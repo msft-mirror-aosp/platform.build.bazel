@@ -109,7 +109,7 @@ function verify_soong_outputs_exist() {
 
     if [[ "${no_soong}" -eq "1" || "${valid_bazel_config}" -eq "0" ]]; then
         >&2 echo "Error: missing generated Bazel files. Have you run bp2build or queryview?"
-        >&2 echo "Run bp2build with the command: GENERATE_BAZEL_FILES=1 m nothing"
+        >&2 echo "Run bp2build with the command: m bp2build"
         >&2 echo "Run queryview with the command: m queryview"
         >&2 echo "Alternatively, for non-queryview applications, invoke Bazel using 'b' with the command: source envsetup.sh; b query/build/test <targets>"
         exit 1
@@ -189,7 +189,7 @@ else
     ADDITIONAL_FLAGS+=("--bazelrc=${ABSOLUTE_OUT_DIR}/bazel/path.bazelrc")
 fi
 
-"${ANDROID_BAZEL_PATH}" \
+JAVA_HOME="${ANDROID_BAZEL_JDK_PATH}" "${ANDROID_BAZEL_PATH}" \
   --server_javabase="${ANDROID_BAZEL_JDK_PATH}" \
   --output_user_root="${ABSOLUTE_OUT_DIR}/bazel/output_user_root" \
   --host_jvm_args=-Djava.io.tmpdir="${ABSOLUTE_OUT_DIR}/bazel/javatmp" \
