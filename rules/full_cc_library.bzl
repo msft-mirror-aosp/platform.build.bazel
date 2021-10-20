@@ -28,11 +28,11 @@ def cc_library(
         link_crt = True,
         use_libcrt = True,
         stl = "",
-        user_link_flags = [],
-        version_script = None,
+        cpp_std = "",
         strip = {},
         shared = {},  # attributes for the shared target
         static = {},  # attributes for the static target
+        additional_linker_inputs = None,
         **kwargs):
     static_name = name + "_bp2build_cc_library_static"
     shared_name = name + "_bp2build_cc_library_shared"
@@ -63,9 +63,9 @@ def cc_library(
         export_system_includes = export_system_includes,
         local_includes = local_includes,
         absolute_includes = absolute_includes,
-        linkopts = linkopts,
         rtti = rtti,
         stl = stl,
+        cpp_std = cpp_std,
         whole_archive_deps = whole_archive_deps + static.get("whole_archive_deps", []),
         implementation_deps = implementation_deps + static.get("implementation_deps", []),
         dynamic_deps = dynamic_deps + static.get("dynamic_deps", []),
@@ -100,8 +100,10 @@ def cc_library(
         local_includes = local_includes,
         absolute_includes = absolute_includes,
         linkopts = linkopts,
+        additional_linker_inputs = additional_linker_inputs,
         rtti = rtti,
         stl = stl,
+        cpp_std = cpp_std,
         whole_archive_deps = whole_archive_deps + shared.get("whole_archive_deps", []),
         deps = deps + shared.get("deps", []),
         implementation_deps = implementation_deps + shared.get("implementation_deps", []),
@@ -111,8 +113,6 @@ def cc_library(
         ),
 
         # Shared library arguments
-        user_link_flags = user_link_flags,
-        version_script = version_script,
         strip = strip,
         link_crt = link_crt,
     )

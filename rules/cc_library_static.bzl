@@ -24,6 +24,7 @@ def cc_library_static(
         use_libcrt = True,
         rtti = False,
         stl = "",
+        cpp_std = "",
         # Flags for C and C++
         copts = [],
         # C++ attributes
@@ -35,7 +36,8 @@ def cc_library_static(
         # asm attributes
         srcs_as = [],
         asflags = [],
-        **kwargs):
+        features = [],
+        alwayslink = None):
     "Bazel macro to correspond with the cc_library_static Soong module."
     exports_name = "%s_exports" % name
     locals_name = "%s_locals" % name
@@ -43,14 +45,15 @@ def cc_library_static(
     c_name = "%s_c" % name
     asm_name = "%s_asm" % name
 
-    features = []
-    if "features" in kwargs:
-        features += kwargs["features"]
-    if rtti:
-        features += ["rtti"]
+    toolchain_features = []
+    toolchain_features += features
 
+    if rtti:
+        toolchain_features += ["rtti"]
     if not use_libcrt:
-        features += ["use_libcrt"]
+        toolchain_features += ["use_libcrt"]
+    if cpp_std:
+        toolchain_features += [cpp_std, "-cpp_std_default"]
 
     if system_dynamic_deps == None:
         system_dynamic_deps = system_dynamic_deps_defaults
@@ -81,9 +84,10 @@ def cc_library_static(
             # dynamic_deps are also needed.
             ("implementation_deps", [locals_name]),
             ("deps", [exports_name]),
-            ("features", features),
+            ("features", toolchain_features),
             ("toolchains", ["//build/bazel/platforms:android_target_product_vars"]),
-        ] + sorted(kwargs.items()),
+            ("alwayslink", alwayslink),
+        ]
     )
 
     native.cc_library(
@@ -221,6 +225,7 @@ _cc_library_combiner = rule(
         ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
+    provides = [CcInfo],
     fragments = ["cpp"],
 )
 
@@ -284,4 +289,5 @@ _cc_includes = rule(
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
     fragments = ["cpp"],
+    provides = [CcInfo],
 )
