@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-load(":proto_file_utils.bzl", "proto_file_utils")
+load("//build/bazel/rules:proto_file_utils.bzl", "proto_file_utils")
 load(":cc_library_common.bzl", "create_ccinfo_for_includes")
 load(":cc_library_static.bzl", "cc_library_static")
 load("@bazel_skylib//lib:paths.bzl", "paths")
@@ -35,17 +35,15 @@ def _cc_proto_sources_gen_rule_impl(ctx):
         if ctx.attr.out_format:
             out_flags.append(ctx.attr.out_format)
 
+
     srcs = []
     hdrs = []
     includes = []
     for dep in ctx.attr.deps:
         proto_info = dep[ProtoInfo]
         if proto_info.proto_source_root == ".":
-            includes.append(proto_info.proto_source_root)
-        else:
-            # the proto_source_root includes bin_dir, which we want to remove
-            include = paths.relativize(proto_info.proto_source_root, ctx.bin_dir.path)
-            includes.append(include)
+            includes.append(paths.join(ctx.label.name, ctx.label.package))
+        includes.append(ctx.label.name)
         outs = _generate_cc_proto_action(
             proto_info = proto_info,
             protoc = ctx.executable._protoc,
@@ -159,6 +157,7 @@ def _cc_proto_library(
         name,
         deps = [],
         plugin = None,
+        target_compatible_with = [],
         out_format = None,
         proto_dep = None):
     proto_lib_name = name + "_proto_gen"
@@ -191,16 +190,19 @@ def _cc_proto_library(
             proto_dep,
         ],
         local_includes = ["."],
+        target_compatible_with = target_compatible_with,
     )
 
 def cc_lite_proto_library(
         name,
         deps = [],
-        plugin = None):
+        plugin = None,
+        target_compatible_with = []):
     _cc_proto_library(
         name,
         deps = deps,
         plugin = plugin,
+        target_compatible_with = target_compatible_with,
         out_format = "lite",
         proto_dep = "//external/protobuf:libprotobuf-cpp-lite",
     )
@@ -208,10 +210,12 @@ def cc_lite_proto_library(
 def cc_proto_library(
         name,
         deps = [],
-        plugin = None):
+        plugin = None,
+        target_compatible_with = []):
     _cc_proto_library(
         name,
         deps = deps,
         plugin = plugin,
+        target_compatible_with = target_compatible_with,
         proto_dep = "//external/protobuf:libprotobuf-cpp-full",
     )
