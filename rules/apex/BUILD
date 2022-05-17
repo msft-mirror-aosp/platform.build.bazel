@@ -1,10 +1,17 @@
 load("//build/bazel/rules/apex:toolchain.bzl", "apex_toolchain")
-load("@bazel_skylib//rules:common_settings.bzl", "string_setting", "string_list_setting")
+load("@bazel_skylib//rules:common_settings.bzl", "string_setting", "string_list_setting", "bool_flag")
 
 string_setting(
     name = "apex_name",
     build_setting_default = "",
     visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "non_apex",
+    flag_values = {
+      ":apex_name": "",
+    },
 )
 
 string_setting(
@@ -16,6 +23,12 @@ string_setting(
 string_list_setting(
     name = "apex_direct_deps",
     build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
+bool_flag(
+    name = "apexer_verbose",
+    build_setting_default = False,
     visibility = ["//visibility:public"],
 )
 
@@ -75,5 +88,10 @@ sh_test(
         "@make_injection//:host/linux-x86/bin/deapexer",
         "@make_injection//:host/linux-x86/bin/sefcontext_compile",
         "//prebuilts/sdk/current:public/android.jar",
-    ]
+    ],
+    # This is a host test.
+    target_compatible_with = select({
+        "//build/bazel/platforms/os:linux": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }),
 )
