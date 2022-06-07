@@ -110,7 +110,7 @@ def _convert_apex_manifest_json_to_pb(ctx, apex_toolchain):
     ctx.actions.run(
         outputs = [apex_manifest_pb],
         inputs = [ctx.file.manifest],
-        executable = apex_toolchain.conv_apex_manifest,
+        executable = apex_toolchain.conv_apex_manifest[DefaultInfo].files_to_run,
         arguments = [
             "proto",
             apex_manifest_json.path,
@@ -193,6 +193,10 @@ def _run_apexer(ctx, apex_toolchain):
     args.add_all(['--payload_type', 'image'])
     args.add_all(['--target_sdk_version', '10000'])
     args.add_all(['--payload_fs_type', 'ext4'])
+
+    # Override the package name, if it's expicitly specified
+    if ctx.attr.package_name != None:
+        args.add_all(["--override_apk_package_name", ctx.attr.package_name])
 
     # TODO(b/215339575): This is a super rudimentary way to convert "current" to a numerical number.
     # Generalize this to API level handling logic in a separate Starlark utility, preferably using
@@ -291,6 +295,7 @@ def _run_signapk(ctx, unsigned_file, signed_file, private_key, public_key, mnemo
 # Compress a file with apex_compression_tool.
 def _run_apex_compression_tool(ctx, apex_toolchain, input_file, output_file_name):
     avbtool_files = apex_toolchain.avbtool[DefaultInfo].files_to_run
+    apex_compression_tool_files = apex_toolchain.apex_compression_tool[DefaultInfo].files_to_run
 
     # Outputs
     compressed_file = ctx.actions.declare_file(output_file_name)
@@ -307,11 +312,11 @@ def _run_apex_compression_tool(ctx, apex_toolchain, input_file, output_file_name
         inputs = [input_file],
         tools = [
             avbtool_files,
-            apex_toolchain.apex_compression_tool,
+            apex_compression_tool_files,
             apex_toolchain.soong_zip,
         ],
         outputs = [compressed_file],
-        executable = apex_toolchain.apex_compression_tool,
+        executable = apex_compression_tool_files,
         arguments = [args],
         mnemonic = "BazelApexCompressing",
     )
@@ -342,6 +347,7 @@ _apex = rule(
     attrs = {
         "manifest": attr.label(allow_single_file = [".json"]),
         "android_manifest": attr.label(allow_single_file = [".xml"]),
+        "package_name": attr.string(),
         "file_contexts": attr.label(allow_single_file = True, mandatory = True),
         "key": attr.label(providers = [ApexKeyInfo]),
         "certificate": attr.label(providers = [AndroidAppCertificateInfo]),
@@ -423,6 +429,7 @@ def apex(
         native_shared_libs_64 = [],
         binaries = [],
         prebuilts = [],
+        package_name = None,
         **kwargs):
     "Bazel macro to correspond with the APEX bundle Soong module."
 
@@ -458,5 +465,6 @@ def apex(
         # $ bazel build //path/to/module:com.android.module.capex
         apex_output = apex_output,
         capex_output = capex_output,
+        package_name = package_name,
         **kwargs
     )
