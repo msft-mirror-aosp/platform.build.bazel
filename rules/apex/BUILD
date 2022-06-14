@@ -1,5 +1,6 @@
 load("//build/bazel/rules/apex:toolchain.bzl", "apex_toolchain")
 load("@bazel_skylib//rules:common_settings.bzl", "string_setting", "string_list_setting", "bool_flag")
+load(":apex_test.bzl", "apex_test_suite")
 
 string_setting(
     name = "apex_name",
@@ -38,7 +39,7 @@ apex_toolchain(
     name = "apex_toolchain",
     aapt2 = "//prebuilts/sdk/tools:linux/bin/aapt2",
     avbtool = "//external/avb:avbtool",
-    apexer = "@make_injection//:host/linux-x86/bin/apexer",
+    apexer = "//system/apex/apexer",
     mke2fs = "//external/e2fsprogs/misc:mke2fs",
     resize2fs = "//external/e2fsprogs/resize:resize2fs",
     e2fsdroid = "//external/e2fsprogs/contrib/android:e2fsdroid",
@@ -47,6 +48,7 @@ apex_toolchain(
     android_jar = "//prebuilts/sdk/current:public/android.jar",
     apex_compression_tool = "//system/apex/tools:apex_compression_tool",
     soong_zip = "//prebuilts/build-tools:linux-x86/bin/soong_zip",
+    jsonmodify = "//build/soong/scripts:jsonmodify",
 )
 
 toolchain(
@@ -84,14 +86,18 @@ sh_test(
         "//prebuilts/build-tools:linux-x86/bin/soong_zip",
         "//prebuilts/sdk/current:public/android.jar",
         "//prebuilts/sdk/tools:linux/bin/aapt2",
+        "//system/apex/apexer:apexer",
         "//system/apex/apexer:conv_apex_manifest",
         "//system/apex/tools:apex_compression_tool",
         "//system/apex/tools:deapexer",
-        "@make_injection//:host/linux-x86/bin/apexer",
     ],
     # This is a host test.
     target_compatible_with = select({
         "//build/bazel/platforms/os:linux": [],
         "//conditions:default": ["@platforms//:incompatible"],
     }),
+)
+
+apex_test_suite(
+    name = "apex_tests",
 )
