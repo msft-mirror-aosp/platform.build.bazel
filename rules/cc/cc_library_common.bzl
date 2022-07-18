@@ -17,7 +17,6 @@ limitations under the License.
 load("//build/bazel/product_variables:constants.bzl", "constants")
 load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
 _bionic_targets = ["//bionic/libc", "//bionic/libdl", "//bionic/libm"]
 _static_bionic_targets = ["//bionic/libc:libc_bp2build_cc_library_static", "//bionic/libdl:libdl_bp2build_cc_library_static", "//bionic/libm:libm_bp2build_cc_library_static"]
@@ -65,6 +64,7 @@ def get_includes_paths(ctx, dirs, package_relative = True):
             execution_rel_dir = ctx.label.package
             if len(rel_dir) > 0:
                 execution_rel_dir = execution_rel_dir + "/" + rel_dir
+
         # To allow this repo to be used as an external one.
         repo_prefix_dir = execution_rel_dir
         if ctx.label.workspace_root != "":
@@ -78,14 +78,14 @@ def get_includes_paths(ctx, dirs, package_relative = True):
 
 def create_ccinfo_for_includes(
         ctx,
+        hdrs = [],
         includes = [],
         absolute_includes = [],
         system_includes = [],
         deps = []):
-    cc_toolchain = find_cpp_toolchain(ctx)
-
     # Create a compilation context using the string includes of this target.
     compilation_context = cc_common.create_compilation_context(
+        headers = depset(hdrs),
         includes = depset(
             get_includes_paths(ctx, includes) +
             get_includes_paths(ctx, absolute_includes, package_relative = False),
@@ -101,25 +101,24 @@ def create_ccinfo_for_includes(
 
     return CcInfo(compilation_context = combined_info.compilation_context)
 
-
 def is_external_directory(package_name):
-  if package_name.startswith('external'):
-    return True
-  if package_name.startswith('hardware'):
-    paths = package_name.split("/")
-    if len(paths) < 2:
-      return True
-    secondary_path = paths[1]
-    if secondary_path in ["google", "interfaces", "ril"]:
-      return True
-    return secondary_path.startswith("libhardware")
-  if package_name.startswith("vendor"):
-    paths = package_name.split("/")
-    if len(paths) < 2:
-      return True
-    secondary_path = paths[1]
-    return secondary_path.contains("google")
-  return False
+    if package_name.startswith("external"):
+        return True
+    if package_name.startswith("hardware"):
+        paths = package_name.split("/")
+        if len(paths) < 2:
+            return True
+        secondary_path = paths[1]
+        if secondary_path in ["google", "interfaces", "ril"]:
+            return True
+        return secondary_path.startswith("libhardware")
+    if package_name.startswith("vendor"):
+        paths = package_name.split("/")
+        if len(paths) < 2:
+            return True
+        secondary_path = paths[1]
+        return secondary_path.contains("google")
+    return False
 
 # TODO: Move this to a common rule dir, instead of a cc rule dir. Nothing here
 # should be cc specific, except that the current callers are (only) cc rules.
@@ -132,7 +131,8 @@ def parse_sdk_version(version):
         return version
     elif version in api_levels.keys():
         return str(api_levels[version])
-    # We need to handle this case properly later
+        # We need to handle this case properly later
+
     elif version == "apex_inherit":
         return future_version
     elif version.isdigit() and int(version) == product_vars["Platform_sdk_version"]:

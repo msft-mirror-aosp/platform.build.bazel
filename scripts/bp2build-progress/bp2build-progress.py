@@ -34,7 +34,6 @@ import collections
 import datetime
 import dependency_analysis
 import os.path
-import queue
 import subprocess
 import sys
 
@@ -199,163 +198,81 @@ def generate_report(report_data):
 
 
 def adjacency_list_from_json(module_graph, ignore_by_name, top_level_module):
-  # The set of ignored modules. These modules (and their dependencies) are not shown
-  # in the graph or report.
-  ignored = set()
 
-  # A map of module name to _ModuleInfo
-  name_to_info = dict()
+  def filter_by_name(json):
+    return json["Name"] == top_level_module
 
-  # name to all module variants
-  module_graph_map = collections.defaultdict(list)
-  q = queue.Queue()
+  module_adjacency_list = collections.defaultdict(set)
+  name_to_info = {}
 
-  # Do a single pass to find all top-level modules to be ignored
-  for module in module_graph:
+  def collect_transitive_dependencies(module, deps_names):
+    module_info = None
     name = module["Name"]
-    if dependency_analysis.is_windows_variation(module):
-      continue
-    if ignore_kind(module["Type"]) or name in ignore_by_name:
-      ignored.add(module["Name"])
-      continue
-    if dependency_analysis.is_windows_variation(module):
-      # ignore the windows variations of modules
-      continue
-    name_to_info[name] = _ModuleInfo(
-        name=name,
-        kind=module["Type"],
-        dirname=os.path.dirname(module["Blueprint"]))
-    module_graph_map[name].append(module)
-    if name == top_level_module:
-      q.put(name)
+    name_to_info.setdefault(
+        name,
+        _ModuleInfo(
+            name=name,
+            kind=module["Type"],
+            dirname=os.path.dirname(module["Blueprint"]),
+        ))
+    module_info = name_to_info[name]
 
-  # An adjacency list for all modules in the transitive closure, excluding ignored modules.
-  module_adjacency_list = {}
-  visited = set()
+    module_adjacency_list[module_info].update(deps_names)
+    # account for transitive deps
+    for dep in deps_names:
+      dep_module_info = name_to_info[dep]
+      module_adjacency_list[module_info].update(
+          module_adjacency_list.get(dep_module_info, set()))
 
-  # Create the adjacency list.
-  while not q.empty():
-    module_name = q.get()
-    if module_name in ignored or module_name in visited:
-      continue
-    visited.add(module_name)
-    module_info = name_to_info[module_name]
-    module_adjacency_list[module_info] = set()
-    for module in module_graph_map[module_name]:
-      for dep in module["Deps"]:
-        dep_name = dep["Name"]
-        if dep_name in ignored or dep_name == module_name:
-          continue
-        module_adjacency_list[module_info].add(dep_name)
-        if dep_name not in visited:
-          q.put(dep_name)
+  dependency_analysis.visit_json_module_graph_post_order(
+      module_graph, ignore_by_name, filter_by_name,
+      collect_transitive_dependencies)
 
   return module_adjacency_list
-
-
-def ignore_kind(kind):
-  return kind in dependency_analysis.IGNORED_KINDS or "defaults" in kind
-
-
-def bazel_target_to_dir(full_target):
-  dirname, _ = full_target.split(":")
-  return dirname[2:]
 
 
 def adjacency_list_from_queryview_xml(module_graph, ignore_by_name,
                                       top_level_module):
-  # The set of ignored modules. These modules (and their dependencies) are
-  # not shown in the graph or report.
-  ignored = set()
 
-  # A map of module name to ModuleInfo
-  name_to_info = dict()
+  def filter_by_name(module):
+    return module.name == top_level_module
 
-  # queryview embeds variant in long name, keep a map of the name with vaiarnt
-  # to just name
-  name_with_variant_to_name = dict()
+  module_adjacency_list = collections.defaultdict(set)
+  name_to_info = {}
 
-  module_graph_map = dict()
-  q = queue.Queue()
+  def collect_transitive_dependencies(module, deps_names):
+    module_info = None
+    name_to_info.setdefault(
+        module.name,
+        _ModuleInfo(
+            name=module.name,
+            kind=module.kind,
+            dirname=module.dirname,
+        ))
+    module_info = name_to_info[module.name]
 
-  for module in module_graph:
-    ignore = False
-    if module.tag != "rule":
-      continue
-    kind = module.attrib["class"]
-    name_with_variant = module.attrib["name"]
-    name = None
-    variant = ""
-    for attr in module:
-      attr_name = attr.attrib["name"]
-      if attr_name == "soong_module_name":
-        name = attr.attrib["value"]
-      elif attr_name == "soong_module_variant":
-        variant = attr.attrib["value"]
-      elif attr_name == "soong_module_type" and kind == "generic_soong_module":
-        kind = attr.attrib["value"]
-      # special handling for filegroup srcs, if a source has the same name as
-      # the module, we don't convert it
-      elif kind == "filegroup" and attr_name == "srcs":
-        for item in attr:
-          if item.attrib["value"] == name:
-            ignore = True
-    if name in ignore_by_name:
-      ignore = True
+    module_adjacency_list[module_info].update(deps_names)
+    for dep in deps_names:
+      dep_module_info = name_to_info[dep]
+      module_adjacency_list[module_info].update(
+          module_adjacency_list.get(dep_module_info, set()))
 
-    if ignore_kind(kind) or variant.startswith("windows") or ignore:
-      ignored.add(name_with_variant)
-    else:
-      if name == top_level_module:
-        q.put(name_with_variant)
-      name_with_variant_to_name.setdefault(name_with_variant, name)
-      name_to_info.setdefault(
-          name,
-          _ModuleInfo(
-              name=name,
-              kind=kind,
-              dirname=bazel_target_to_dir(name_with_variant),
-          ))
-      module_graph_map[name_with_variant] = module
-
-  # An adjacency list for all modules in the transitive closure, excluding ignored modules.
-  module_adjacency_list = {}
-  visited = set()
-  while not q.empty():
-    name_with_variant = q.get()
-    module = module_graph_map[name_with_variant]
-    if module.tag != "rule":
-      continue
-    visited.add(name_with_variant)
-    if name_with_variant in ignored:
-      continue
-
-    name = name_with_variant_to_name[name_with_variant]
-    module_info = name_to_info[name]
-    module_adjacency_list.setdefault(module_info, set())
-    for attr in module:
-      if attr.tag != "rule-input":
-        continue
-      dep_name_with_variant = attr.attrib["name"]
-      if dep_name_with_variant in ignored:
-        continue
-      dep_name = name_with_variant_to_name[dep_name_with_variant]
-      if dep_name_with_variant not in visited:
-        q.put(dep_name_with_variant)
-      if name != dep_name:
-        module_adjacency_list[module_info].add(dep_name)
+  dependency_analysis.visit_queryview_xml_module_graph_post_order(
+      module_graph, ignore_by_name, filter_by_name,
+      collect_transitive_dependencies)
 
   return module_adjacency_list
 
 
-def get_module_adjacency_list(top_level_module, use_queryview, ignore_by_name):
+def get_module_adjacency_list(top_level_module, use_queryview, ignore_by_name,
+                              banchan_mode):
   # The main module graph containing _all_ modules in the Soong build,
   # and the list of converted modules.
   try:
     module_graph = dependency_analysis.get_queryview_module_info(
-        top_level_module
+        top_level_module, banchan_mode
     ) if use_queryview else dependency_analysis.get_json_module_info(
-        top_level_module)
+        top_level_module, banchan_mode)
     converted = dependency_analysis.get_bp2build_converted_modules()
   except subprocess.CalledProcessError as err:
     output = err.output.decode("utf-8") if err.output else ""
@@ -403,6 +320,13 @@ def main():
       required=False,
       help="Comma-separated list. When building the tree of transitive dependencies, will not follow dependency edges pointing to module names listed by this flag."
   )
+  parser.add_argument(
+      "--banchan",
+      type=bool,
+      default=False,
+      required=False,
+      help="whether to run Soong in a banchan configuration rather than lunch",
+  )
   args = parser.parse_args()
 
   if len(args.module) > 1 and args.mode != "report":
@@ -411,11 +335,12 @@ def main():
   mode = args.mode
   use_queryview = args.use_queryview
   ignore_by_name = args.ignore_by_name
+  banchan_mode = args.banchan
 
   report_infos = []
   for top_level_module in args.module:
     module_adjacency_list, converted = get_module_adjacency_list(
-        top_level_module, use_queryview, ignore_by_name)
+        top_level_module, use_queryview, ignore_by_name, banchan_mode)
 
     if mode == "graph":
       generate_dot_file(module_adjacency_list, converted, top_level_module)
