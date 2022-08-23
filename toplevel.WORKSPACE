@@ -1,4 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//build/bazel/rules:selective_local_repository.bzl", "selective_local_repository")
 
 # Skylib provides common utilities for writing bazel rules and functions.
 # For docs see https://github.com/bazelbuild/bazel-skylib/blob/main/README.md
@@ -14,3 +15,29 @@ http_archive(
 load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
+
+# Repository that provides the clang compilers
+selective_local_repository(
+    name = "clang",
+    build_file = "build/bazel/toolchains/cc/clang.BUILD",
+    # Ignore pre-existing BUILD files so we can use our own BUILD file without
+    # touching the ones added by go/roboleaf.
+    ignore_filenames = [
+        "BUILD",
+        "BUILD.bazel",
+    ],
+    path = "prebuilts/clang/host",
+)
+
+# Repository that provides include / libs from GCC
+selective_local_repository(
+    name = "gcc_lib",
+    build_file = "build/bazel/toolchains/cc/gcc_lib.BUILD",
+    # Ignore pre-existing BUILD files so we can use our own BUILD file without
+    # touching the ones added by go/roboleaf.
+    ignore_filenames = [
+        "BUILD",
+        "BUILD.bazel",
+    ],
+    path = "prebuilts/gcc/linux-x86/host",
+)
