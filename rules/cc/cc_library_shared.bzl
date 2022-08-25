@@ -52,6 +52,7 @@ def cc_library_shared(
         deps = [],
         whole_archive_deps = [],
         system_dynamic_deps = None,
+        runtime_deps = [],
         export_includes = [],
         export_absolute_includes = [],
         export_system_includes = [],
@@ -249,6 +250,7 @@ def cc_library_shared(
         output_file = soname,
         target_compatible_with = target_compatible_with,
         stub_shared_libraries = stub_shared_libraries,
+        runtime_deps = runtime_deps,
         tags = tags,
     )
 
@@ -361,6 +363,19 @@ CcStubLibrariesInfo = provider(
     },
 )
 
+# A provider to propagate shared library output artifacts, primarily useful
+# for root level querying in Soong-Bazel mixed builds.
+# Ideally, it would be preferable to reuse the existing native
+# CcSharedLibraryInfo provider, but that provider requires that shared library
+# artifacts are wrapped in a linker input. Artifacts retrievable from this linker
+# input are symlinks to the original artifacts, which is problematic when
+# other dependencies expect a real file.
+CcSharedLibraryOutputInfo = provider(
+    fields = {
+        "output_file": "A single .so file, produced by this target.",
+    },
+)
+
 def _cc_library_shared_proxy_impl(ctx):
     root_files = ctx.attr.root[DefaultInfo].files.to_list()
     shared_files = ctx.attr.shared[DefaultInfo].files.to_list()
@@ -370,9 +385,17 @@ def _cc_library_shared_proxy_impl(ctx):
 
     shared_lib = shared_files[0]
 
-    ctx.actions.symlink(
-        output = ctx.outputs.output_file,
-        target_file = shared_lib,
+    # Copy the output instead of symlinking. This is because this output
+    # can be directly installed into a system image; this installation treats
+    # symlinks differently from real files (symlinks will be preserved relative
+    # to the image root).
+    ctx.actions.run_shell(
+        inputs = depset(direct = [shared_lib]),
+        outputs = [ctx.outputs.output_file],
+        command = "cp -f %s %s" % (shared_lib.path, ctx.outputs.output_file.path),
+        mnemonic = "CopyFile",
+        progress_message = "Copying files",
+        use_default_shell_env = True,
     )
 
     files = root_files + [ctx.outputs.output_file, ctx.files.table_of_contents[0]]
@@ -399,6 +422,7 @@ def _cc_library_shared_proxy_impl(ctx):
         ctx.attr.root[CcInfo],
         CcStubLibrariesInfo(infos = stub_library_infos),
         ctx.attr.shared[OutputGroupInfo],
+        CcSharedLibraryOutputInfo(output_file = ctx.outputs.output_file),
     ]
 
 _cc_library_shared_proxy = rule(
@@ -414,6 +438,10 @@ _cc_library_shared_proxy = rule(
             providers = [CcTocInfo],
         ),
         "stub_shared_libraries": attr.label_list(providers = [CcStubInfo, CcSharedLibraryInfo]),
+        "runtime_deps": attr.label_list(
+            providers = [CcInfo],
+            doc = "Deps that should be installed along with this target. Read by the apex cc aspect.",
+        ),
     },
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],

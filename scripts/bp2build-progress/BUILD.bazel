@@ -32,25 +32,14 @@ py_binary(
     srcs = ["bp2build-progress.py"],
     visibility = ["//visibility:public"],
     deps = [
-        ":bp2build_py_proto",
+        "//build/soong/ui/metrics/bp2build_progress_metrics_proto:bp2build_py_proto",
         ":dependency_analysis",
     ],
 )
 
 py_binary(
-    name = "bp2build-module-dep-infos",
-    srcs = ["bp2build-module-dep-infos.py"],
+    name = "bp2build_module_dep_infos",
+    srcs = ["bp2build_module_dep_infos.py"],
     visibility = ["//visibility:public"],
     deps = [":dependency_analysis"],
-)
-
-proto_library(
-    name = "bp2build_proto",
-    srcs = ["bp2build.proto"],
-    strip_import_prefix = "",
-)
-
-py_proto_library(
-    name = "bp2build_py_proto",
-    deps = [":bp2build_proto"],
 )
