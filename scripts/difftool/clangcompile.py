@@ -17,12 +17,16 @@
 """Helpers pertaining to clang compile actions."""
 
 import collections
-import difflib
+import pathlib
 import subprocess
 from commands import CommandInfo
 from commands import flag_repr
 from commands import is_flag_starts_with
 from commands import parse_flag_groups
+from diffs.diff import Diff, ExtractInfo
+from diffs.context import ContextDiff
+from diffs.nm import NmSymbolDiff
+from diffs.bloaty import BloatyDiff
 
 
 class ClangCompileInfo(CommandInfo):
@@ -135,43 +139,53 @@ def _process_includes(includes):
   return result
 
 
-def file_differences(left_path, right_path):
-  """Returns a list of strings describing differences in `.o` files.
+def _external_tool(*args) -> ExtractInfo:
+  return lambda file: subprocess.run([*args, str(file)],
+                                     check=True, capture_output=True,
+                                     encoding="utf-8").stdout.splitlines()
+
+
+# TODO(usta) use nm as a data dependency
+def nm_differences(left_path: pathlib.Path, right_path: pathlib.Path) -> list[
+  str]:
+  """Returns differences in symbol tables.
+  Returns the empty list if these files are deemed "similar enough"."""
+  return NmSymbolDiff(_external_tool("nm"), "symbol tables").diff(left_path, right_path)
+
+
+# TODO(usta) use readelf as a data dependency
+def elf_differences(left_path: pathlib.Path, right_path: pathlib.Path) -> list[
+  str]:
+  """Returns differences in elf headers.
   Returns the empty list if these files are deemed "similar enough".
 
   The given files must exist and must be object (.o) files."""
-  errors = []
+  return ContextDiff(_external_tool("readelf", "-h"), "elf headers").diff(left_path, right_path)
 
-  # Compare symbols using nm
-  left_symbols = subprocess.run(["nm", str(left_path)],
-                                check=True, capture_output=True,
-                                encoding="utf-8")
-  right_symbols = subprocess.run(["nm", str(right_path)],
-                                 check=True, capture_output=True,
-                                 encoding="utf-8")
-  comparator = difflib.context_diff(left_symbols.stdout.splitlines(),
-                                    right_symbols.stdout.splitlines())
-  difflines = list(comparator)
-  if difflines:
-    err = "symbol tables differ. diff follows:\n"
-    err += "\n".join(difflines)
-    errors += [err]
+# TODO(usta) use bloaty as a data dependency
+def bloaty_differences(left_path: pathlib.Path, right_path: pathlib.Path) -> list[
+  str]:
+  """Returns differences in symbol and section tables.
+  Returns the empty list if these files are deemed "similar enough".
 
-  # Compare file headers using readelf -h
-  left_readelf = subprocess.run(["readelf", "-h", str(left_path)],
-                                check=True, capture_output=True,
-                                encoding="utf-8")
-  right_readelf = subprocess.run(["readelf", "-h", str(right_path)],
-                                 check=True, capture_output=True,
-                                 encoding="utf-8")
-  left_header = left_readelf.stdout.splitlines()
-  right_header = right_readelf.stdout.splitlines()
-  comparator = difflib.context_diff(left_header, right_header)
+  The given files must exist and must be object (.o) files."""
+  return _bloaty_differences(left_path, right_path)
 
-  difflines = list(comparator)
-  if difflines:
-    err = "elf headers differ. diff follows:\n"
-    err += "\n".join(difflines)
-    errors += [err]
 
-  return errors
+# TODO(usta) use bloaty as a data dependency
+def bloaty_differences_compileunits(left_path: pathlib.Path, right_path: pathlib.Path) -> list[
+  str]:
+  """Returns differences in symbol and section tables.
+  Returns the empty list if these files are deemed "similar enough".
+
+  The given files must exist and must be object (.o) files."""
+  return _bloaty_differences(left_path, right_path, True)
+
+
+# TODO(usta) use bloaty as a data dependency
+def _bloaty_differences(left_path: pathlib.Path, right_path: pathlib.Path, debug=False) -> list[
+  str]:
+  symbols = BloatyDiff("symbol tables", "symbols", has_debug_symbols=debug).diff(left_path, right_path)
+  sections = BloatyDiff("section tables", "sections", has_debug_symbols=debug).diff(left_path, right_path)
+  segments = BloatyDiff("segment tables", "segments", has_debug_symbols=debug).diff(left_path, right_path)
+  return symbols + sections + segments

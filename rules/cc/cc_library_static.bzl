@@ -18,12 +18,12 @@ load(
     ":cc_library_common.bzl",
     "create_ccinfo_for_includes",
     "is_external_directory",
+    "parse_sdk_version",
     "system_dynamic_deps_defaults",
-    "parse_sdk_version")
-load(":stl.bzl", "static_stl_deps")
+)
+load(":stl.bzl", "stl_deps")
 load("@bazel_skylib//lib:collections.bzl", "collections")
-load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cpp_toolchain")
-load("@rules_cc//examples:experimental_cc_shared_library.bzl", "CcSharedLibraryInfo")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//build/bazel/product_variables:constants.bzl", "constants")
 
 CcStaticLibraryInfo = provider(fields = ["root_static_archive", "objects"])
@@ -37,6 +37,7 @@ def cc_library_static(
         whole_archive_deps = [],
         implementation_whole_archive_deps = [],
         system_dynamic_deps = None,
+        runtime_deps = [],
         export_absolute_includes = [],
         export_includes = [],
         export_system_includes = [],
@@ -67,7 +68,8 @@ def cc_library_static(
         data = [],
         sdk_version = "",
         min_sdk_version = "",
-        use_version_lib = False):
+        use_version_lib = False,
+        tags = []):
     "Bazel macro to correspond with the cc_library_static Soong module."
 
     exports_name = "%s_exports" % name
@@ -83,6 +85,11 @@ def cc_library_static(
         toolchain_features += [
             "-non_external_compiler_flags",
             "external_compiler_flags",
+        ]
+    else:
+        toolchain_features += [
+            "non_external_compiler_flags",
+            "-external_compiler_flags",
         ]
 
     if use_version_lib:
@@ -101,7 +108,7 @@ def cc_library_static(
     if min_sdk_version:
         toolchain_features += [
             "sdk_version_" + parse_sdk_version(min_sdk_version),
-            "-sdk_version_default"
+            "-sdk_version_default",
         ]
 
     if system_dynamic_deps == None:
@@ -115,14 +122,18 @@ def cc_library_static(
         # whole archive deps always re-export their includes, etc
         deps = deps + whole_archive_deps + dynamic_deps,
         target_compatible_with = target_compatible_with,
+        tags = ["manual"],
     )
+
+    stl = stl_deps(stl, False)
 
     _cc_includes(
         name = locals_name,
         includes = local_includes,
         absolute_includes = absolute_includes,
-        deps = implementation_deps + implementation_dynamic_deps + system_dynamic_deps + static_stl_deps(stl) + implementation_whole_archive_deps,
+        deps = implementation_deps + implementation_dynamic_deps + system_dynamic_deps + stl.static + stl.shared + implementation_whole_archive_deps,
         target_compatible_with = target_compatible_with,
+        tags = ["manual"],
     )
 
     # Silently drop these attributes for now:
@@ -143,22 +154,35 @@ def cc_library_static(
         ],
     )
 
+    # TODO(b/231574899): restructure this to handle other images
+    copts += select({
+        "//build/bazel/rules/apex:non_apex": [],
+        "//conditions:default": [
+            "-D__ANDROID_APEX__",
+            # TODO(b/231322772): sdk_version/min_sdk_version if not finalized
+            "-D__ANDROID_APEX_MIN_SDK_VERSION__=10000",
+        ],
+    })
+
     native.cc_library(
         name = cpp_name,
         srcs = srcs,
         copts = copts + cppflags,
+        tags = ["manual"],
         **common_attrs
     )
     native.cc_library(
         name = c_name,
         srcs = srcs_c,
         copts = copts + conlyflags,
+        tags = ["manual"],
         **common_attrs
     )
     native.cc_library(
         name = asm_name,
         srcs = srcs_as,
         copts = asflags,
+        tags = ["manual"],
         **common_attrs
     )
 
@@ -166,7 +190,10 @@ def cc_library_static(
     _cc_library_combiner(
         name = name,
         deps = [cpp_name, c_name, asm_name] + whole_archive_deps + implementation_whole_archive_deps,
+        runtime_deps = runtime_deps,
         target_compatible_with = target_compatible_with,
+        alwayslink = alwayslink,
+        tags = tags,
     )
 
 # Returns a CcInfo object which combines one or more CcInfo objects, except that all
@@ -216,6 +243,7 @@ def _cc_library_combiner_impl(ctx):
                 cc_toolchain = cc_toolchain,
                 static_library = output_file,
                 objects = objects_to_link,
+                alwayslink = ctx.attr.alwayslink,
             ),
         ]),
     )
@@ -271,9 +299,20 @@ _cc_library_combiner = rule(
     implementation = _cc_library_combiner_impl,
     attrs = {
         "deps": attr.label_list(providers = [CcInfo]),
+        "runtime_deps": attr.label_list(
+            providers = [CcInfo],
+            doc = "Deps that should be installed along with this target. Read by the apex cc aspect.",
+        ),
         "_cc_toolchain": attr.label(
             default = Label("@local_config_cc//:toolchain"),
             providers = [cc_common.CcToolchainInfo],
+        ),
+        "alwayslink": attr.bool(
+            doc = """At link time, whether these libraries should be wrapped in
+            the --whole_archive block. This causes all libraries in the static
+            archive to be unconditionally linked, regardless of whether the
+            symbols in these object files are being searched by the linker.""",
+            default = False,
         ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],

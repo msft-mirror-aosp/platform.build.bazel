@@ -33,11 +33,14 @@ rm -f out/ninja_build
 FLAGS_LIST=(
   --config=bp2build
   --config=ci
+
+  # Make the apexer log verbosely on CI
+  --//build/bazel/rules/apex:apexer_verbose
 )
 FLAGS="${FLAGS_LIST[@]}"
 
 ###############
-# Build targets
+# Build and test targets for device target platform.
 ###############
 BUILD_TARGETS_LIST=(
   //art/...
@@ -51,6 +54,8 @@ BUILD_TARGETS_LIST=(
   //libnativehelper/...
   //packages/...
   //prebuilts/clang/host/linux-x86:all
+  //prebuilts/build-tools/tests/...
+  //platform_testing/...
   //system/...
   //tools/apksig/...
   //tools/platform-compat/...
@@ -62,49 +67,56 @@ BUILD_TARGETS_LIST=(
   -//external/e2fsprogs/e2fsck:all
 )
 BUILD_TARGETS="${BUILD_TARGETS_LIST[@]}"
+
+TEST_TARGETS_LIST=(
+  //build/bazel/tests/...
+  //build/bazel/rules/...
+  //build/bazel/scripts/...
+)
+TEST_TARGETS="${TEST_TARGETS_LIST[@]}"
+
+###########
 # Iterate over various architectures supported in the platform build.
-tools/bazel --max_idle_secs=5 build ${FLAGS} --platforms //build/bazel/platforms:android_x86 -k -- ${BUILD_TARGETS}
-tools/bazel --max_idle_secs=5 build ${FLAGS} --platforms //build/bazel/platforms:android_x86_64 -k -- ${BUILD_TARGETS}
-tools/bazel --max_idle_secs=5 build ${FLAGS} --platforms //build/bazel/platforms:android_arm -k -- ${BUILD_TARGETS}
-tools/bazel --max_idle_secs=5 build ${FLAGS} --platforms //build/bazel/platforms:android_arm64 -k -- ${BUILD_TARGETS}
+###########
+
+for platform in android_x86 android_x86_64 android_arm android_arm64; do
+  # Use a loop to prevent unnecessarily switching --platforms because that drops
+  # the Bazel analysis cache.
+  #
+  # 1. Build every target in $BUILD_TARGETS
+  tools/bazel --max_idle_secs=5 build ${FLAGS} --config=${platform} -k -- ${BUILD_TARGETS}
+  # 2. Test every target that is compatible with an android target platform (e.g. analysis_tests, sh_tests, diff_tests).
+  tools/bazel --max_idle_secs=5 test ${FLAGS} --build_tests_only --config=${platform} -k -- ${TEST_TARGETS}
+  # 3. Dist mainline modules.
+  tools/bazel --max_idle_secs=5 run //build/bazel/ci/dist:mainline_modules ${FLAGS} --config=${platform} -- --dist_dir="${DIST_DIR}/mainline_modules_${platform}"
+done
+
+
+#########
+# Host-only builds and tests
+#########
 
 HOST_INCOMPATIBLE_TARGETS=(
   # TODO(b/217756861): Apex toolchain is incompatible with host arches but apex modules do
   # not have this restriction
   -//build/bazel/examples/apex/...
+  -//build/bazel/examples/partitions/...
+  -//build/bazel/ci/dist/...
+  -//build/bazel/rules/apex/...
+  -//build/bazel/tests/apex/...
+  -//build/bazel/tests/partitions/...
   -//packages/modules/adb/apex:com.android.adbd
   -//system/timezone/apex:com.android.tzdata
-  -//build/bazel/tests/apex/...
-  -//build/bazel/ci/dist/...
 
-  # TODO(b/217927043): Determine how to address targets that are device only
-  -//system/core/libpackagelistparser:all
-  -//external/icu/libicu:all
-  //external/icu/libicu:libicu
-  -//external/icu/icu4c/source/tools/ctestfw:all
-
-  # TODO(b/217926427): determine why these host_supported modules do not build on host
+  # TODO(b/216626461): add support for host_ldlibs
   -//packages/modules/adb:all
   -//packages/modules/adb/pairing_connection:all
 )
 
-# build for host
-tools/bazel --max_idle_secs=5 build ${FLAGS} \
-  --platforms //build/bazel/platforms:linux_x86_64 \
-  -- ${BUILD_TARGETS} "${HOST_INCOMPATIBLE_TARGETS[@]}"
-
-###########
-# Run tests
-###########
-tools/bazel --max_idle_secs=5 test ${FLAGS} //build/bazel/tests/... //build/bazel/rules/apex/...
-
-###########
-# Dist mainline modules
-###########
-tools/bazel --max_idle_secs=5 run //build/bazel/ci/dist:mainline_modules ${FLAGS} --platforms=//build/bazel/platforms:android_x86 -- --dist_dir="${DIST_DIR}/mainline_modules_x86"
-tools/bazel --max_idle_secs=5 run //build/bazel/ci/dist:mainline_modules ${FLAGS} --platforms=//build/bazel/platforms:android_x86_64 -- --dist_dir="${DIST_DIR}/mainline_modules_x86_64"
-tools/bazel --max_idle_secs=5 run //build/bazel/ci/dist:mainline_modules ${FLAGS} --platforms=//build/bazel/platforms:android_arm -- --dist_dir="${DIST_DIR}/mainline_modules_arm"
-tools/bazel --max_idle_secs=5 run //build/bazel/ci/dist:mainline_modules ${FLAGS} --platforms=//build/bazel/platforms:android_arm64 -- --dist_dir="${DIST_DIR}/mainline_modules_arm64"
+# We can safely build and test all targets on the host linux config, and rely on
+# incompatible target skipping for tests that cannot run on the host.
+tools/bazel --max_idle_secs=5 test ${FLAGS} --build_tests_only=false -k --config=linux_x86_64 \
+  -- ${BUILD_TARGETS} ${TEST_TARGETS} "${HOST_INCOMPATIBLE_TARGETS[@]}"
 
 ###################
 # bp2build-progress
@@ -113,18 +125,20 @@ tools/bazel --max_idle_secs=5 run //build/bazel/ci/dist:mainline_modules ${FLAGS
 # Generate bp2build progress reports and graphs for these modules into the dist
 # dir so that they can be downloaded from the CI artifact list.
 BP2BUILD_PROGRESS_MODULES=(
-  com.android.runtime
   com.android.neuralnetworks
   com.android.media.swcodec
 )
-bp2build_progress_script="${AOSP_ROOT}/build/bazel/scripts/bp2build-progress/bp2build-progress.py"
+bp2build_progress_script="//build/bazel/scripts/bp2build-progress:bp2build-progress"
 bp2build_progress_output_dir="${DIST_DIR}/bp2build-progress"
 mkdir -p "${bp2build_progress_output_dir}"
 
 report_args=""
 for m in "${BP2BUILD_PROGRESS_MODULES[@]}"; do
   report_args="$report_args -m ""${m}"
-  "${bp2build_progress_script}" graph  -m "${m}" --use_queryview=true > "${bp2build_progress_output_dir}/${m}_graph.dot"
+  tools/bazel run ${FLAGS} --config=linux_x86_64 "${bp2build_progress_script}" -- graph  -m "${m}" --use-queryview > "${bp2build_progress_output_dir}/${m}_graph.dot"
 done
 
-"${bp2build_progress_script}" report ${report_args} --use_queryview=true > "${bp2build_progress_output_dir}/progress_report.txt"
+tools/bazel run ${FLAGS} --config=linux_x86_64 "${bp2build_progress_script}" -- \
+  report ${report_args} --use-queryview \
+  --proto-file=$( realpath "${bp2build_progress_output_dir}" )"/bp2build-progress.pb" \
+  > "${bp2build_progress_output_dir}/progress_report.txt"

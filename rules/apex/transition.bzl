@@ -35,7 +35,7 @@ load("@bazel_skylib//lib:dicts.bzl", "dicts")
 def _create_apex_configuration(attr, additional = {}):
     return dicts.add({
         "//build/bazel/rules/apex:apex_name": attr.name,  # Name of the APEX
-        "//build/bazel/rules/apex:min_sdk_version": attr.min_sdk_version,  # Min SDK version of the APEX
+        "//build/bazel/rules/apex:in_apex": True,  # Building a APEX
     }, additional)
 
 def _impl(settings, attr):
@@ -43,13 +43,15 @@ def _impl(settings, attr):
     # destination target (i.e. an APEX dependency).
     return _create_apex_configuration(attr)
 
+APEX_TRANSITION_BUILD_SETTINGS = [
+    "//build/bazel/rules/apex:apex_name",
+    "//build/bazel/rules/apex:in_apex",
+]
+
 apex_transition = transition(
     implementation = _impl,
     inputs = [],
-    outputs = [
-        "//build/bazel/rules/apex:apex_name",
-        "//build/bazel/rules/apex:min_sdk_version",
-    ],
+    outputs = APEX_TRANSITION_BUILD_SETTINGS,
 )
 
 def _impl_shared_lib_transition_32(settings, attr):
@@ -57,6 +59,7 @@ def _impl_shared_lib_transition_32(settings, attr):
     # destination target (i.e. an APEX dependency).
 
     direct_deps = [str(dep) for dep in attr.native_shared_libs_32]
+    direct_deps += [str(dep) for dep in attr.binaries]
 
     # TODO: We need to check if this is a x86 or arm arch then only set one platform
     # instead of this 1:2 split to avoid performance hit.
@@ -71,15 +74,15 @@ def _impl_shared_lib_transition_32(settings, attr):
         }),
     }
 
+SHARED_LIB_TRANSITION_BUILD_SETTINGS = APEX_TRANSITION_BUILD_SETTINGS + [
+    "//build/bazel/rules/apex:apex_direct_deps",
+    "//command_line_option:platforms",
+]
+
 shared_lib_transition_32 = transition(
     implementation = _impl_shared_lib_transition_32,
     inputs = [],
-    outputs = [
-        "//build/bazel/rules/apex:apex_name",
-        "//build/bazel/rules/apex:min_sdk_version",
-        "//build/bazel/rules/apex:apex_direct_deps",
-        "//command_line_option:platforms",
-    ],
+    outputs = SHARED_LIB_TRANSITION_BUILD_SETTINGS,
 )
 
 def _impl_shared_lib_transition_64(settings, attr):
@@ -87,6 +90,7 @@ def _impl_shared_lib_transition_64(settings, attr):
     # destination target (i.e. an APEX dependency).
 
     direct_deps = [str(dep) for dep in attr.native_shared_libs_64]
+    direct_deps += [str(dep) for dep in attr.binaries]
 
     # TODO: We need to check if this is a x86 or arm arch then only set one platform
     # instead of this 1:2 split to avoid performance hit.
@@ -104,10 +108,5 @@ def _impl_shared_lib_transition_64(settings, attr):
 shared_lib_transition_64 = transition(
     implementation = _impl_shared_lib_transition_64,
     inputs = [],
-    outputs = [
-        "//build/bazel/rules/apex:apex_name",
-        "//build/bazel/rules/apex:min_sdk_version",
-        "//build/bazel/rules/apex:apex_direct_deps",
-        "//command_line_option:platforms",
-    ],
+    outputs = SHARED_LIB_TRANSITION_BUILD_SETTINGS,
 )
