@@ -41,3 +41,8 @@ selective_local_repository(
     ],
     path = "prebuilts/gcc/linux-x86/host",
 )
+
+# CC toolchains
+register_toolchains(
+    "//build/bazel/toolchains/cc:linux_clang_x64_toolchain",
+)
