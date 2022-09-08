@@ -48,6 +48,8 @@ IGNORED_KINDS = set([
     "license",
     "cc_defaults",
     "java_defaults",
+    "hidl_interface.go_android/soong/hidl.hidlGenFactory__loadHookModule",  # implementation detail of hidl_interface
+    "hidl_package_root",  # not being converted, contents converted as part of hidl_interface
 ])
 
 # queryview doesn't have information on the type of deps, so we explicitly skip
@@ -61,8 +63,6 @@ _QUERYVIEW_IGNORE_KINDS = set([
     "cc_prebuilt_library_static",
     "cc_prebuilt_library_static",
     "cc_prebuilt_object",
-    "hidl_interface.go_android/soong/hidl.hidlGenFactory__loadHookModule",  # implementation detail of hidl_interface
-    "hidl_package_root",  # not being converted, contents converted as part of hidl_interface
     "java_import",
     "java_import_host",
     "java_sdk_library_import",
@@ -122,19 +122,12 @@ ParseError: {err}""")
 def get_json_module_info(module, banchan_mode=False):
   """Returns the list of transitive dependencies of input module as provided by Soong's json module graph."""
   _build_with_soong("json-module-graph", banchan_mode)
-  # Run query.sh on the module graph for the top level module
-  jq_json = subprocess.check_output(
-      [
-          "build/bazel/json_module_graph/query.sh", "fullTransitiveDeps",
-          "out/soong/module-graph.json", module
-      ],
-      cwd=SRC_ROOT_DIR,
-  )
   try:
-    return json.loads(jq_json)
+    with open(os.path.join(SRC_ROOT_DIR,"out/soong/module-graph.json")) as f:
+      return json.load(f)
   except json.JSONDecodeError as err:
     sys.exit(f"""Could not decode json:
-{jq_json}
+out/soong/module-graph.json
 JSONDecodeError: {err}""")
 
 
