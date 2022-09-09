@@ -1,0 +1,4 @@
+# Bazel tool configs
+build --incompatible_enable_cc_toolchain_resolution
+
+build:linux --host_platform='//build/bazel/platforms:host_clang'
