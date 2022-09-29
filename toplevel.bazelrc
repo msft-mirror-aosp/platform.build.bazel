@@ -1,3 +1,8 @@
 common --enable_platform_specific_config
 
 import %workspace%/build/bazel/tool.bazelrc
+
+# sibling_repository_layout is needed so external repositories doesn't
+# collide with the "external" top-level directory.
+common --experimental_sibling_repository_layout
+common --legacy_external_runfiles=false
