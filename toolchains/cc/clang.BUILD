@@ -14,9 +14,22 @@ cc_tools(
         "archiver_flags",
     ],
     cxx = target_linux_x64 + "/bin/clang++",
+    cxx_features = [
+        "supports_pic",
+        "supports_start_end_lib",
+        "supports_dynamic_linker",
+    ],
     gcc = target_linux_x64 + "/bin/clang",
+    gcc_features = [
+        "supports_pic",
+        "supports_start_end_lib",
+        "supports_dynamic_linker",
+    ],
     ld = target_linux_x64 + "/bin/clang++",
     ld_features = [
+        "supports_pic",
+        "supports_start_end_lib",
+        "supports_dynamic_linker",
         "shared_flag",
         "linkstamps",
         "output_execpath_flags",

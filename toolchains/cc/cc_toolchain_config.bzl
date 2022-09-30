@@ -11,6 +11,7 @@ load(
     "toolchain_binary_search_path_feature",
     "toolchain_compile_flags_feature",
     "toolchain_cxx_flags_feature",
+    "toolchain_feature_flags",
     "toolchain_gcc_toolchain_feature",
     "toolchain_lib_search_paths_feature",
     "toolchain_link_flags_feature",
@@ -160,6 +161,7 @@ def _cc_toolchain_config_impl(ctx):
         features = flatten([
             no_builtin_legacy_features,
             legacy_features_begin(),
+            toolchain_feature_flags(),
             _toolchain_features(ctx),
             legacy_features_end(),
         ]),

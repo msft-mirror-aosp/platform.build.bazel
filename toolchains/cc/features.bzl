@@ -104,6 +104,13 @@ def toolchain_binary_search_path_feature(path):
         ],
     )
 
+def toolchain_feature_flags():
+    return [
+        feature(name = "supports_start_end_lib"),
+        feature(name = "supports_dynamic_linker"),
+        feature(name = "supports_pic"),
+    ]
+
 def legacy_features_begin():
     """Legacy features moved from their hardcoded Bazel's Java implementation to Starlark.
 
@@ -115,7 +122,6 @@ def legacy_features_begin():
         #
         # Compile related features:
         #
-        # random_seed
         # legacy_compile_flags
         # per_object_debug_info
         #
@@ -162,6 +168,24 @@ def legacy_features_begin():
                                 "-MD",
                                 "-MF",
                                 "%{dependency_file}",
+                            ],
+                        ),
+                    ],
+                ),
+            ],
+        ),
+        # https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;drc=6d03a2ecf25ad596446c296ef1e881b60c379812;l=129
+        feature(
+            name = "random_seed",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    actions = C_COMPILE_ACTIONS + CPP_CODEGEN_ACTIONS + [ACTION_NAMES.cpp_module_compile],
+                    flag_groups = [
+                        flag_group(
+                            expand_if_available = "output_file",
+                            flags = [
+                                "-frandom-seed=%{output_file}",
                             ],
                         ),
                     ],
