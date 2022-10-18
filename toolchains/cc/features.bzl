@@ -1,5 +1,7 @@
 """Cc toolchain features."""
 
+load("@bazel_skylib//lib:collections.bzl", "collections")
+load(":utils.bzl", "flatten", "tee_filter")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
@@ -19,6 +21,9 @@ load(
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
 )
+load(":cc_toolchain_import.bzl", "CcToolchainImportInfo")
+
+OBJECT_EXTENSIONS = ["o", "obj"]
 
 def toolchain_compile_flags_feature(flags):
     return feature(
@@ -62,43 +67,131 @@ def toolchain_link_flags_feature(flags):
         ],
     )
 
-def toolchain_lib_search_paths_feature(paths):
+def toolchain_import_feature(import_libs):
+    """Creates flags for cc_toolchain_import
+
+    This feature purposefully ignores the (dynamic|static)_runtimes
+    as those need to be propagated to the cc_toolchain target.
+
+    Args:
+        import_libs: A list of labels to cc_toolchain_import targets.
+
+    Returns:
+        A feature to support cc_toolchain_import rule
+    """
+    include_paths = depset(transitive = [
+        lib[CcToolchainImportInfo].include_paths
+        for lib in import_libs
+    ], order = "topological").to_list()
+    dynamic_mode_libs = depset(transitive = [
+        lib[CcToolchainImportInfo].dynamic_mode_libraries
+        for lib in import_libs
+    ], order = "topological").to_list()
+    static_mode_libs = depset(transitive = [
+        lib[CcToolchainImportInfo].static_mode_libraries
+        for lib in import_libs
+    ], order = "topological").to_list()
+    dynamic_linked_objects, dynamic_mode_libs = tee_filter(
+        dynamic_mode_libs,
+        lambda f: f.extension in OBJECT_EXTENSIONS,
+    )
+    static_linked_objects, static_mode_libs = tee_filter(
+        static_mode_libs,
+        lambda f: f.extension in OBJECT_EXTENSIONS,
+    )
+    lib_search_paths = collections.uniq([f.dirname for f in dynamic_mode_libs + static_mode_libs])
+    dynamic_lib_filenames = collections.uniq([f.basename for f in dynamic_mode_libs])
+    static_lib_filenames = collections.uniq([f.basename for f in static_mode_libs])
+    so_linked_objects = depset(transitive = [
+        lib[CcToolchainImportInfo].so_linked_objects
+        for lib in import_libs
+    ]).to_list()
+
     return feature(
-        name = "toolchain_lib_search_paths",
+        name = "toolchain_import",
         enabled = True,
         flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+                flag_groups = [
+                    flag_group(
+                        flags = flatten([
+                            ("-isystem", path)
+                            for path in include_paths
+                        ]),
+                    ),
+                ],
+            ),
+            flag_set(
+                actions = [ACTION_NAMES.cpp_link_executable],
+                flag_groups = [
+                    flag_group(
+                        flags = ["-L" + p for p in lib_search_paths],
+                    ),
+                ],
+            ),
+            flag_set(
+                actions = [ACTION_NAMES.cpp_link_executable],
+                flag_groups = [
+                    flag_group(
+                        flags = [obj.path for obj in dynamic_linked_objects],
+                    ),
+                    flag_group(
+                        flags = ["-l:" + f for f in dynamic_lib_filenames],
+                    ),
+                ],
+                with_features = [
+                    with_feature_set(features = ["dynamic_linking_mode"]),
+                ],
+            ),
+            flag_set(
+                actions = [ACTION_NAMES.cpp_link_executable],
+                flag_groups = [
+                    flag_group(
+                        flags = [obj.path for obj in static_linked_objects],
+                    ),
+                    flag_group(
+                        flags = ["-l:" + f for f in static_lib_filenames],
+                    ),
+                ],
+                with_features = [
+                    with_feature_set(features = ["static_linking_mode"]),
+                ],
+            ),
+            flag_set(
+                actions = [
+                    ACTION_NAMES.cpp_link_dynamic_library,
+                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ],
+                flag_groups = [
+                    flag_group(
+                        flags = [obj.path for obj in so_linked_objects],
+                    ),
+                ],
+            ),
+        ],
+    )
+
+def no_implicit_libs_feature():
+    return feature(
+        name = "no_implicit_libs",
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = ["-nostdinc"]),
+                ],
+            ),
+            flag_set(
+                actions = CPP_COMPILE_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = ["-nostdinc++"]),
+                ],
+            ),
             flag_set(
                 actions = LINK_ACTIONS,
                 flag_groups = [
-                    flag_group(flags = [("-L" + lib) for lib in paths]),
-                ],
-            ),
-        ],
-    )
-
-def toolchain_gcc_toolchain_feature(gcc_path):
-    return feature(
-        name = "toolchain_gcc_toolchain",
-        enabled = True,
-        flag_sets = [
-            flag_set(
-                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
-                flag_groups = [
-                    flag_group(flags = ["--gcc-toolchain=" + gcc_path]),
-                ],
-            ),
-        ],
-    )
-
-def toolchain_binary_search_path_feature(path):
-    return feature(
-        name = "toolchain_binary_search_path",
-        enabled = True,
-        flag_sets = [
-            flag_set(
-                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
-                flag_groups = [
-                    flag_group(flags = ["-B" + path]),
+                    flag_group(flags = ["-nostdlib"]),
                 ],
             ),
         ],
@@ -109,6 +202,9 @@ def toolchain_feature_flags():
         feature(name = "supports_start_end_lib"),
         feature(name = "supports_dynamic_linker"),
         feature(name = "supports_pic"),
+        feature(name = "static_link_cpp_runtimes"),
+        feature(name = "dynamic_linking_mode"),
+        feature(name = "static_linking_mode"),
     ]
 
 def legacy_features_begin():
@@ -340,44 +436,12 @@ def legacy_features_begin():
                             flag_groups = [
                                 flag_group(
                                     flags = [
-                                        "-Wl,-rpath,$EXEC_ORIGIN/%{runtime_library_search_directories}",
-                                    ],
-                                    expand_if_true = "is_cc_test",
-                                ),
-                                flag_group(
-                                    flags = [
-                                        "-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}",
-                                    ],
-                                    expand_if_false = "is_cc_test",
-                                ),
-                            ],
-                            expand_if_available =
-                                "runtime_library_search_directories",
-                        ),
-                    ],
-                    with_features = [
-                        with_feature_set(features = ["static_link_cpp_runtimes"]),
-                    ],
-                ),
-                flag_set(
-                    actions = LINK_ACTIONS,
-                    flag_groups = [
-                        flag_group(
-                            iterate_over = "runtime_library_search_directories",
-                            flag_groups = [
-                                flag_group(
-                                    flags = [
                                         "-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}",
                                     ],
                                 ),
                             ],
                             expand_if_available =
                                 "runtime_library_search_directories",
-                        ),
-                    ],
-                    with_features = [
-                        with_feature_set(
-                            not_features = ["static_link_cpp_runtimes"],
                         ),
                     ],
                 ),
