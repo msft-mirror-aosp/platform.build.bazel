@@ -1,4 +1,9 @@
 load(":cc_toolchain_config.bzl", "cc_toolchain_config")
+load(
+    "@//build/bazel/toolchains/cc:cc_toolchain_import.bzl",
+    "cc_toolchain_dynamic_runtime",
+    "cc_toolchain_static_runtime",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -7,69 +12,51 @@ filegroup(
     srcs = [],
 )
 
-filegroup(
-    name = "linux_clang_x64_compile_files",
-    srcs = [
-        "@clang//:linux_x64_binaries",
-        "@clang//:linux_x64_includes",
-        "@gcc_lib//:includes",
-    ],
-)
-
-filegroup(
-    name = "linux_clang_x64_link_files",
-    srcs = [
-        "@clang//:linux_x64_binaries",
-        "@clang//:linux_x64_libs",
-        "@gcc_lib//:libs",
-    ],
-)
-
-filegroup(
-    name = "linux_clang_x64_all_files",
-    srcs = [
-        ":linux_clang_x64_compile_files",
-        ":linux_clang_x64_link_files",
-    ],
-)
-
 cc_toolchain_config(
     name = "linux_clang_x64_config",
-    binary_search_path = "@gcc_lib//:binary_search_path",
     cc_tools = "@clang//:linux_x64",
     compile_flags = [
         "-m64",
         "-no-canonical-prefixes",
     ],
-    cxx_flags = [
-        "-stdlib=libc++",
-    ],
-    gcc_toolchain = "@gcc_lib//:toolchain_path",
     identifier = "linux_clang_x64",
-    include_paths = [
-        "@gcc_lib//:include_paths",
-        "@clang//:linux_x64_include_paths",
-    ],
-    library_search_paths = [
-        "@gcc_lib//:lib_paths",
-        "@clang//:linux_x64_lib_paths",
-    ],
     link_flags = [
         "-fuse-ld=lld",
     ],
-    sysroot = "@gcc_lib//:sysroot_path",
+    toolchain_imports = [
+        "@clang//:linux_x64_libcxx",
+        "@gcc_lib//:start_libs",
+    ],
+)
+
+cc_toolchain_dynamic_runtime(
+    name = "linux_clang_x64_dynamic_runtime",
+    libs = [
+        "@clang//:linux_x64_libcxx",
+        "@gcc_lib//:start_libs",
+    ],
+)
+
+cc_toolchain_static_runtime(
+    name = "linux_clang_x64_static_runtime",
+    libs = [
+        "@clang//:linux_x64_libcxx",
+        "@gcc_lib//:start_libs",
+    ],
 )
 
 cc_toolchain(
     name = "linux_clang_x64",
-    all_files = ":linux_clang_x64_all_files",
-    ar_files = "@clang//:linux_x64_binaries",
-    as_files = "@clang//:linux_x64_binaries",
-    compiler_files = ":linux_clang_x64_compile_files",
+    all_files = ":linux_clang_x64_config",
+    ar_files = "@clang//:linux_x64",
+    as_files = "@clang//:linux_x64",
+    compiler_files = ":linux_clang_x64_config",
     dwp_files = ":empty",
-    linker_files = ":linux_clang_x64_link_files",
+    dynamic_runtime_lib = ":linux_clang_x64_dynamic_runtime",
+    linker_files = ":linux_clang_x64_config",
     objcopy_files = ":empty",
-    strip_files = "@clang//:linux_x64_binaries",
+    static_runtime_lib = ":linux_clang_x64_static_runtime",
+    strip_files = "@clang//:linux_x64",
     supports_param_files = 1,
     toolchain_config = ":linux_clang_x64_config",
 )
