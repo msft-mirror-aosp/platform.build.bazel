@@ -23,8 +23,8 @@ load(
 )
 load(":cc_library_static.bzl", "cc_library_static")
 load(":generate_toc.bzl", "shared_library_toc", _CcTocInfo = "CcTocInfo")
-load(":stl.bzl", "stl_deps")
-load(":stripped_cc_common.bzl", "stripped_shared_library")
+load(":stl.bzl", "stl_info_from_attr")
+load(":stripped_cc_common.bzl", "CcUnstrippedInfo", "stripped_shared_library")
 load(":versioned_cc_common.bzl", "versioned_shared_library")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 
@@ -100,7 +100,9 @@ def cc_library_shared(
     if min_sdk_version:
         features = features + parse_sdk_version(min_sdk_version) + ["-sdk_version_default"]
 
-    stl = stl_deps(stl, True)
+    stl_info = stl_info_from_attr(stl, True)
+    linkopts = linkopts + stl_info.linkopts
+    copts = copts + stl_info.cppflags
 
     features = features + select({
         "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
@@ -136,8 +138,8 @@ def cc_library_shared(
         cpp_std = cpp_std,
         c_std = c_std,
         dynamic_deps = dynamic_deps,
-        implementation_deps = implementation_deps + stl.static,
-        implementation_dynamic_deps = implementation_dynamic_deps + stl.shared,
+        implementation_deps = implementation_deps + stl_info.static_deps,
+        implementation_dynamic_deps = implementation_dynamic_deps + stl_info.shared_deps,
         implementation_whole_archive_deps = implementation_whole_archive_deps,
         system_dynamic_deps = system_dynamic_deps,
         deps = deps + whole_archive_deps,
@@ -155,7 +157,14 @@ def cc_library_shared(
     deps_stub = name + "_deps"
     native.cc_library(
         name = imp_deps_stub,
-        deps = implementation_deps + implementation_whole_archive_deps + stl.static + implementation_dynamic_deps + system_dynamic_deps + stl.shared,
+        deps = (
+            implementation_deps +
+            implementation_whole_archive_deps +
+            stl_info.static_deps +
+            implementation_dynamic_deps +
+            system_dynamic_deps +
+            stl_info.shared_deps
+        ),
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
     )
@@ -170,7 +179,7 @@ def cc_library_shared(
         dynamic_deps,
         system_dynamic_deps,
         implementation_dynamic_deps,
-        stl.shared,
+        stl_info.shared_deps,
     )
 
     soname = name + suffix + ".so"
@@ -227,6 +236,7 @@ def cc_library_shared(
     _cc_library_shared_proxy(
         name = name,
         shared = stripped_name,
+        shared_debuginfo = unstripped_name,
         root = shared_root_name,
         table_of_contents = toc_name,
         output_file = soname,
@@ -287,9 +297,9 @@ CcSharedLibraryOutputInfo = provider(
 def _cc_library_shared_proxy_impl(ctx):
     root_files = ctx.attr.root[DefaultInfo].files.to_list()
     shared_files = ctx.attr.shared[DefaultInfo].files.to_list()
-
-    if len(shared_files) != 1:
-        fail("Expected only one shared library file")
+    shared_debuginfo = ctx.attr.shared_debuginfo[DefaultInfo].files.to_list()
+    if len(shared_files) != 1 or len(shared_debuginfo) != 1:
+        fail("Expected only one shared library file and one debuginfo file for it")
 
     shared_lib = shared_files[0]
 
@@ -322,12 +332,14 @@ def _cc_library_shared_proxy_impl(ctx):
         CcStubLibrariesInfo(has_stubs = ctx.attr.has_stubs),
         ctx.attr.shared[OutputGroupInfo],
         CcSharedLibraryOutputInfo(output_file = ctx.outputs.output_file),
+        CcUnstrippedInfo(unstripped = shared_debuginfo[0]),
     ]
 
 _cc_library_shared_proxy = rule(
     implementation = _cc_library_shared_proxy_impl,
     attrs = {
         "shared": attr.label(mandatory = True, providers = [CcSharedLibraryInfo]),
+        "shared_debuginfo": attr.label(mandatory = True),
         "root": attr.label(mandatory = True, providers = [CcInfo]),
         "output_file": attr.output(mandatory = True),
         "table_of_contents": attr.label(
