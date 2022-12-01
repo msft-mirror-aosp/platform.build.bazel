@@ -15,13 +15,21 @@ limitations under the License.
 """
 
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load("//build/bazel/platforms:transitions.bzl", "default_android_transition")
 load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo", "android_app_certificate_with_default_cert")
 load("//build/bazel/rules/apex:cc.bzl", "ApexCcInfo", "apex_cc_aspect")
 load("//build/bazel/rules/apex:transition.bzl", "apex_transition", "shared_lib_transition_32", "shared_lib_transition_64")
 load("//build/bazel/rules/cc:stripped_cc_common.bzl", "StrippedCcBinaryInfo")
 load("//build/bazel/rules:prebuilt_file.bzl", "PrebuiltFileInfo")
 load("//build/bazel/rules:sh_binary.bzl", "ShBinaryInfo")
+load("//build/bazel/rules:toolchain_utils.bzl", "verify_toolchain_exists")
+load(
+    "//build/bazel/rules/license:license_aspect.bzl",
+    "RuleLicensedDependenciesInfo",
+    "license_aspect",
+    "license_map",
+    "license_map_notice_files",
+    "license_map_to_json",
+)
 load(":apex_key.bzl", "ApexKeyInfo")
 load(":bundle.bzl", "apex_zip_files")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
@@ -298,6 +306,30 @@ def _generate_installed_files_list(ctx, file_mapping):
     )
     return installed_files
 
+def _generate_notices(ctx, apex_toolchain):
+    licensees = license_map(ctx, ctx.attr.binaries + ctx.attr.prebuilts + ctx.attr.native_shared_libs_32 + ctx.attr.native_shared_libs_64)
+    licenses_file = ctx.actions.declare_file(ctx.attr.name + "_licenses.json")
+    ctx.actions.write(licenses_file, "[\n%s\n]\n" % ",\n".join(license_map_to_json(licensees)))
+
+    # Run HTML notice file generator.
+    notice_file = ctx.actions.declare_file(ctx.attr.name + "_notice_dir/NOTICE.html.gz")
+    notice_generator = apex_toolchain.notice_generator[DefaultInfo].files_to_run
+    args = ctx.actions.args()
+    args.add_all(["-o", notice_file, licenses_file])
+
+    # TODO(asmundak): should we extend it with license info for self
+    # (the case when APEX itself has applicable_licenses attribute)?
+    inputs = license_map_notice_files(licensees) + [licenses_file]
+    ctx.actions.run(
+        mnemonic = "GenerateNoticeFile",
+        inputs = inputs,
+        outputs = [notice_file],
+        executable = notice_generator,
+        tools = [notice_generator],
+        arguments = [args],
+    )
+    return notice_file
+
 # apexer - generate the APEX file.
 def _run_apexer(ctx, apex_toolchain):
     # Inputs
@@ -311,6 +343,7 @@ def _run_apexer(ctx, apex_toolchain):
     file_contexts = _generate_file_contexts(ctx)
     full_apex_manifest_json = _add_apex_manifest_information(ctx, apex_toolchain, requires_native_libs, provides_native_libs)
     apex_manifest_pb = _convert_apex_manifest_json_to_pb(ctx, apex_toolchain, full_apex_manifest_json)
+    notices_file = _generate_notices(ctx, apex_toolchain)
 
     file_mapping_file = ctx.actions.declare_file(ctx.attr.name + "_apex_file_mapping.json")
     ctx.actions.write(file_mapping_file, json.encode({k: v.path for k, v in file_mapping.items()}))
@@ -345,6 +378,7 @@ def _run_apexer(ctx, apex_toolchain):
     args.add_all(["--payload_type", "image"])
     args.add_all(["--target_sdk_version", "10000"])
     args.add_all(["--payload_fs_type", "ext4"])
+    args.add_all(["--assets_dir", notices_file.dirname])
 
     # Override the package name, if it's expicitly specified
     if ctx.attr.package_name:
@@ -396,6 +430,7 @@ def _run_apexer(ctx, apex_toolchain):
         canned_fs_config,
         apex_manifest_pb,
         file_contexts,
+        notices_file,
         privkey,
         pubkey,
         android_jar,
@@ -536,6 +571,7 @@ def _generate_java_symbols_used_by_apex(ctx, apex_toolchain):
 
 # See the APEX section in the README on how to use this rule.
 def _apex_rule_impl(ctx):
+    verify_toolchain_exists(ctx, "//build/bazel/rules/apex:apex_toolchain_type")
     apex_toolchain = ctx.toolchains["//build/bazel/rules/apex:apex_toolchain_type"].toolchain_info
 
     apexer_outputs = _run_apexer(ctx, apex_toolchain)
@@ -590,7 +626,6 @@ def _apex_rule_impl(ctx):
 
 _apex = rule(
     implementation = _apex_rule_impl,
-    cfg = default_android_transition,
     attrs = {
         "manifest": attr.label(allow_single_file = [".json"]),
         "android_manifest": attr.label(allow_single_file = [".xml"]),
@@ -607,27 +642,31 @@ _apex = rule(
         "installable": attr.bool(default = True),
         "compressible": attr.bool(default = False),
         "native_shared_libs_32": attr.label_list(
-            providers = [ApexCcInfo],
-            aspects = [apex_cc_aspect],
+            providers = [ApexCcInfo, RuleLicensedDependenciesInfo],
+            aspects = [apex_cc_aspect, license_aspect],
             cfg = shared_lib_transition_32,
             doc = "The libs compiled for 32-bit",
         ),
         "native_shared_libs_64": attr.label_list(
-            providers = [ApexCcInfo],
-            aspects = [apex_cc_aspect],
+            providers = [ApexCcInfo, RuleLicensedDependenciesInfo],
+            aspects = [apex_cc_aspect, license_aspect],
             cfg = shared_lib_transition_64,
             doc = "The libs compiled for 64-bit",
         ),
         "binaries": attr.label_list(
             providers = [
                 # The dependency must produce _all_ of the providers in _one_ of these lists.
-                [ShBinaryInfo],  # sh_binary
-                [StrippedCcBinaryInfo, CcInfo, ApexCcInfo],  # cc_binary (stripped)
+                [ShBinaryInfo, RuleLicensedDependenciesInfo],  # sh_binary
+                [StrippedCcBinaryInfo, CcInfo, ApexCcInfo, RuleLicensedDependenciesInfo],  # cc_binary (stripped)
             ],
             cfg = apex_transition,
-            aspects = [apex_cc_aspect],
+            aspects = [apex_cc_aspect, license_aspect],
         ),
-        "prebuilts": attr.label_list(providers = [PrebuiltFileInfo], cfg = apex_transition),
+        "prebuilts": attr.label_list(
+            providers = [PrebuiltFileInfo, RuleLicensedDependenciesInfo],
+            cfg = apex_transition,
+            aspects = [license_aspect],
+        ),
         "apex_output": attr.output(doc = "signed .apex output"),
         "capex_output": attr.output(doc = "signed .capex output"),
 
@@ -667,7 +706,9 @@ _apex = rule(
             doc = "If enabled, make apexer log verbosely.",
         ),
     },
-    toolchains = ["//build/bazel/rules/apex:apex_toolchain_type"],
+    # The apex toolchain is not mandatory so that we don't get toolchain resolution errors even
+    # when the apex is not compatible with the current target (via target_compatible_with).
+    toolchains = [config_common.toolchain_type("//build/bazel/rules/apex:apex_toolchain_type", mandatory = False)],
     fragments = ["platform"],
 )
 
@@ -692,6 +733,7 @@ def apex(
         testonly = False,
         # TODO(b/255400736): tests are not fully supported yet.
         tests = [],
+        target_compatible_with = [],
         **kwargs):
     "Bazel macro to correspond with the APEX bundle Soong module."
 
@@ -724,6 +766,11 @@ def apex(
         android_app_certificate_with_default_cert(app_cert_name)
         certificate_label = ":" + app_cert_name
 
+    target_compatible_with = select({
+        "//build/bazel/platforms/os:android": [],
+        "//conditions:default": ["@platforms//:incompatible"],
+    }) + target_compatible_with
+
     _apex(
         name = name,
         manifest = manifest,
@@ -749,5 +796,6 @@ def apex(
         apex_output = apex_output,
         capex_output = capex_output,
         testonly = testonly,
+        target_compatible_with = target_compatible_with,
         **kwargs
     )

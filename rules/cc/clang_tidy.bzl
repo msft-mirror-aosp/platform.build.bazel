@@ -14,6 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+load("//build/bazel/rules/cc:cc_library_common.bzl", "get_compilation_args")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -37,23 +38,8 @@ _TIDY_GLOBAL_NO_CHECKS = constants.TidyGlobalNoChecks.split(",")
 _TIDY_GLOBAL_NO_ERROR_CHECKS = constants.TidyGlobalNoErrorChecks.split(",")
 _TIDY_DEFAULT_GLOBAL_CHECKS = constants.TidyDefaultGlobalChecks.split(",")
 _TIDY_EXTERNAL_VENDOR_CHECKS = constants.TidyExternalVendorChecks.split(",")
-
-def _get_compilation_args(toolchain, feature_config, flags, compilation_ctx, action_name):
-    compilation_vars = cc_common.create_compile_variables(
-        cc_toolchain = toolchain,
-        feature_configuration = feature_config,
-        user_compile_flags = flags,
-        include_directories = compilation_ctx.includes,
-        quote_include_directories = compilation_ctx.quote_includes,
-        system_include_directories = compilation_ctx.system_includes,
-        framework_include_directories = compilation_ctx.framework_includes,
-    )
-
-    return cc_common.get_memory_inefficient_command_line(
-        feature_configuration = feature_config,
-        action_name = action_name,
-        variables = compilation_vars,
-    )
+_TIDY_DEFAULT_GLOBAL_CHECKS_NO_ANALYZER = constants.TidyDefaultGlobalChecks.split(",") + ["-clang-analyzer-*"]
+_TIDY_EXTRA_ARG_FLAGS = constants.TidyExtraArgFlags
 
 def _check_bad_tidy_flags(tidy_flags):
     """should be kept up to date with
@@ -80,7 +66,7 @@ def _check_bad_tidy_checks(tidy_checks):
         if " " in check:
             fail("Check `%s` invalid, cannot contain spaces" % check)
         if "," in check:
-            fail("Check `%s` invalid, cannot contain commas. Split each entry into it's own string instead" % check)
+            fail("Check `%s` invalid, cannot contain commas. Split each entry into its own string instead" % check)
 
 def _add_with_tidy_flags(ctx, tidy_flags):
     with_tidy_flags = ctx.attr._with_tidy_flags[BuildSettingInfo].value
@@ -110,25 +96,7 @@ def _add_header_filter(ctx, tidy_flags):
     return tidy_flags + [header_filter]
 
 def _add_extra_arg_flags(tidy_flags):
-    """keep up to date with
-    https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/tidy.go;l=138-152;drc=ff2efae9b014d644fcce8143258fa652fc2bcf13
-    TODO(b/255750565) export this
-    """
-    extra_arg_flags = [
-        # We might be using the static analyzer through clang tidy.
-        # https://bugs.llvm.org/show_bug.cgi?id=32914
-        "-D__clang_analyzer__",
-
-        # A recent change in clang-tidy (r328258) enabled destructor inlining, which
-        # appears to cause a number of false positives. Until that's resolved, this turns
-        # off the effects of r328258.
-        # https://bugs.llvm.org/show_bug.cgi?id=37459
-        "-Xclang",
-        "-analyzer-config",
-        "-Xclang",
-        "c++-temp-dtor-inlining=false",
-    ]
-    return tidy_flags + ["-extra-arg-before=" + f for f in extra_arg_flags]
+    return tidy_flags + ["-extra-arg-before=" + f for f in _TIDY_EXTRA_ARG_FLAGS]
 
 def _add_quiet_if_not_global_tidy(tidy_flags):
     if len(_PRODUCT_VARIABLE_TIDY_CHECKS) == 0:
@@ -155,10 +123,13 @@ def _clang_rewrite_tidy_checks(tidy_checks):
     # remove the enabling argument from the list.
     return [t for t in tidy_checks if t not in clang_tidy_disable_checks]
 
-def _add_checks_for_dir(directory):
+def _add_checks_for_dir(directory, input_file):
     """should be kept up to date with
     https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/config/tidy.go;l=170;drc=b45a2ea782074944f79fc388df20b06e01f265f7
     """
+
+    if not input_file.is_source:
+        return _TIDY_DEFAULT_GLOBAL_CHECKS_NO_ANALYZER
 
     # This is a map of local path prefixes to the set of default clang-tidy checks
     # to be used.  This is like android.IsThirdPartyPath, but with more patterns.
@@ -184,12 +155,12 @@ def _add_checks_for_dir(directory):
 
     return _TIDY_DEFAULT_GLOBAL_CHECKS
 
-def _add_global_tidy_checks(ctx, local_checks):
+def _add_global_tidy_checks(ctx, local_checks, input_file):
     global_tidy_checks = []
     if product_vars["TidyChecks"]:
         global_tidy_checks = _PRODUCT_VARIABLE_TIDY_CHECKS
     else:
-        global_tidy_checks = _add_checks_for_dir(ctx.label.package)
+        global_tidy_checks = _add_checks_for_dir(ctx.label.package, input_file)
 
     # If Tidy_checks contains "-*", ignore all checks before "-*".
     for i, check in enumerate(local_checks):
@@ -220,7 +191,7 @@ def _create_clang_tidy_action(
     tidy_flags = _add_header_filter(ctx, tidy_flags)
     tidy_flags = _add_extra_arg_flags(tidy_flags)
     tidy_flags = _add_quiet_if_not_global_tidy(tidy_flags)
-    tidy_checks = _add_global_tidy_checks(ctx, tidy_checks)
+    tidy_checks = _add_global_tidy_checks(ctx, tidy_checks, input_file)
     tidy_checks_as_errors = _add_global_tidy_checks_as_errors(tidy_checks_as_errors)
 
     _check_bad_tidy_checks(tidy_checks)
@@ -259,6 +230,7 @@ def _create_clang_tidy_action(
         execution_requirements = {
             "no-sandbox": "1",
         },
+        mnemonic = "ClangTidy",
     )
 
     return tidy_file
@@ -314,7 +286,7 @@ def generate_clang_tidy_actions(
 
     dep_info = cc_common.merge_cc_infos(direct_cc_infos = [d[CcInfo] for d in deps])
     compilation_ctx = dep_info.compilation_context
-    args = _get_compilation_args(
+    args = get_compilation_args(
         toolchain = toolchain,
         feature_config = feature_config,
         flags = flags,

@@ -16,9 +16,14 @@ limitations under the License.
 
 load(
     ":cc_library_common.bzl",
+    "CPP_EXTENSIONS",
+    "C_EXTENSIONS",
+    "check_absolute_include_dirs_disabled",
     "create_ccinfo_for_includes",
+    "future_version",
     "get_non_header_srcs",
     "is_external_directory",
+    "parse_apex_sdk_version",
     "parse_sdk_version",
     "system_dynamic_deps_defaults",
 )
@@ -28,8 +33,29 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_skylib//lib:collections.bzl", "collections")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("//build/bazel/product_variables:constants.bzl", "constants")
+load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 
 CcStaticLibraryInfo = provider(fields = ["root_static_archive", "objects"])
+
+_APEX_MIN_SDK_VERSION_FLAG = "-D__ANDROID_APEX_MIN_SDK_VERSION__="
+
+def _create_sdk_version_number_map():
+    version_number_map = {}
+    for api in api_levels.values():
+        version_number_map["//build/bazel/rules/apex:min_sdk_version_" + str(api)] = [_APEX_MIN_SDK_VERSION_FLAG + str(api)]
+    version_number_map["//conditions:default"] = [_APEX_MIN_SDK_VERSION_FLAG + future_version]
+
+    return version_number_map
+
+sdk_version_numbers = select(_create_sdk_version_number_map())
+
+def android_apex_sdk_version_opt(version):
+    if version == "apex_inherit":
+        return sdk_version_numbers
+
+    return select({
+        "//conditions:default": [_APEX_MIN_SDK_VERSION_FLAG + parse_apex_sdk_version(version)],
+    })
 
 def cc_library_static(
         name,
@@ -166,13 +192,13 @@ def cc_library_static(
         ],
     )
 
+    copts += android_apex_sdk_version_opt(min_sdk_version)
+
     # TODO(b/231574899): restructure this to handle other images
     copts += select({
         "//build/bazel/rules/apex:non_apex": [],
         "//conditions:default": [
             "-D__ANDROID_APEX__",
-            # TODO(b/231322772): sdk_version/min_sdk_version if not finalized
-            "-D__ANDROID_APEX_MIN_SDK_VERSION__=10000",
         ],
     })
 
@@ -206,6 +232,8 @@ def cc_library_static(
         runtime_deps = runtime_deps,
         target_compatible_with = target_compatible_with,
         alwayslink = alwayslink,
+        static_deps = deps + implementation_deps + whole_archive_deps + implementation_whole_archive_deps,
+        exports = exports_name,
         tags = tags,
         features = toolchain_features,
         tidy = tidy,
@@ -233,8 +261,16 @@ def _generate_tidy_actions(ctx):
     if tidy_timeout != "":
         disabled_srcs.extend(ctx.attr.tidy_timeout_srcs)
 
-    cpp_srcs, cpp_hdrs = get_non_header_srcs(ctx.files.srcs_cpp, disabled_srcs)
-    c_srcs, c_hdrs = get_non_header_srcs(ctx.files.srcs_c, disabled_srcs)
+    cpp_srcs, cpp_hdrs = get_non_header_srcs(
+        ctx.files.srcs_cpp,
+        ctx.files.tidy_disabled_srcs,
+        source_extensions = CPP_EXTENSIONS,
+    )
+    c_srcs, c_hdrs = get_non_header_srcs(
+        ctx.files.srcs_cpp + ctx.files.srcs_c,
+        ctx.files.tidy_disabled_srcs,
+        source_extensions = C_EXTENSIONS,
+    )
     hdrs = ctx.attr.hdrs + cpp_hdrs + c_hdrs
     cpp_tidy_outs = generate_clang_tidy_actions(
         ctx,
@@ -306,6 +342,7 @@ def _cc_library_combiner_impl(ctx):
             fail("cc_static_library %s given transitive linker dependency from %s" % (ctx.label, old_linker_input.owner))
 
     cc_toolchain = find_cpp_toolchain(ctx)
+
     CPP_LINK_STATIC_LIBRARY_ACTION_NAME = "c++-link-static-library"
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -389,6 +426,12 @@ _cc_library_combiner = rule(
             providers = [CcInfo],
             doc = "Deps that should be installed along with this target. Read by the apex cc aspect.",
         ),
+        # All the static deps of the lib, this is used by abi_dump_aspect to travel along the
+        # static_deps edges to create abi dump files.
+        "static_deps": attr.label_list(providers = [CcInfo]),
+        # The exported includes used by abi_dump_aspect to retrieve and use as the inputs
+        # of abi dumper binary.
+        "exports": attr.label(providers = [CcInfo]),
         "_cc_toolchain": attr.label(
             default = Label("@local_config_cc//:toolchain"),
             providers = [cc_common.CcToolchainInfo],
@@ -456,6 +499,11 @@ _cc_library_combiner = rule(
 )
 
 def _cc_includes_impl(ctx):
+    check_absolute_include_dirs_disabled(
+        ctx.label.package,
+        ctx.attr.absolute_includes,
+    )
+
     return [create_ccinfo_for_includes(
         ctx,
         includes = ctx.attr.includes,

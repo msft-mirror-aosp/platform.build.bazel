@@ -15,8 +15,15 @@ limitations under the License.
 """
 
 load("//build/bazel/product_variables:constants.bzl", "constants")
+load(
+    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_COMPILE_ACTION_NAME",
+    "C_COMPILE_ACTION_NAME",
+)
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
+load("@soong_injection//android:constants.bzl", android_constants = "constants")
 
 _bionic_targets = ["//bionic/libc", "//bionic/libdl", "//bionic/libm"]
 _static_bionic_targets = ["//bionic/libc:libc_bp2build_cc_library_static", "//bionic/libdl:libdl_bp2build_cc_library_static", "//bionic/libm:libm_bp2build_cc_library_static"]
@@ -45,6 +52,14 @@ system_static_deps_defaults = select({
     "//build/bazel/rules/apex:linux_bionic-non_apex": _static_bionic_targets,
     "//conditions:default": [],
 })
+
+# List comes from here:
+# https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/cc.go;l=1441;drc=9fd9129b5728602a4768e8e8e695660b683c405e
+_bionic_libs = ["libc", "libm", "libdl", "libdl_android", "linker", "linkerconfig"]
+
+# Comes from here:
+# https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/cc.go;l=1450;drc=9fd9129b5728602a4768e8e8e695660b683c405e
+_bootstrap_libs = ["libclang_rt.hwasan"]
 
 future_version = "10000"
 
@@ -178,22 +193,117 @@ def parse_apex_sdk_version(version):
              "an integer and/or is not a recognized codename. Valid api levels are:" +
              str(api_levels))
 
+CPP_EXTENSIONS = ["cc", "cpp", "c++"]
+
+C_EXTENSIONS = ["c"]
+
 _HEADER_EXTENSIONS = ["h", "hh", "hpp", "hxx", "h++", "inl", "inc", "ipp", "h.generic"]
 
-def get_non_header_srcs(input_srcs, exclude_srcs):
+def get_non_header_srcs(input_srcs, exclude_srcs = [], source_extensions = None, header_extensions = _HEADER_EXTENSIONS):
     """get_non_header_srcs returns a list of srcs that do not have header extensions and aren't in the exclude srcs list
 
     Args:
-        srcs (list[File]): list of file to filter
+        input_srcs (list[File]): list of files to filter
         exclude_srcs (list[File]): list of files that should be excluded from the returned list
+        source_extensions (list[str]): list of extensions that designate sources.
+            If None, all extensions are valid. Otherwise only source with these extensions are returned
+        header_extensions (list[str]): list of extensions that designate headers
     Returns:
-        list[File]: files that have non-header extension and are not excluded
+        srcs, hdrs (list[File], list[File]): tuple of lists of files; srcs have non-header extension and are not excluded,
+            and hdrs are files with header extensions
     """
     srcs = []
     hdrs = []
     for s in input_srcs:
-        if s.extension in _HEADER_EXTENSIONS:
+        is_source = not source_extensions or s.extension in source_extensions
+        if s.extension in header_extensions:
             hdrs.append(s)
-        elif s not in exclude_srcs:
+        elif is_source and s not in exclude_srcs:
             srcs.append(s)
     return srcs, hdrs
+
+def prefix_in_list(str, prefixes):
+    """returns the prefix if any element of prefixes is a prefix of path
+
+    Args:
+        str (str): the string to compare prefixes against
+        prefixes (list[str]): a list of prefixes to check against str
+    Returns:
+        prefix (str or None): the prefix (if any) that str starts with
+    """
+    for prefix in prefixes:
+        if str.startswith(prefix):
+            return prefix
+    return None
+
+_DISALLOWED_INCLUDE_DIRS = android_constants.NeverAllowNotInIncludeDir
+_PACKAGES_DISALLOWED_TO_SPECIFY_INCLUDE_DIRS = android_constants.NeverAllowNoUseIncludeDir
+
+def check_absolute_include_dirs_disabled(target_package, absolute_includes):
+    """checks that absolute include dirs are disabled for some directories
+
+    Args:
+        target_package (str): package of current target
+        absolute_includes (list[str]): list of absolute include directories
+    """
+    if len(absolute_includes) > 0:
+        disallowed_prefix = prefix_in_list(
+            target_package,
+            _PACKAGES_DISALLOWED_TO_SPECIFY_INCLUDE_DIRS,
+        )
+        if disallowed_prefix != None:
+            fail("include_dirs is deprecated, all usages of them in '" +
+                 disallowed_prefix + "' have been migrated to use alternate" +
+                 " mechanisms and so can no longer be used.")
+
+    for path in absolute_includes:
+        if path in _DISALLOWED_INCLUDE_DIRS:
+            fail("include_dirs is deprecated, all usages of '" + path + "' have" +
+                 " been migrated to use alternate mechanisms and so can no longer" +
+                 " be used.")
+
+def get_compilation_args(toolchain, feature_config, flags, compilation_ctx, action_name):
+    compilation_vars = cc_common.create_compile_variables(
+        cc_toolchain = toolchain,
+        feature_configuration = feature_config,
+        user_compile_flags = flags,
+        include_directories = compilation_ctx.includes,
+        quote_include_directories = compilation_ctx.quote_includes,
+        system_include_directories = compilation_ctx.system_includes,
+        framework_include_directories = compilation_ctx.framework_includes,
+    )
+
+    return cc_common.get_memory_inefficient_command_line(
+        feature_configuration = feature_config,
+        action_name = action_name,
+        variables = compilation_vars,
+    )
+
+def build_compilation_flags(ctx, deps, user_flags, action_name):
+    cc_toolchain = find_cpp_toolchain(ctx)
+
+    feature_config = cc_common.configure_features(
+        ctx = ctx,
+        cc_toolchain = cc_toolchain,
+        language = "c++",
+        requested_features = ctx.features,
+        unsupported_features = ctx.disabled_features,
+    )
+
+    cc_info = cc_common.merge_cc_infos(direct_cc_infos = [d[CcInfo] for d in deps])
+
+    compilation_flags = get_compilation_args(
+        toolchain = cc_toolchain,
+        feature_config = feature_config,
+        flags = user_flags,
+        compilation_ctx = cc_info.compilation_context,
+        action_name = action_name,
+    )
+
+    return cc_info.compilation_context, compilation_flags
+
+def is_bionic_lib(name):
+    return name in _bionic_libs
+
+def is_bootstrap_lib(name):
+    return name in _bootstrap_libs
