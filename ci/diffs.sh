@@ -9,8 +9,10 @@ build/soong/soong_ui.bash \
   --all-modules \
   --dir="$(pwd)" \
   bp2build
-tools/bazel build --config=bp2build //build/bazel/scripts/difftool:collect_zip
-tools/bazel build --config=bp2build //build/bazel/scripts/difftool:difftool_zip
+build/bazel/bin/bazel build --config=bp2build //build/bazel/scripts/difftool:collect_zip //build/bazel/scripts/difftool:difftool_zip
+
+readonly COLLECT_ZIP="$(realpath bazel-bin/build/bazel/scripts/difftool/collect.zip)"
+readonly DIFFTOOL_ZIP="$(realpath bazel-bin/build/bazel/scripts/difftool/difftool.zip)"
 
 # the following 2 arrays must be of the same size
 MODULES=(
@@ -31,11 +33,11 @@ readonly LEGACY_OUTPUT_SEARCH_TREE="out/soong/.intermediates/libnativehelper"
 readonly MIXED_OUTPUT_SEARCH_TREE="out/bazel/output/execroot/__main__/bazel-out"
 readonly NINJA_FILE="$AOSP_ROOT/out/combined-$TARGET_PRODUCT.ninja"
 # python is expected in PATH but used only to start a zipped python archive,
-# which bundles its own interpreter. We could also simply use `tools/bazel run`
+# which bundles its own interpreter. We could also simply use `build/bazel/bin/bazel run`
 # instead however that sets the working directly differently and collect.py
 # won't work because it expects paths relative to $OUT_DIR
 # TODO(usta) make collect.py work with absolute paths and maybe consider
-# using `tools/bazel run` on the `py_binary` target directly instead of using
+# using `build/bazel/bin/bazel run` on the `py_binary` target directly instead of using
 # the python_zip_file filegroup's output
 readonly stub_python=python3
 readonly LEGACY_COLLECTION="$AOSP_ROOT/out/diff_metadata/legacy"
@@ -57,15 +59,17 @@ for ((i = 0; i < ${#MODULES[@]}; i++)); do
   MODULE=${MODULES[$i]}
   echo "Building $MODULE for comparison"
   build/soong/soong_ui.bash --make-mode "$MODULE"
-  $stub_python "bazel-bin/build/bazel/scripts/difftool/collect.zip" \
+  $stub_python $COLLECT_ZIP \
     "$NINJA_FILE" "$LEGACY_COLLECTION"
+  # TODO(b/254572169): Remove DISABLE_ARTIFACT_PATH_REQUIREMENT before launching --bazel-mode.
   build/soong/soong_ui.bash \
     --make-mode \
     --bazel-mode-dev \
+    DISABLE_ARTIFACT_PATH_REQUIREMENTS=true \
     BAZEL_STARTUP_ARGS="--max_idle_secs=5" \
     BAZEL_BUILD_ARGS="--color=no --curses=no --noshow_progress" \
     "$MODULE"
-  $stub_python "bazel-bin/build/bazel/scripts/difftool/collect.zip" \
+  $stub_python $COLLECT_ZIP \
       "$NINJA_FILE" "$MIXED_COLLECTION"
   OUTPUT=${OUTPUTS[$i]}
   for ((j = 0; j < ${#PATH_FILTERS[@]}; j++)); do
@@ -80,7 +84,7 @@ for ((i = 0; i < ${#MODULES[@]}; i++)); do
     mkdir -p "$MIXED_COLLECTION_DIR"
     cp "$MIXED_OUTPUT" "$MIXED_COLLECTION_DIR"
 
-    $stub_python "bazel-bin/build/bazel/scripts/difftool/difftool.zip" \
+    $stub_python $DIFFTOOL_ZIP \
       --level=SEVERE -v "$LEGACY_COLLECTION" "$MIXED_COLLECTION" \
       -l="$LEGACY_OUTPUT" -r="$MIXED_OUTPUT"
   done

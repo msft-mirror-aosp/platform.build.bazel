@@ -42,6 +42,12 @@ product_config(
 )
 # ! WARNING ! WARNING ! WARNING !
 
+load("//build/bazel/rules:env.bzl", "env_repository")
+
+env_repository(
+    name = "env",
+)
+
 load("//build/bazel_common_rules/workspace:external.bzl", "import_external_repositories")
 
 import_external_repositories(
@@ -58,9 +64,13 @@ local_repository(
     path = "external/bazelbuild-rules_android",
 )
 
+local_repository(
+    name = "rules_license",
+    path = "external/bazelbuild-rules_license",
+)
+
 register_toolchains(
     "//prebuilts/build-tools:py_toolchain",
-    "//prebuilts/clang/host/linux-x86:all",
 
     # For Starlark Android rules
     "//prebuilts/sdk:android_default_toolchain",
@@ -122,3 +132,29 @@ local_repository(
 )
 
 register_toolchains("@local_jdk//:all")
+
+local_repository(
+    name = "kotlin_maven_interface",
+    path = "build/bazel/rules/kotlin/maven_interface",
+)
+
+local_repository(
+    name = "rules_kotlin",
+    path = "external/bazelbuild-kotlin-rules",
+    repo_mapping = {
+        "@maven": "@kotlin_maven_interface",
+        "@bazel_platforms": "@platforms",
+    },
+)
+
+new_local_repository(
+    name = "kotlinc",
+    build_file = "@rules_kotlin//bazel:kotlinc.BUILD",
+    path = "external/kotlinc",
+)
+
+register_toolchains("@rules_kotlin//toolchains/kotlin_jvm:kt_jvm_toolchain")
+
+load("//prebuilts/clang/host/linux-x86:cc_toolchain_config.bzl", "cc_register_toolchains")
+
+cc_register_toolchains()

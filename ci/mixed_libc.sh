@@ -7,26 +7,31 @@ if [[ -z ${DIST_DIR+x} ]]; then
   echo "DIST_DIR not set. Using out/dist. This should only be used for manual developer testing."
   DIST_DIR="out/dist"
 fi
+if [[ -z ${TARGET_PRODUCT+x} ]]; then
+  echo "TARGET_PRODUCT not set. Have you run lunch?"
+  exit 1
+fi
 
 TARGETS=(
-  libbacktrace
-  libfdtrack
-  libsimpleperf
-  com.android.adbd
-  com.android.runtime
+  CaptivePortalLogin
   bluetoothtbd
+  com.android.media
+  com.android.media.swcodec
+  com.android.neuralnetworks
+  com.android.runtime
   framework-minus-apex
+  libsimpleperf
 )
 
 # Run a mixed build of "libc"
+# TODO(b/254572169): Remove DISABLE_ARTIFACT_PATH_REQUIREMENT before launching --bazel-mode.
 build/soong/soong_ui.bash --make-mode \
   --mk-metrics \
   --bazel-mode-dev \
+  DISABLE_ARTIFACT_PATH_REQUIREMENTS=true \
   BP2BUILD_VERBOSE=1 \
   BAZEL_STARTUP_ARGS="--max_idle_secs=5" \
   BAZEL_BUILD_ARGS="--color=no --curses=no --show_progress_rate_limit=5" \
-  TARGET_PRODUCT=aosp_arm64 \
-  TARGET_BUILD_VARIANT=userdebug \
   "${TARGETS[@]}" \
   dist DIST_DIR=$DIST_DIR
 

@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//build/bazel/rules:sh_binary.bzl", "sh_binary")
+load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo", "android_app_certificate")
 load("//build/bazel/rules/cc:cc_binary.bzl", "cc_binary")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
@@ -25,6 +26,12 @@ load(":apex_test_helpers.bzl", "test_apex")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//lib:new_sets.bzl", "sets")
 load("@soong_injection//apex_toolchain:constants.bzl", "default_manifest_version")
+
+ActionArgsInfo = provider(
+    fields = {
+        "argv": "The link action arguments.",
+    },
+)
 
 def _canned_fs_config_test(ctx):
     env = analysistest.begin(ctx)
@@ -1000,6 +1007,698 @@ def _test_generate_file_contexts():
 
     return test_name
 
+def _min_sdk_version_failure_test_impl(ctx):
+    env = analysistest.begin(ctx)
+
+    asserts.expect_failure(
+        env,
+        "min_sdk_version %s cannot be lower than the dep's min_sdk_version %s" %
+        (ctx.attr.apex_min, ctx.attr.dep_min),
+    )
+
+    return analysistest.end(env)
+
+min_sdk_version_failure_test = analysistest.make(
+    _min_sdk_version_failure_test_impl,
+    expect_failure = True,
+    attrs = {
+        "apex_min": attr.string(),
+        "dep_min": attr.string(),
+    },
+)
+
+def _test_min_sdk_version_failure():
+    name = "min_sdk_version_failure"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+        min_sdk_version = "32",
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_lib_cc"],
+        min_sdk_version = "30",
+    )
+
+    min_sdk_version_failure_test(
+        name = test_name,
+        target_under_test = name,
+        apex_min = "30",
+        dep_min = "32",
+    )
+
+    return test_name
+
+def _test_min_sdk_version_failure_transitive():
+    name = "min_sdk_version_failure_transitive"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        dynamic_deps = [name + "_lib2_cc"],
+        tags = ["manual"],
+    )
+
+    cc_library_shared(
+        name = name + "_lib2_cc",
+        srcs = [name + "_lib2.cc"],
+        tags = ["manual"],
+        min_sdk_version = "32",
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_lib_cc"],
+        min_sdk_version = "30",
+    )
+
+    min_sdk_version_failure_test(
+        name = test_name,
+        target_under_test = name,
+        apex_min = "30",
+        dep_min = "32",
+    )
+
+    return test_name
+
+def _apex_certificate_test(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    container_key_info = target_under_test[ApexInfo].container_key_info
+
+    asserts.equals(env, ctx.attr.expected_pem_path, container_key_info.pem.path)
+    asserts.equals(env, ctx.attr.expected_pk8_path, container_key_info.pk8.path)
+
+    return analysistest.end(env)
+
+apex_certificate_test = analysistest.make(
+    _apex_certificate_test,
+    attrs = {
+        "expected_pem_path": attr.string(),
+        "expected_pk8_path": attr.string(),
+    },
+)
+
+def _test_apex_certificate_none():
+    name = "apex_certificate_none"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+        certificate = None,
+    )
+
+    apex_certificate_test(
+        name = test_name,
+        target_under_test = name,
+        expected_pem_path = "build/make/target/product/security/testkey.x509.pem",
+        expected_pk8_path = "build/make/target/product/security/testkey.pk8",
+    )
+
+    return test_name
+
+def _test_apex_certificate_name():
+    name = "apex_certificate_name"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+        certificate = None,
+        certificate_name = "shared",  # use something other than testkey
+    )
+
+    apex_certificate_test(
+        name = test_name,
+        target_under_test = name,
+        expected_pem_path = "build/make/target/product/security/shared.x509.pem",
+        expected_pk8_path = "build/make/target/product/security/shared.pk8",
+    )
+
+    return test_name
+
+def _test_apex_certificate_label():
+    name = "apex_certificate_label"
+    test_name = name + "_test"
+
+    android_app_certificate(
+        name = name + "_cert",
+        certificate = name,
+        tags = ["manual"],
+    )
+
+    test_apex(
+        name = name,
+        certificate = name + "_cert",
+    )
+
+    apex_certificate_test(
+        name = test_name,
+        target_under_test = name,
+        expected_pem_path = "build/bazel/rules/apex/apex_certificate_label.x509.pem",
+        expected_pk8_path = "build/bazel/rules/apex/apex_certificate_label.pk8",
+    )
+
+    return test_name
+
+def _min_sdk_version_apex_inherit_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    argv = target_under_test[ActionArgsInfo].argv
+
+    found = False
+    for arg in argv:
+        if arg.startswith("--target="):
+            found = True
+            asserts.true(
+                env,
+                arg.endswith(ctx.attr.apex_min),
+                "Incorrect --target flag: %s %s" % (arg, ctx.attr.apex_min),
+            )
+
+    asserts.true(
+        env,
+        found,
+        "No --target flag found: %s" % argv,
+    )
+
+    return analysistest.end(env)
+
+def _feature_check_aspect_impl(target, ctx):
+    rules_propagate_src = [
+        "_bssl_hash_injection",
+        "stripped_shared_library",
+        "versioned_shared_library",
+    ]
+
+    argv = []
+    if ctx.rule.kind == "cc_shared_library" and target.label.name == ctx.attr.cc_target:
+        link_actions = [a for a in target.actions if a.mnemonic == "CppLink"]
+        argv = link_actions[0].argv
+    elif ctx.rule.kind in rules_propagate_src and hasattr(ctx.rule.attr, "src"):
+        argv = ctx.rule.attr.src[ActionArgsInfo].argv
+    elif ctx.rule.kind == "_cc_library_shared_proxy" and hasattr(ctx.rule.attr, "shared"):
+        argv = ctx.rule.attr.shared[ActionArgsInfo].argv
+    elif ctx.rule.kind == "_apex" and hasattr(ctx.rule.attr, "native_shared_libs_32"):
+        argv = ctx.rule.attr.native_shared_libs_32[0][ActionArgsInfo].argv
+
+    return [
+        ActionArgsInfo(
+            argv = argv,
+        ),
+    ]
+
+feature_check_aspect = aspect(
+    implementation = _feature_check_aspect_impl,
+    attrs = {
+        "cc_target": attr.string(values = ["min_sdk_version_apex_inherit_lib_cc_unstripped"]),
+    },
+    attr_aspects = ["native_shared_libs_32", "shared", "src"],
+)
+
+min_sdk_version_apex_inherit_test = analysistest.make(
+    _min_sdk_version_apex_inherit_test_impl,
+    attrs = {
+        "apex_min": attr.string(),
+        "cc_target": attr.string(),
+    },
+    # We need to use aspect to examine the dependencies' actions of the apex
+    # target as the result of the transition, checking the dependencies directly
+    # using names will give you the info before the transition takes effect.
+    extra_target_under_test_aspects = [feature_check_aspect],
+)
+
+def _test_min_sdk_version_apex_inherit():
+    name = "min_sdk_version_apex_inherit"
+    test_name = name + "_test"
+    cc_name = name + "_lib_cc"
+    apex_min = "28"
+
+    cc_library_shared(
+        name = cc_name,
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+        min_sdk_version = "apex_inherit",
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [cc_name],
+        min_sdk_version = apex_min,
+    )
+
+    min_sdk_version_apex_inherit_test(
+        name = test_name,
+        target_under_test = name,
+        apex_min = apex_min,
+        cc_target = cc_name + "_unstripped",
+    )
+
+    return test_name
+
+def _apex_provides_base_zip_files_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+
+    # The particular name of the file isn't important as it just gets zipped with the other apex files for other architectures
+    asserts.true(
+        env,
+        target_under_test[ApexInfo].base_file != None,
+        "Expected base_file to exist, but found None %s" % target_under_test[ApexInfo].base_file,
+    )
+
+    asserts.equals(
+        env,
+        target_under_test[ApexInfo].base_with_config_zip.basename,
+        # name is important here because the file gets disted and then referenced by name
+        ctx.attr.apex_name + ".apex-base.zip",
+        "Expected base file with config zip to have name ending with , but found %s" % target_under_test[ApexInfo].base_with_config_zip.basename,
+    )
+
+    return analysistest.end(env)
+
+apex_provides_base_zip_files_test = analysistest.make(
+    _apex_provides_base_zip_files_test_impl,
+    attrs = {
+        "apex_name": attr.string(),
+    },
+)
+
+def _test_apex_provides_base_zip_files():
+    name = "apex_provides_base_zip_files"
+    test_name = name + "_test"
+
+    test_apex(name = name)
+
+    apex_provides_base_zip_files_test(
+        name = test_name,
+        target_under_test = name,
+        apex_name = name,
+    )
+
+    return test_name
+
+def _apex_testonly_with_manifest_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "Apexer"]
+    asserts.true(
+        env,
+        len(actions) == 1,
+        "No apexer action found: %s" % actions,
+    )
+    argv = actions[0].argv
+
+    asserts.false(
+        env,
+        "--test_only" in argv,
+        "Calling apexer with --test_only when manifest file is specified: %s" % argv,
+    )
+
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "MarkAndroidManifestTestOnly"]
+    asserts.true(
+        env,
+        len(actions) == 1,
+        "No MarkAndroidManifestTestOnly action found: %s" % actions,
+    )
+    argv = actions[0].argv
+
+    asserts.true(
+        env,
+        "--test-only" in argv,
+        "Calling manifest_fixer without --test-only: %s" % argv,
+    )
+
+    return analysistest.end(env)
+
+apex_testonly_with_manifest_test = analysistest.make(
+    _apex_testonly_with_manifest_test_impl,
+)
+
+def _test_apex_testonly_with_manifest():
+    name = "apex_testonly_with_manifest"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+        min_sdk_version = "32",
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_lib_cc"],
+        # This will not cause the validation failure because it is testonly.
+        min_sdk_version = "30",
+        testonly = True,
+        tests = [name + "_cc_test"],
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    # It shouldn't complain about the min_sdk_version of the dep is too low.
+    apex_testonly_with_manifest_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _apex_testonly_without_manifest_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "Apexer"]
+    asserts.true(
+        env,
+        len(actions) == 1,
+        "No apexer action found: %s" % actions,
+    )
+    argv = actions[0].argv
+
+    asserts.true(
+        env,
+        "--test_only" in argv,
+        "Calling apexer without --test_only when manifest file is not specified: %s" % argv,
+    )
+
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "MarkAndroidManifestTestOnly"]
+    asserts.true(
+        env,
+        len(actions) == 0,
+        "MarkAndroidManifestTestOnly shouldn't be called when manifest file is not specified: %s" % actions,
+    )
+
+    return analysistest.end(env)
+
+apex_testonly_without_manifest_test = analysistest.make(
+    _apex_testonly_without_manifest_test_impl,
+)
+
+def _test_apex_testonly_without_manifest():
+    name = "apex_testonly_without_manifest"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+        testonly = True,
+    )
+
+    apex_testonly_without_manifest_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _apex_backing_file_test(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "FileWrite" and a.outputs.to_list()[0].basename.endswith("_backing.txt")]
+    asserts.true(
+        env,
+        len(actions) == 1,
+        "No FileWrite action found for creating <apex>_backing.txt file: %s" % actions,
+    )
+
+    asserts.equals(env, ctx.attr.expected_content, actions[0].content)
+    return analysistest.end(env)
+
+apex_backing_file_test = analysistest.make(
+    _apex_backing_file_test,
+    attrs = {
+        "expected_content": attr.string(),
+    },
+)
+
+def _test_apex_backing_file():
+    name = "apex_backing_file"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_lib_cc"],
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    apex_backing_file_test(
+        name = test_name,
+        target_under_test = name,
+        expected_content = "apex_backing_file_lib_cc.so libc++.so\n",
+    )
+
+    return test_name
+
+def _apex_installed_files_test(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "GenerateApexInstalledFileList"]
+    asserts.true(
+        env,
+        len(actions) == 1,
+        "No GenerateApexInstalledFileList action found for creating <apex>-installed-files.txt file: %s" % actions,
+    )
+
+    asserts.equals(
+        env,
+        len(ctx.attr.expected_inputs),
+        len(actions[0].inputs.to_list()),
+        "Expected inputs length: %d, actual inputs length: %d" % (len(ctx.attr.expected_inputs), len(actions[0].inputs.to_list())),
+    )
+    for file in actions[0].inputs.to_list():
+        asserts.true(
+            env,
+            file.basename in ctx.attr.expected_inputs,
+            "Unexpected input: %s" % file.basename,
+        )
+    asserts.equals(env, ctx.attr.expected_output, actions[0].outputs.to_list()[0].basename)
+    return analysistest.end(env)
+
+apex_installed_files_test = analysistest.make(
+    _apex_installed_files_test,
+    attrs = {
+        "expected_inputs": attr.string_list(),
+        "expected_output": attr.string(),
+    },
+)
+
+def _test_apex_installed_files():
+    name = "apex_installed_files"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_lib_cc"],
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    apex_installed_files_test(
+        name = test_name,
+        target_under_test = name,
+        expected_inputs = ["libc++.so", "apex_installed_files_lib_cc.so"],
+        expected_output = "apex_installed_files-installed-files.txt",
+    )
+
+    return test_name
+
+def _apex_symbols_used_by_apex_test(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    actual = target_under_test[ApexInfo].symbols_used_by_apex
+
+    asserts.equals(env, ctx.attr.expected_path, actual.short_path)
+
+    return analysistest.end(env)
+
+apex_symbols_used_by_apex_test = analysistest.make(
+    _apex_symbols_used_by_apex_test,
+    attrs = {
+        "expected_path": attr.string(),
+    },
+)
+
+def _test_apex_symbols_used_by_apex():
+    name = "apex_with_symbols_used_by_apex"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+    )
+
+    apex_symbols_used_by_apex_test(
+        name = test_name,
+        target_under_test = name,
+        expected_path = "build/bazel/rules/apex/apex_with_symbols_used_by_apex_using.txt",
+    )
+
+    return test_name
+
+def _apex_java_symbols_used_by_apex_test(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    actual = target_under_test[ApexInfo].java_symbols_used_by_apex
+
+    asserts.equals(env, ctx.attr.expected_path, actual.short_path)
+
+    return analysistest.end(env)
+
+apex_java_symbols_used_by_apex_test = analysistest.make(
+    _apex_java_symbols_used_by_apex_test,
+    attrs = {
+        "expected_path": attr.string(),
+    },
+)
+
+def _test_apex_java_symbols_used_by_apex():
+    name = "apex_with_java_symbols_used_by_apex"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+    )
+
+    apex_java_symbols_used_by_apex_test(
+        name = test_name,
+        target_under_test = name,
+        expected_path = "build/bazel/rules/apex/apex_with_java_symbols_used_by_apex_using.xml",
+    )
+
+    return test_name
+
+def _generate_notice_file_test(ctx):
+    env = analysistest.begin(ctx)
+    actions = [a for a in analysistest.target_actions(env) if a.mnemonic == "GenerateNoticeFile"]
+    asserts.true(
+        env,
+        len(actions) == 1,
+        "apex target should have a single GenerateNoticeFile action, found %s" % actions,
+    )
+    input_json = [f for f in actions[0].inputs.to_list() if f.basename.endswith("_licenses.json")]
+    asserts.true(
+        env,
+        len(input_json) == 1,
+        "apex GenerateNoticeFile should have a single input *_license.json file, got %s" % input_json,
+    )
+    outs = actions[0].outputs.to_list()
+    asserts.true(
+        env,
+        len(outs) == 1 and outs[0].basename == "NOTICE.html.gz",
+        "apex GenerateNoticeFile should generate a single NOTICE.html.gz file, got %s" % [o.short_path for o in outs],
+    )
+    return analysistest.end(env)
+
+apex_generate_notice_file_test = analysistest.make(_generate_notice_file_test)
+
+def _test_apex_generate_notice_file():
+    name = "apex_notice_file"
+    test_name = name + "_test"
+    test_apex(name = name)
+    apex_generate_notice_file_test(name = test_name, target_under_test = name)
+    return test_name
+
+def _analysis_success_test(ctx):
+    env = analysistest.begin(ctx)
+
+    # An empty analysis test that just ensures the target_under_test can be analyzed.
+    return analysistest.end(env)
+
+analysis_success_test = analysistest.make(_analysis_success_test)
+
+def _test_apex_available():
+    name = "apex_available"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            # Explicit name.
+            "apex_available=" + name,
+        ],
+    )
+
+    cc_library_shared(
+        name = name + "_lib2_cc",
+        srcs = [name + "_lib2.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            # anyapex.
+            "apex_available=//apex_available:anyapex",
+        ],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [
+            name + "_lib_cc",
+            name + "_lib2_cc",
+        ],
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    analysis_success_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _test_apex_available_with_base_apex():
+    name = "apex_available_with_base_apex"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            # Explicit name.
+            "apex_available=" + name + "_base",
+        ],
+    )
+
+    cc_library_shared(
+        name = name + "_lib2_cc",
+        srcs = [name + "_lib2.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            # anyapex.
+            "apex_available=//apex_available:anyapex",
+        ],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [
+            name + "_lib_cc",
+            name + "_lib2_cc",
+        ],
+        base_apex_name = name + "_base",
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    analysis_success_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
 def apex_test_suite(name):
     native.test_suite(
         name = name,
@@ -1024,5 +1723,21 @@ def apex_test_suite(name):
             _test_logging_parent_flag(),
             _test_generate_file_contexts(),
             _test_default_apex_manifest_version(),
+            _test_min_sdk_version_failure(),
+            _test_min_sdk_version_failure_transitive(),
+            _test_apex_certificate_none(),
+            _test_apex_certificate_name(),
+            _test_apex_certificate_label(),
+            _test_min_sdk_version_apex_inherit(),
+            _test_apex_testonly_with_manifest(),
+            _test_apex_provides_base_zip_files(),
+            _test_apex_testonly_without_manifest(),
+            _test_apex_backing_file(),
+            _test_apex_symbols_used_by_apex(),
+            _test_apex_installed_files(),
+            _test_apex_java_symbols_used_by_apex(),
+            _test_apex_generate_notice_file(),
+            _test_apex_available(),
+            _test_apex_available_with_base_apex(),
         ],
     )

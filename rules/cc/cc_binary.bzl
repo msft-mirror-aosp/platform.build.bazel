@@ -22,7 +22,7 @@ load(
     "system_static_deps_defaults",
 )
 load(":cc_library_static.bzl", "cc_library_static")
-load(":stl.bzl", "stl_deps")
+load(":stl.bzl", "stl_info_from_attr")
 load(":stripped_cc_common.bzl", "stripped_binary")
 load(":versioned_cc_common.bzl", "versioned_binary")
 
@@ -60,6 +60,12 @@ def cc_binary(
         use_version_lib = False,
         tags = [],
         generate_cc_test = False,
+        tidy = None,
+        tidy_checks = None,
+        tidy_checks_as_errors = None,
+        tidy_flags = None,
+        tidy_disabled_srcs = None,
+        tidy_timeout_srcs = None,
         **kwargs):
     "Bazel macro to correspond with the cc_binary Soong module."
 
@@ -67,8 +73,6 @@ def cc_binary(
     unstripped_name = name + "_unstripped"
 
     toolchain_features = []
-    toolchain_features += features
-
     if linkshared:
         toolchain_features.extend(["dynamic_executable", "dynamic_linker"])
     else:
@@ -78,10 +82,8 @@ def cc_binary(
         toolchain_features += ["-use_libcrt"]
 
     if min_sdk_version:
-        toolchain_features += [
-            "sdk_version_" + parse_sdk_version(min_sdk_version),
-            "-sdk_version_default",
-        ]
+        toolchain_features += parse_sdk_version(min_sdk_version) + ["-sdk_version_default"]
+    toolchain_features += features
 
     system_dynamic_deps = []
     system_static_deps = []
@@ -96,7 +98,9 @@ def cc_binary(
     else:
         system_static_deps = system_deps
 
-    stl = stl_deps(stl, linkshared, is_binary = True)
+    stl_info = stl_info_from_attr(stl, linkshared, is_binary = True)
+    linkopts = linkopts + stl_info.linkopts
+    copts = copts + stl_info.cppflags
 
     # The static library at the root of the cc_binary.
     cc_library_static(
@@ -114,9 +118,9 @@ def cc_binary(
         copts = copts,
         cpp_std = cpp_std,
         cppflags = cppflags,
-        deps = deps + stl.static + system_static_deps,
+        deps = deps + stl_info.static_deps + system_static_deps,
         whole_archive_deps = whole_archive_deps,
-        dynamic_deps = dynamic_deps + stl.shared,
+        dynamic_deps = dynamic_deps + stl_info.shared_deps,
         features = toolchain_features,
         local_includes = local_includes,
         rtti = rtti,
@@ -126,20 +130,35 @@ def cc_binary(
         stl = "none",
         system_dynamic_deps = system_dynamic_deps,
         target_compatible_with = target_compatible_with,
-        use_version_lib = use_version_lib,
         tags = ["manual"],
+        tidy = tidy,
+        tidy_checks = tidy_checks,
+        tidy_checks_as_errors = tidy_checks_as_errors,
+        tidy_flags = tidy_flags,
+        tidy_disabled_srcs = tidy_disabled_srcs,
     )
 
     binary_dynamic_deps = add_lists_defaulting_to_none(
         dynamic_deps,
         system_dynamic_deps,
-        stl.shared,
+        stl_info.shared_deps,
     )
+
+    toolchain_features += select({
+        "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
+        "//conditions:default": [],
+    })
+
+    # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
+    extra_implementation_deps = select({
+        "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
+        "//conditions:default": [],
+    })
 
     if generate_cc_test:
         native.cc_test(
             name = name,
-            deps = [root_name] + deps + system_static_deps + stl.static,
+            deps = [root_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
             dynamic_deps = binary_dynamic_deps,
             features = toolchain_features,
             linkopts = linkopts,
@@ -150,7 +169,7 @@ def cc_binary(
     else:
         native.cc_binary(
             name = unstripped_name,
-            deps = [root_name] + deps + system_static_deps + stl.static,
+            deps = [root_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
             dynamic_deps = binary_dynamic_deps,
             features = toolchain_features,
             linkopts = linkopts,
@@ -175,5 +194,6 @@ def cc_binary(
             runtime_deps = runtime_deps,
             target_compatible_with = target_compatible_with,
             tags = tags,
+            unstripped = unstripped_name,
             **strip
         )

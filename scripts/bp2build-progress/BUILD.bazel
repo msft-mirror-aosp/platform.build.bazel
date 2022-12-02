@@ -12,11 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//build/bazel/rules/python:py_proto.bzl", "py_proto_library")
-
 py_library(
     name = "dependency_analysis",
     srcs = ["dependency_analysis.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "queryview_xml",
+    testonly = True,
+    srcs = ["queryview_xml.py"],
+    visibility = ["//visibility:public"],
+)
+
+py_library(
+    name = "soong_module_json",
+    testonly = True,
+    srcs = ["soong_module_json.py"],
     visibility = ["//visibility:public"],
 )
 
@@ -24,7 +36,11 @@ py_test(
     name = "dependency_analysis_test",
     srcs = ["dependency_analysis_test.py"],
     python_version = "PY3",
-    deps = [":dependency_analysis"],
+    deps = [
+        ":dependency_analysis",
+        ":queryview_xml",
+        ":soong_module_json",
+    ],
 )
 
 py_binary(
@@ -32,8 +48,8 @@ py_binary(
     srcs = ["bp2build-progress.py"],
     visibility = ["//visibility:public"],
     deps = [
-        "//build/soong/ui/metrics/bp2build_progress_metrics_proto:bp2build_py_proto",
         ":dependency_analysis",
+        "//build/soong/ui/metrics/bp2build_progress_metrics_proto:bp2build_py_proto",
     ],
 )
 

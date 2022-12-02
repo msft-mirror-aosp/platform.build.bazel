@@ -44,12 +44,11 @@ class _ModuleKey:
 # that they shouldn't be converted, but that they are not that useful
 # to be recorded in the graph or report currently.
 IGNORED_KINDS = set([
-    "license_kind",
-    "license",
     "cc_defaults",
-    "java_defaults",
-    "hidl_interface.go_android/soong/hidl.hidlGenFactory__loadHookModule",  # implementation detail of hidl_interface
     "hidl_package_root",  # not being converted, contents converted as part of hidl_interface
+    "java_defaults",
+    "license",
+    "license_kind",
 ])
 
 # queryview doesn't have information on the type of deps, so we explicitly skip
@@ -99,15 +98,42 @@ def _build_with_soong(target, banchan_mode=False):
   )
 
 
-def get_queryview_module_info(module, banchan_mode=False):
+def get_properties(json_module):
+  set_properties = {}
+  if "Module" not in json_module:
+    return set_properties
+  if "Android" not in json_module["Module"]:
+    return set_properties
+  if "SetProperties" not in json_module["Module"]["Android"]:
+    return set_properties
+
+  for prop in json_module['Module']['Android']['SetProperties']:
+    if prop["Values"]:
+      value = prop["Values"]
+    else:
+      value = prop["Value"]
+    set_properties[prop["Name"]] = value
+  return set_properties
+
+
+def get_property_names(json_module):
+  return get_properties(json_module).keys()
+
+
+def get_queryview_module_info(modules, banchan_mode=False):
   """Returns the list of transitive dependencies of input module as built by queryview."""
   _build_with_soong("queryview", banchan_mode)
 
   queryview_xml = subprocess.check_output(
       [
-          "tools/bazel", "query", "--config=ci", "--config=queryview",
+          "build/bazel/bin/bazel",
+          "query",
+          "--config=ci",
+          "--config=queryview",
           "--output=xml",
-          'deps(attr("soong_module_name", "^{}$", //...))'.format(module)
+          # union of queries to get the deps of all Soong modules with the give names
+          " + ".join(f'deps(attr("soong_module_name", "^{m}$", //...))'
+                     for m in modules)
       ],
       cwd=SRC_ROOT_DIR,
   )
@@ -119,7 +145,7 @@ def get_queryview_module_info(module, banchan_mode=False):
 ParseError: {err}""")
 
 
-def get_json_module_info(module, banchan_mode=False):
+def get_json_module_info(banchan_mode=False):
   """Returns the list of transitive dependencies of input module as provided by Soong's json module graph."""
   _build_with_soong("json-module-graph", banchan_mode)
   try:
@@ -131,6 +157,24 @@ out/soong/module-graph.json
 JSONDecodeError: {err}""")
 
 
+def _ignore_json_module(json_module, ignore_by_name):
+  # windows is not a priority currently
+  if is_windows_variation(json_module):
+    return True
+  if ignore_kind(json_module['Type']):
+    return True
+  if json_module['Name'] in ignore_by_name:
+    return True
+  # for filegroups with a name the same as the source, we are not migrating the
+  # filegroup and instead just rely on the filename being exported
+  if json_module['Type'] == 'filegroup':
+    set_properties = get_properties(json_module)
+    srcs = set_properties.get('Srcs', [])
+    if len(srcs) == 1:
+      return json_module['Name'] in srcs
+  return False
+
+
 def visit_json_module_graph_post_order(module_graph, ignore_by_name,
                                        filter_predicate, visit):
   # The set of ignored modules. These modules (and their dependencies) are not shown
@@ -140,15 +184,16 @@ def visit_json_module_graph_post_order(module_graph, ignore_by_name,
   # name to all module variants
   module_graph_map = {}
   root_module_keys = []
+  name_to_keys = collections.defaultdict(set)
 
   # Do a single pass to find all top-level modules to be ignored
   for module in module_graph:
     name = module["Name"]
     key = _ModuleKey(name, module["Variations"])
-    if is_windows_variation(module) or ignore_kind(
-        module["Type"]) or name in ignore_by_name:
+    if _ignore_json_module(module, ignore_by_name):
       ignored.add(key)
       continue
+    name_to_keys[name].add(key)
     module_graph_map[key] = module
     if filter_predicate(module):
       root_module_keys.append(key)
@@ -162,6 +207,19 @@ def visit_json_module_graph_post_order(module_graph, ignore_by_name,
 
     deps = set()
     module = module_graph_map[module_key]
+    created_by = module["CreatedBy"]
+    to_visit = set()
+
+    if created_by:
+      for key in name_to_keys[created_by]:
+        if key in ignored:
+          continue
+        # treat created by as a dep so it appears as a blocker, otherwise the
+        # module will be disconnected from the traversal graph despite having a
+        # direct relationship to a module and must addressed in the migration
+        deps.add(created_by)
+        json_module_graph_post_traversal(key)
+
     for dep in module["Deps"]:
       if ignore_json_dep(dep, module["Name"], ignored):
         continue

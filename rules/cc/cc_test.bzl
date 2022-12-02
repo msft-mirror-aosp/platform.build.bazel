@@ -25,8 +25,8 @@ _gtest_copts = select({
     "//build/bazel/platforms/os:windows": ["-DGTEST_OS_WINDOWS"],
     "//conditions:default": ["-DGTEST_OS_LINUX_ANDROID"],
 }) + select({
-    "//build/bazel/platforms/os:android": ["-O0", "-g"],
-    "//conditions:default": [],
+    "//build/bazel/platforms/os:android": [],
+    "//conditions:default": ["-O0", "-g"],  # here, default == host platform
 }) + [
     "-DGTEST_HAS_STD_STRING",
     "-Wno-unused-result",  # TODO(b/244433518): Figure out why this is necessary in the bazel compile action.
@@ -44,6 +44,12 @@ def cc_test(
         dynamic_deps = [],
         gtest = True,
         isolated = True,  # TODO(b/244432609): currently no-op.
+        tidy = None,
+        tidy_checks = None,
+        tidy_checks_as_errors = None,
+        tidy_flags = None,
+        tidy_disabled_srcs = None,
+        tidy_timeout_srcs = None,
         **kwargs):
     # NOTE: Keep this in sync with cc/test.go#linkerDeps
     if gtest:
@@ -60,5 +66,10 @@ def cc_test(
         deps = deps,
         dynamic_deps = dynamic_deps,
         generate_cc_test = True,
+        tidy = tidy,
+        tidy_checks = tidy_checks,
+        tidy_checks_as_errors = tidy_checks_as_errors,
+        tidy_flags = tidy_flags,
+        tidy_disabled_srcs = tidy_disabled_srcs,
         **kwargs
     )

@@ -28,7 +28,8 @@ if [[ -z ${DIST_DIR+x} ]]; then
   DIST_DIR="${OUT_DIR}/dist"
 fi
 
-# Generate the ninja file without mixed builds flag.
+# Generate the ninja file with default setting. We expect Bazel to be enabled by
+# default.
 build/soong/soong_ui.bash --make-mode \
   --mk-metrics \
   BAZEL_STARTUP_ARGS="--max_idle_secs=5" \
@@ -38,12 +39,48 @@ build/soong/soong_ui.bash --make-mode \
   nothing \
   dist DIST_DIR=$DIST_DIR
 
-if [[ ! $(grep -L "bazel-out" ${OUT_DIR}/soong/build.ninja) ]]; then
-  echo "Expected legacy build to not reference bazel-out"
+# Default setting should contain bazel-out, as *at least* tzdata is allowlisted for
+# default prod mode.
+if [[ $(grep -L "bazel-out" ${OUT_DIR}/soong/build.ninja) ]]; then
+  echo "Expected default build to reference bazel-out"
   exit 1
 fi
 
-# Regen ninja file with mixed builds flag.
+# Regenerate the ninja file with BUILD_BROKEN override. This should have mixed builds
+# disabled.
+build/soong/soong_ui.bash --make-mode \
+  --mk-metrics \
+  DISABLE_ARTIFACT_PATH_REQUIREMENTS=true \
+  BUILD_BROKEN_DISABLE_BAZEL=true \
+  BAZEL_STARTUP_ARGS="--max_idle_secs=5" \
+  BAZEL_BUILD_ARGS="--color=no --curses=no --show_progress_rate_limit=5" \
+  TARGET_PRODUCT=aosp_arm64 \
+  TARGET_BUILD_VARIANT=userdebug \
+  nothing \
+  dist DIST_DIR=$DIST_DIR
+
+if [[ ! $(grep -L "bazel-out" ${OUT_DIR}/soong/build.ninja) ]]; then
+  echo "Expected BUILD_BROKEN override to not reference bazel-out"
+  exit 1
+fi
+
+# Rerun default setting. This verifies that removing BUILD_BROKEN_DISABLE_BAZEL
+# causes analysis to be rerun.
+build/soong/soong_ui.bash --make-mode \
+  --mk-metrics \
+  BAZEL_STARTUP_ARGS="--max_idle_secs=5" \
+  BAZEL_BUILD_ARGS="--color=no --curses=no --show_progress_rate_limit=5" \
+  TARGET_PRODUCT=aosp_arm64 \
+  TARGET_BUILD_VARIANT=userdebug \
+  nothing \
+  dist DIST_DIR=$DIST_DIR
+
+if [[ $(grep -L "bazel-out" ${OUT_DIR}/soong/build.ninja) ]]; then
+  echo "Expected default build rerun to reference bazel-out"
+  exit 1
+fi
+
+# Regen ninja file with mixed builds dev mode.
 build/soong/soong_ui.bash --make-mode \
   --mk-metrics \
   --bazel-mode-dev \
@@ -55,22 +92,6 @@ build/soong/soong_ui.bash --make-mode \
   dist DIST_DIR=$DIST_DIR
 
 if [[ $(grep -L "bazel-out" ${OUT_DIR}/soong/build.ninja) ]]; then
-  echo "Expected mixed build to reference bazel-out"
-  exit 1
-fi
-
-# Regenerate the ninja file without mixed builds flag.
-# (This ensures the environment variable change retriggers the build.)
-build/soong/soong_ui.bash --make-mode \
-  --mk-metrics \
-  BAZEL_STARTUP_ARGS="--max_idle_secs=5" \
-  BAZEL_BUILD_ARGS="--color=no --curses=no --show_progress_rate_limit=5" \
-  TARGET_PRODUCT=aosp_arm64 \
-  TARGET_BUILD_VARIANT=userdebug \
-  nothing \
-  dist DIST_DIR=$DIST_DIR
-
-if [[ ! $(grep -L "bazel-out" ${OUT_DIR}/soong/build.ninja) ]]; then
-  echo "Expected second legacy build to not reference bazel-out"
+  echo "Expected dev mode build to reference bazel-out"
   exit 1
 fi

@@ -35,7 +35,16 @@ ApexCcInfo = provider(
 # provided from another APEX or the platform.  By omitting them from APEXes, we
 # ensure that there are no multiple copies of such libraries on a device.
 def has_cc_stubs(target, ctx):
-    return (ctx.rule.kind == "_cc_library_shared_proxy" and target[CcStubLibrariesInfo].has_stubs) or ctx.rule.kind == "_cc_stub_library_shared"
+    if CcStubLibrarySharedInfo in target:
+        # This is a stub lib (direct or transitive).
+        return True
+
+    if CcStubLibrariesInfo in target and target[CcStubLibrariesInfo].has_stubs:
+        # Direct deps of the apex. The apex would depend on the source lib, not stub lib,
+        # so check for CcStubLibrariesInfo.has_stubs.
+        return True
+
+    return False
 
 # Check if this target is specified as a direct dependency of the APEX,
 # as opposed to a transitive dependency, as the transitivity impacts
@@ -44,7 +53,24 @@ def is_apex_direct_dep(target, ctx):
     apex_direct_deps = ctx.attr._apex_direct_deps[BuildSettingInfo].value
     return str(target.label) in apex_direct_deps
 
+def _validate_min_sdk_version(ctx):
+    # ctx.features refer to the features of the (e.g. cc_library) target being visited
+    for f in ctx.features:
+        # min_sdk_version in cc targets are represented as features
+        if f.startswith("sdk_version_"):
+            # e.g. sdk_version_29 or sdk_version_10000
+            version = f.split("_")[-1]
+            min_sdk_version = ctx.attr._min_sdk_version[BuildSettingInfo].value
+            if min_sdk_version < version:
+                fail("The apex %s's min_sdk_version %s cannot be lower than the dep's min_sdk_version %s" %
+                     (ctx.attr._apex_name[BuildSettingInfo].value, min_sdk_version, version))
+            return
+
 def _apex_cc_aspect_impl(target, ctx):
+    # Ensure that dependencies are compatible with this apex's min_sdk_level
+    if not ctx.attr.testonly:
+        _validate_min_sdk_version(ctx)
+
     # Whether this dep is a direct dep of an APEX or makes a difference in dependency
     # traversal, and aggregation of libs that are required from the platform/other APEXes,
     # and libs that this APEX will provide to others.
@@ -53,6 +79,14 @@ def _apex_cc_aspect_impl(target, ctx):
     provides = []
     requires = []
 
+    # The APEX manifest records the stub-providing libs (ABI-stable) in its
+    # direct and transitive deps.
+    #
+    # If a stub-providing lib is in the direct deps of an apex, then the apex
+    # provides the symbols.
+    #
+    # If a stub-providing lib is in the transitive deps of an apex, then the
+    # apex requires the symbols from the platform or other apexes.
     if has_cc_stubs(target, ctx):
         if is_direct_dep:
             # Mark this target as "stub-providing" exports of this APEX,
@@ -132,17 +166,19 @@ def _apex_cc_aspect_impl(target, ctx):
         ),
     ]
 
+# The list of attributes in a cc dep graph where this aspect will traverse on.
+CC_ATTR_ASPECTS = ["dynamic_deps", "deps", "shared", "src", "runtime_deps"]
+
 # This aspect is intended to be applied on a apex.native_shared_libs attribute
 apex_cc_aspect = aspect(
     implementation = _apex_cc_aspect_impl,
     attrs = {
         "_apex_name": attr.label(default = "//build/bazel/rules/apex:apex_name"),
         "_apex_direct_deps": attr.label(default = "//build/bazel/rules/apex:apex_direct_deps"),
-        # This will be set to the min_sdk_version of the apex that runs this aspect.
-        # A values list must be provided, but we want to allow all sdk versions so just generate
-        # a bunch of ints here.
-        "min_sdk_version": attr.string(values = ["current"] + [str(i) for i in range(50)]),
+        "_min_sdk_version": attr.label(default = "//build/bazel/rules/apex:min_sdk_version"),
+        # This is propagated from the apex
+        "testonly": attr.bool(default = False),
     },
-    attr_aspects = ["dynamic_deps", "deps", "shared", "src", "runtime_deps"],
+    attr_aspects = CC_ATTR_ASPECTS,
     # TODO: Have this aspect also propagate along attributes of native_shared_libs?
 )
