@@ -30,33 +30,16 @@ load(
     "license_map_notice_files",
     "license_map_to_json",
 )
-load("//build/bazel/rules/apex:apex_available.bzl", "apex_available_aspect")
+load("//build/bazel/rules/apex:apex_available.bzl", "apex_available_aspect", "apex_platform_available_aspect")
 load(":apex_key.bzl", "ApexKeyInfo")
+load(":apex_info.bzl", "ApexInfo")
 load(":bundle.bzl", "apex_zip_files")
+load(":apex_deps_validation.bzl", "ApexDepsInfo", "apex_deps_validation_aspect", "validate_apex_deps")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@soong_injection//apex_toolchain:constants.bzl", "default_manifest_version")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
-
-ApexInfo = provider(
-    "ApexInfo exports metadata about this apex.",
-    fields = {
-        "provides_native_libs": "Labels of native shared libs that this apex provides.",
-        "requires_native_libs": "Labels of native shared libs that this apex requires.",
-        "unsigned_output": "Unsigned .apex file.",
-        "signed_output": "Signed .apex file.",
-        "bundle_key_info": "APEX bundle signing public/private key pair (the value of the key: attribute).",
-        "container_key_info": "Info of the container key provided as AndroidAppCertificateInfo.",
-        "package_name": "APEX package name.",
-        "backing_libs": "File containing libraries used by the APEX.",
-        "symbols_used_by_apex": "Symbol list used by this APEX.",
-        "java_symbols_used_by_apex": "Java symbol list used by this APEX.",
-        "installed_files": "File containing all files installed by the APEX",
-        "base_file": "A zip file used to create aab files.",
-        "base_with_config_zip": "A zip file used to create aab files within mixed builds.",
-    },
-)
 
 def _create_file_mapping(ctx):
     """Create a file mapping for the APEX filesystem image.
@@ -88,22 +71,19 @@ def _create_file_mapping(ctx):
             for lib_file in apex_cc_info.transitive_shared_libs.to_list():
                 add_file_mapping(paths.join(directory, lib_file.basename), lib_file)
 
-    # Ensure the split attribute dicts are non-empty
-    native_shared_libs_32 = dicts.add({"x86": [], "arm": []}, ctx.split_attr.native_shared_libs_32)
-    native_shared_libs_64 = dicts.add({"x86_64": [], "arm64": []}, ctx.split_attr.native_shared_libs_64)
+    native_shared_libs_32 = []
+    if ctx.split_attr.native_shared_libs_32.values():
+        native_shared_libs_32 = ctx.split_attr.native_shared_libs_32.values()[0]
+    native_shared_libs_64 = []
+    if ctx.split_attr.native_shared_libs_64.values():
+        native_shared_libs_64 = ctx.split_attr.native_shared_libs_64.values()[0]
 
-    if platforms.is_target_x86(ctx.attr._platform_utils):
-        _add_lib_files("lib", native_shared_libs_32["x86"])
-    elif platforms.is_target_x86_64(ctx.attr._platform_utils):
-        if product_vars["DeviceSecondaryArch"] == "x86":
-            _add_lib_files("lib", native_shared_libs_32["x86"])
-        _add_lib_files("lib64", native_shared_libs_64["x86_64"])
-    elif platforms.is_target_arm(ctx.attr._platform_utils):
-        _add_lib_files("lib", native_shared_libs_32["arm"])
-    elif platforms.is_target_arm64(ctx.attr._platform_utils):
-        if product_vars["DeviceSecondaryArch"] == "arm":
-            _add_lib_files("lib", native_shared_libs_32["arm"])
-        _add_lib_files("lib64", native_shared_libs_64["arm64"])
+    if platforms.get_target_bitness(ctx.attr._platform_utils) == 64:
+        _add_lib_files("lib64", native_shared_libs_64)
+        if not product_vars["DeviceSecondaryArch"] == "":
+            _add_lib_files("lib", native_shared_libs_32)
+    else:
+        _add_lib_files("lib", native_shared_libs_32)
 
     backing_libs = []
     for lib in file_mapping.values():
@@ -164,7 +144,10 @@ def _add_apex_manifest_information(
     args.add_all(["-a", "provideNativeLibs"])
     args.add_all(provides_native_libs, map_each = _add_so)
 
-    args.add_all(["-se", "version", "0", default_manifest_version])
+    manifest_version = ctx.attr._override_apex_manifest_default_version[BuildSettingInfo].value
+    if not manifest_version:
+        manifest_version = default_manifest_version
+    args.add_all(["-se", "version", "0", manifest_version])
 
     # TODO: support other optional flags like -v name and -a jniLibs
     args.add_all(["-o", apex_manifest_full_json])
@@ -603,6 +586,21 @@ def _apex_rule_impl(ctx):
         soong_zip = apex_toolchain.soong_zip,
     ), apex_file = signed_apex, arch = arch)
 
+    transitive_deps = depset(
+        transitive = [
+            d[ApexDepsInfo].transitive_deps
+            for d in (
+                ctx.attr.native_shared_libs_32 +
+                ctx.attr.native_shared_libs_64 +
+                ctx.attr.binaries +
+                ctx.attr.prebuilts
+            )
+        ],
+    )
+    validation_files = []
+    if not ctx.attr._unsafe_disable_apex_allowed_deps_check[BuildSettingInfo].value:
+        validation_files.append(validate_apex_deps(ctx, transitive_deps, ctx.file.allowed_apex_deps_manifest))
+
     return [
         DefaultInfo(files = depset([signed_apex])),
         ApexInfo(
@@ -625,7 +623,9 @@ def _apex_rule_impl(ctx):
             java_coverage_files = [apexer_outputs.java_symbols_used_by_apex],
             backing_libs = depset([apexer_outputs.backing_libs]),
             installed_files = depset([apexer_outputs.installed_files]),
+            _validation = validation_files,
         ),
+        ApexDepsInfo(transitive_deps = transitive_deps),
     ]
 
 # These are the standard aspects that should be applied on all edges that
@@ -633,6 +633,8 @@ def _apex_rule_impl(ctx):
 STANDARD_PAYLOAD_ASPECTS = [
     license_aspect,
     apex_available_aspect,
+    apex_platform_available_aspect,
+    apex_deps_validation_aspect,
 ]
 
 _apex = rule(
@@ -724,10 +726,23 @@ _apex = rule(
             default = Label("//build/bazel/platforms:platform_utils"),
         ),
 
+        # allowed deps check
+        "_unsafe_disable_apex_allowed_deps_check": attr.label(
+            default = "//build/bazel/rules/apex:unsafe_disable_apex_allowed_deps_check",
+        ),
+        "allowed_apex_deps_manifest": attr.label(
+            allow_single_file = True,
+            default = "//packages/modules/common/build:allowed_deps.txt",
+        ),
+
         # Build settings.
         "_apexer_verbose": attr.label(
             default = "//build/bazel/rules/apex:apexer_verbose",
             doc = "If enabled, make apexer log verbosely.",
+        ),
+        "_override_apex_manifest_default_version": attr.label(
+            default = "//build/bazel/rules/apex:override_apex_manifest_default_version",
+            doc = "If specified, override 'version: 0' in apex_manifest.json with this value instead of the branch default. Non-zero versions will not be changed.",
         ),
     },
     # The apex toolchain is not mandatory so that we don't get toolchain resolution errors even

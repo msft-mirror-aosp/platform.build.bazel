@@ -20,8 +20,9 @@ load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
 load("//build/bazel/rules/cc:cc_stub_library.bzl", "cc_stub_suite")
 load("//build/bazel/rules:prebuilt_file.bzl", "prebuilt_file")
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load(":apex.bzl", "ApexInfo", "apex")
-load(":apex_key.bzl", "apex_key")
+load(":apex.bzl", "apex")
+load(":apex_info.bzl", "ApexInfo")
+load(":apex_deps_validation.bzl", "ApexDepsInfo", "apex_dep_infos_to_allowlist_strings")
 load(":apex_test_helpers.bzl", "test_apex")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//lib:new_sets.bzl", "sets")
@@ -911,12 +912,14 @@ def _action_args_test(ctx):
 
     return analysistest.end(env)
 
+_action_args_test_attrs = {
+    "action_mnemonic": attr.string(mandatory = True),
+    "expected_args": attr.string_list(mandatory = True),
+}
+
 action_args_test = analysistest.make(
     _action_args_test,
-    attrs = {
-        "action_mnemonic": attr.string(mandatory = True),
-        "expected_args": attr.string_list(mandatory = True),
-    },
+    attrs = _action_args_test_attrs,
 )
 
 def _test_logging_parent_flag():
@@ -957,6 +960,37 @@ def _test_default_apex_manifest_version():
             "version",
             "0",
             str(default_manifest_version),
+        ],
+    )
+
+    return test_name
+
+action_args_with_override_apex_manifest_default_version_test = analysistest.make(
+    _action_args_test,
+    attrs = _action_args_test_attrs,
+    # Wouldn't it be nice if it's possible to set the config_setting from the test callsite..
+    config_settings = {
+        "@//build/bazel/rules/apex:override_apex_manifest_default_version": "1234567890",
+    },
+)
+
+def _test_override_apex_manifest_version():
+    name = "override_apex_manifest_version"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+    )
+
+    action_args_with_override_apex_manifest_default_version_test(
+        name = test_name,
+        target_under_test = name,
+        action_mnemonic = "ApexManifestModify",
+        expected_args = [
+            "-se",
+            "version",
+            "0",
+            "1234567890",
         ],
     )
 
@@ -1201,7 +1235,7 @@ def _feature_check_aspect_impl(target, ctx):
     elif ctx.rule.kind in rules_propagate_src and hasattr(ctx.rule.attr, "src"):
         argv = ctx.rule.attr.src[ActionArgsInfo].argv
     elif ctx.rule.kind == "_cc_library_shared_proxy" and hasattr(ctx.rule.attr, "shared"):
-        argv = ctx.rule.attr.shared[ActionArgsInfo].argv
+        argv = ctx.rule.attr.shared[0][ActionArgsInfo].argv
     elif ctx.rule.kind == "_apex" and hasattr(ctx.rule.attr, "native_shared_libs_32"):
         argv = ctx.rule.attr.native_shared_libs_32[0][ActionArgsInfo].argv
 
@@ -1235,7 +1269,7 @@ def _test_min_sdk_version_apex_inherit():
     name = "min_sdk_version_apex_inherit"
     test_name = name + "_test"
     cc_name = name + "_lib_cc"
-    apex_min = "28"
+    apex_min = "29"
 
     cc_library_shared(
         name = cc_name,
@@ -1699,6 +1733,133 @@ def _test_apex_available_with_base_apex():
 
     return test_name
 
+def _apex_deps_validation_test_impl(ctx):
+    env = analysistest.begin(ctx)
+
+    target_under_test = analysistest.target_under_test(env)
+    asserts.new_set_equals(
+        env,
+        sets.make(ctx.attr.allowed_deps_manifest + ctx.attr._default_apex_deps),
+        sets.make(apex_dep_infos_to_allowlist_strings(
+            target_under_test[ApexDepsInfo].transitive_deps.to_list(),
+        )),
+    )
+
+    return analysistest.end(env)
+
+_apex_deps_validation_test = analysistest.make(
+    _apex_deps_validation_test_impl,
+    attrs = {
+        "allowed_deps_manifest": attr.string_list(),
+        "_default_apex_deps": attr.string_list(
+            default = [
+                "libc_llndk_headers(minSdkVersion:apex_inherit)",
+                "libc_headers(minSdkVersion:apex_inherit)",
+                "libc++abi(minSdkVersion:apex_inherit)",
+                "libc++_static(minSdkVersion:apex_inherit)",
+                "libc++(minSdkVersion:apex_inherit)",
+                "libc++demangle(minSdkVersion:apex_inherit)",
+            ],
+        ),
+    },
+    config_settings = {
+        "@//build/bazel/rules/apex:unsafe_disable_apex_allowed_deps_check": True,
+    },
+)
+
+def _test_apex_deps_validation():
+    name = "apex_deps_validation"
+    test_name = name + "_test"
+
+    specific_apex_available_name = name + "_specific_apex_available"
+    cc_library_shared(
+        name = specific_apex_available_name,
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=" + name,
+            "apex_available=//apex_available:platform",
+        ],
+        min_sdk_version = "30",
+    )
+
+    any_apex_available_name = name + "_any_apex_available"
+    cc_library_shared(
+        name = any_apex_available_name,
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=//apex_available:anyapex",
+            "apex_available=//apex_available:platform",
+        ],
+        min_sdk_version = "30",
+    )
+
+    no_platform_available_name = name + "_no_platform_available"
+    cc_library_shared(
+        name = no_platform_available_name,
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=//apex_available:anyapex",
+        ],
+        min_sdk_version = "30",
+    )
+
+    no_platform_available_transitive_dep_name = name + "_no_platform_available_transitive_dep"
+    cc_library_shared(
+        name = no_platform_available_transitive_dep_name,
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=//apex_available:anyapex",
+        ],
+        min_sdk_version = "30",
+    )
+
+    platform_available_but_dep_with_no_platform_available_name = name + "_shared_platform_available_but_dep_with_no_platform_available"
+    cc_library_shared(
+        name = platform_available_but_dep_with_no_platform_available_name,
+        srcs = [name + "_lib.cc"],
+        deps = [no_platform_available_transitive_dep_name],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=//apex_available:anyapex",
+            "apex_available=//apex_available:platform",
+        ],
+        min_sdk_version = "30",
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [
+            specific_apex_available_name,
+            any_apex_available_name,
+            no_platform_available_name,
+            platform_available_but_dep_with_no_platform_available_name,
+        ],
+        android_manifest = "AndroidManifest.xml",
+        min_sdk_version = "30",
+    )
+
+    _apex_deps_validation_test(
+        name = test_name,
+        target_under_test = name,
+        allowed_deps_manifest = [
+            specific_apex_available_name + "(minSdkVersion:30)",
+            any_apex_available_name + "(minSdkVersion:30)",
+            platform_available_but_dep_with_no_platform_available_name + "(minSdkVersion:30)",
+        ],
+        tags = ["manual"],
+    )
+
+    return test_name
+
 def apex_test_suite(name):
     native.test_suite(
         name = name,
@@ -1723,6 +1884,7 @@ def apex_test_suite(name):
             _test_logging_parent_flag(),
             _test_generate_file_contexts(),
             _test_default_apex_manifest_version(),
+            _test_override_apex_manifest_version(),
             _test_min_sdk_version_failure(),
             _test_min_sdk_version_failure_transitive(),
             _test_apex_certificate_none(),
@@ -1739,5 +1901,6 @@ def apex_test_suite(name):
             _test_apex_generate_notice_file(),
             _test_apex_available(),
             _test_apex_available_with_base_apex(),
+            _test_apex_deps_validation(),
         ],
     )

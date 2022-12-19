@@ -18,6 +18,7 @@ load(
     ":cc_library_common.bzl",
     "add_lists_defaulting_to_none",
     "parse_sdk_version",
+    "sanitizer_deps",
     "system_dynamic_deps_defaults",
     "system_static_deps_defaults",
 )
@@ -155,45 +156,43 @@ def cc_binary(
         "//conditions:default": [],
     })
 
-    if generate_cc_test:
-        native.cc_test(
-            name = name,
-            deps = [root_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
-            dynamic_deps = binary_dynamic_deps,
-            features = toolchain_features,
-            linkopts = linkopts,
-            additional_linker_inputs = additional_linker_inputs,
-            target_compatible_with = target_compatible_with,
-            **kwargs
-        )
-    else:
-        native.cc_binary(
-            name = unstripped_name,
-            deps = [root_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
-            dynamic_deps = binary_dynamic_deps,
-            features = toolchain_features,
-            linkopts = linkopts,
-            additional_linker_inputs = additional_linker_inputs,
-            target_compatible_with = target_compatible_with,
-            tags = ["manual"],
-            **kwargs
-        )
+    sanitizer_deps_name = name + "_sanitizer_deps"
+    sanitizer_deps(
+        name = sanitizer_deps_name,
+        dep = root_name,
+        tags = ["manual"],
+    )
 
-        versioned_name = name + "_versioned"
-        versioned_binary(
-            name = versioned_name,
-            src = unstripped_name,
-            stamp_build_number = use_version_lib,
-            tags = ["manual"],
-        )
+    cc_rule = native.cc_test if generate_cc_test else native.cc_binary
+    cc_rule(
+        name = unstripped_name,
+        deps = [root_name, sanitizer_deps_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
+        dynamic_deps = binary_dynamic_deps,
+        features = toolchain_features,
+        linkopts = linkopts,
+        additional_linker_inputs = additional_linker_inputs,
+        target_compatible_with = target_compatible_with,
+        tags = ["manual"],
+        **kwargs
+    )
 
-        stripped_binary(
-            name = name,
-            suffix = suffix,
-            src = versioned_name,
-            runtime_deps = runtime_deps,
-            target_compatible_with = target_compatible_with,
-            tags = tags,
-            unstripped = unstripped_name,
-            **strip
-        )
+    versioned_name = name + "_versioned"
+    versioned_binary(
+        name = versioned_name,
+        src = unstripped_name,
+        stamp_build_number = use_version_lib,
+        tags = ["manual"],
+        testonly = generate_cc_test,
+    )
+
+    stripped_binary(
+        name = name,
+        suffix = suffix,
+        src = versioned_name,
+        runtime_deps = runtime_deps,
+        target_compatible_with = target_compatible_with,
+        tags = tags,
+        unstripped = unstripped_name,
+        testonly = generate_cc_test,
+        **strip
+    )
