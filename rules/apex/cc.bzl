@@ -94,26 +94,10 @@ def get_min_sdk_version(ctx):
         apex_inherit = apex_inherit,
     )
 
-def _compare_sdk_version(v1, v2):
-    max = ["current", "10000"]
-    if v1 in max and v2 not in max:
-        return 1
-    elif v2 in max and v1 not in max:
-        return -1
-    if v1.isdigit():
-        v1 = int(v1)
-    else:
-        fail("tried to parse invalid min_sdk_version: %s".format(v1))
-    if v2.isdigit():
-        v2 = int(v2)
-    else:
-        fail("tried to parse invalid min_sdk_version: %s".format(v2))
-    return v1 - v2
-
 def _validate_min_sdk_version(ctx):
     dep_min_version = get_min_sdk_version(ctx).min_sdk_version
     apex_min_version = ctx.attr._min_sdk_version[BuildSettingInfo].value
-    if dep_min_version and _compare_sdk_version(apex_min_version, dep_min_version) < 0:
+    if dep_min_version and apex_min_version < dep_min_version:
         fail("The apex %s's min_sdk_version %s cannot be lower than the dep's min_sdk_version %s" %
              (ctx.attr._apex_name[BuildSettingInfo].value, apex_min_version, dep_min_version))
 
@@ -143,7 +127,7 @@ def _apex_cc_aspect_impl(target, ctx):
             # Mark this target as "stub-providing" exports of this APEX,
             # which the system and other APEXes can depend on, and propagate
             # this list.
-            provides += [target.label]
+            provides.append(target.label)
         else:
             # If this is not a direct dep, and stubs are available, don't
             # propagate the libraries. Mark this target as required from the
@@ -153,7 +137,7 @@ def _apex_cc_aspect_impl(target, ctx):
 
             # If a stub library is in the "provides" of the apex, it doesn't need to be in the "requires"
             if not is_apex_direct_dep(source_library, ctx):
-                requires += [target[CcStubLibrarySharedInfo].source_library.label]
+                requires.append(target[CcStubLibrarySharedInfo].source_library.label)
             return [
                 ApexCcInfo(
                     transitive_shared_libs = depset(),
@@ -218,11 +202,19 @@ def _apex_cc_aspect_impl(target, ctx):
     ]
 
 # The list of attributes in a cc dep graph where this aspect will traverse on.
-CC_ATTR_ASPECTS = ["dynamic_deps", "deps", "shared", "src", "runtime_deps"]
+CC_ATTR_ASPECTS = [
+    "dynamic_deps",
+    "deps",
+    "shared",
+    "src",
+    "runtime_deps",
+    "static_deps",
+]
 
 # This aspect is intended to be applied on a apex.native_shared_libs attribute
 apex_cc_aspect = aspect(
     implementation = _apex_cc_aspect_impl,
+    provides = [ApexCcInfo],
     attrs = {
         "_apex_name": attr.label(default = "//build/bazel/rules/apex:apex_name"),
         "_apex_direct_deps": attr.label(default = "//build/bazel/rules/apex:apex_direct_deps"),

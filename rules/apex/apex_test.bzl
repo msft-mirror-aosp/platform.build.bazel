@@ -13,14 +13,15 @@
 # limitations under the License.
 
 load("//build/bazel/rules:sh_binary.bzl", "sh_binary")
-load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo", "android_app_certificate")
+load("//build/bazel/rules/android:android_app_certificate.bzl", "android_app_certificate")
 load("//build/bazel/rules/cc:cc_binary.bzl", "cc_binary")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
 load("//build/bazel/rules/cc:cc_stub_library.bzl", "cc_stub_suite")
+load("//build/bazel/rules:common.bzl", "get_dep_targets")
+load("//build/bazel/rules/test_common:rules.bzl", "expect_failure_test", "target_under_test_exist_test")
 load("//build/bazel/rules:prebuilt_file.bzl", "prebuilt_file")
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load(":apex.bzl", "apex")
 load(":apex_info.bzl", "ApexInfo")
 load(":apex_deps_validation.bzl", "ApexDepsInfo", "apex_dep_infos_to_allowlist_strings")
 load(":apex_test_helpers.bzl", "test_apex")
@@ -489,13 +490,13 @@ def _apex_native_libs_requires_provides_test(ctx):
     target_under_test = analysistest.target_under_test(env)
     asserts.equals(
         env,
-        sorted([t.label for t in ctx.attr.requires_native_libs]),  # expected
-        sorted(target_under_test[ApexInfo].requires_native_libs),  # actual
+        [t.label for t in ctx.attr.requires_native_libs],  # expected
+        target_under_test[ApexInfo].requires_native_libs,  # actual
     )
     asserts.equals(
         env,
-        sorted([t.label for t in ctx.attr.provides_native_libs]),
-        sorted(target_under_test[ApexInfo].provides_native_libs),
+        [t.label for t in ctx.attr.provides_native_libs],
+        target_under_test[ApexInfo].provides_native_libs,
     )
 
     # Compare the argv of the jsonmodify action that updates the apex
@@ -627,7 +628,7 @@ def _test_apex_manifest_dependencies_requires():
             "//build/bazel/rules/apex:android-non_apex": [name + "_libfoo"],
         }),
         tags = ["manual"],
-        has_stubs = True,
+        stubs_symbol_file = name + "_lib_with_dep" + ".map.txt",
     )
 
     native.genrule(
@@ -650,7 +651,7 @@ def _test_apex_manifest_dependencies_requires():
         system_dynamic_deps = [],
         stl = "none",
         tags = ["manual"],
-        has_stubs = False,
+        stubs_symbol_file = name + "_libfoo" + ".map.txt",
     )
 
     native.genrule(
@@ -693,7 +694,7 @@ def _test_apex_manifest_dependencies_provides():
         system_dynamic_deps = [],
         stl = "none",
         tags = ["manual"],
-        has_stubs = True,
+        stubs_symbol_file = name + "_libfoo" + ".map.txt",
     )
 
     native.genrule(
@@ -739,7 +740,7 @@ def _test_apex_manifest_dependencies_selfcontained():
             "//build/bazel/rules/apex:android-non_apex": [name + "_libfoo"],
         }),
         tags = ["manual"],
-        has_stubs = True,
+        stubs_symbol_file = name + "_lib_with_dep" + ".map.txt",
     )
 
     native.genrule(
@@ -762,7 +763,7 @@ def _test_apex_manifest_dependencies_selfcontained():
         system_dynamic_deps = [],
         stl = "none",
         tags = ["manual"],
-        has_stubs = True,
+        stubs_symbol_file = name + "_libfoo" + ".map.txt",
     )
 
     native.genrule(
@@ -838,7 +839,7 @@ def _test_apex_manifest_dependencies_cc_binary():
         system_dynamic_deps = [],
         stl = "none",
         tags = ["manual"],
-        has_stubs = True,
+        stubs_symbol_file = name + "_librequires" + ".map.txt",
     )
 
     native.genrule(
@@ -861,7 +862,7 @@ def _test_apex_manifest_dependencies_cc_binary():
         system_dynamic_deps = [],
         stl = "none",
         tags = ["manual"],
-        has_stubs = True,
+        stubs_symbol_file = name + "_librequires2.map.txt",
     )
 
     native.genrule(
@@ -1690,6 +1691,46 @@ def _test_apex_available():
 
     return test_name
 
+def _test_apex_available_failure():
+    name = "apex_available_failure"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+        ],
+    )
+    cc_library_shared(
+        name = name + "_lib2_cc",
+        srcs = [name + "_lib2.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            # anyapex.
+            "apex_available=//apex_available:anyapex",
+        ],
+    )
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [
+            name + "_lib_cc",
+            name + "_lib2_cc",
+        ],
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    expect_failure_test(
+        name = test_name,
+        target_under_test = name,
+        failure_message = "@//build/bazel/rules/apex:apex_available_failure_lib_cc" +
+                          " is a dependency of @//build/bazel/rules/apex:apex_available_failure" +
+                          " apex, but does not include the apex in its apex_available tags: []",
+    )
+    return test_name
+
 def _test_apex_available_with_base_apex():
     name = "apex_available_with_base_apex"
     test_name = name + "_test"
@@ -1860,6 +1901,182 @@ def _test_apex_deps_validation():
 
     return test_name
 
+_MarchInfo = provider(fields = {"march": "list of march values found in the cc deps of this apex"})
+
+def _apex_transition_test(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    march_values = target_under_test[_MarchInfo].march
+
+    asserts.equals(env, ctx.attr.expected, march_values.to_list())
+
+    return analysistest.end(env)
+
+def _cc_compile_test_aspect_impl(target, ctx):
+    transitive_march = []
+    for attr, attr_deps in get_dep_targets(ctx.rule.attr, predicate = lambda target: _MarchInfo in target).items():
+        for dep in attr_deps:
+            transitive_march.append(dep[_MarchInfo].march)
+    march_values = []
+    if (target.label.name).startswith("apex_transition_lib"):
+        for a in target.actions:
+            if a.mnemonic == "CppCompile":
+                march_values += [arg for arg in a.argv if "march" in arg]
+    return [
+        _MarchInfo(
+            march = depset(
+                direct = march_values,
+                transitive = transitive_march,
+            ),
+        ),
+    ]
+
+_cc_compile_test_aspect = aspect(
+    implementation = _cc_compile_test_aspect_impl,
+    attr_aspects = ["*"],
+)
+
+apex_transition_test = analysistest.make(
+    _apex_transition_test,
+    attrs = {
+        "expected": attr.string_list(),
+    },
+    extra_target_under_test_aspects = [_cc_compile_test_aspect],
+)
+
+def _test_apex_transition():
+    name = "apex_transition"
+    test_name = name + "_test"
+
+    cc_library_shared(
+        name = name + "_lib_cc",
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+    )
+
+    cc_library_shared(
+        name = name + "_lib2_cc",
+        srcs = [name + "_lib2.cc"],
+        tags = ["manual"],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_lib_cc"],
+        native_shared_libs_64 = [name + "_lib2_cc"],
+        android_manifest = "AndroidManifest.xml",
+    )
+
+    apex_transition_test(
+        name = test_name + "_32",
+        target_under_test = name,
+        target_compatible_with = ["//build/bazel/platforms/os:android", "//build/bazel/platforms/arch:arm"],
+        expected = ["-march=armv7-a"],
+    )
+
+    apex_transition_test(
+        name = test_name + "_64",
+        target_under_test = name,
+        target_compatible_with = ["//build/bazel/platforms/os:android", "//build/bazel/platforms/arch:arm64"],
+        expected = ["-march=armv8-a"],
+    )
+
+    return [test_name + "_32", test_name + "_64"]
+
+def _test_no_static_linking_for_stubs_lib():
+    name = "no_static_linking_for_stubs_lib"
+    test_name = name + "_test"
+
+    cc_library_static(
+        name = name + "_static_unavailable_to_apex",
+        tags = [
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+    )
+
+    cc_library_shared(
+        name = name + "_shared",
+        deps = [name + "_static_unavailable_to_apex"],
+        tags = [
+            "apex_available=" + name,
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_shared"],
+    )
+
+    expect_failure_test(
+        name = test_name,
+        target_under_test = name,
+        failure_message = "@//build/bazel/rules/apex:no_static_linking_for_stubs_lib_static_unavailable_to_apex is " +
+                          "a dependency of @//build/bazel/rules/apex:no_static_linking_for_stubs_lib apex, " +
+                          "but does not include the apex in its apex_available tags: []",
+    )
+
+    return test_name
+
+def _test_directly_included_stubs_lib_with_indirectly_static_variant():
+    name = "directly_included_stubs_lib_with_indirectly_static_variant"
+    test_name = name + "_test"
+
+    cc_binary(
+        name = name + "bar",
+        deps = [name + "_shared_bp2build_cc_library_static"],
+        tags = [
+            "apex_available=" + name,
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+    )
+
+    cc_library_shared(
+        name = name + "foo",
+        deps = [name + "_shared_bp2build_cc_library_static"],
+        tags = [
+            "apex_available=" + name,
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+    )
+
+    # This target is unavailable to apex but is allowed to be required by
+    # cc_binary bar and cc_library_shared foo because its shared variant
+    # is directly in the apex
+    cc_library_static(
+        name = name + "_shared_bp2build_cc_library_static",
+        tags = [
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+    )
+
+    cc_library_shared(
+        name = name + "_shared",
+        tags = [
+            "apex_available=" + name,
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [name + "_shared", name + "foo"],
+        binaries = [name + "bar"],
+    )
+
+    target_under_test_exist_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
 def apex_test_suite(name):
     native.test_suite(
         name = name,
@@ -1900,7 +2117,10 @@ def apex_test_suite(name):
             _test_apex_java_symbols_used_by_apex(),
             _test_apex_generate_notice_file(),
             _test_apex_available(),
+            _test_apex_available_failure(),
             _test_apex_available_with_base_apex(),
             _test_apex_deps_validation(),
-        ],
+            _test_no_static_linking_for_stubs_lib(),
+            _test_directly_included_stubs_lib_with_indirectly_static_variant(),
+        ] + _test_apex_transition(),
     )

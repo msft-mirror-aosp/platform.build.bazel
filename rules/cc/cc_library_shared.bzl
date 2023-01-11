@@ -81,7 +81,6 @@ def cc_library_shared(
         # TODO(b/202299295): Handle data attribute.
         data = [],
         use_version_lib = False,
-        has_stubs = False,
         stubs_symbol_file = None,
         inject_bssl_hash = False,
         sdk_version = "",
@@ -92,8 +91,15 @@ def cc_library_shared(
         abi_checker_exclude_symbol_tags = [],
         abi_checker_check_all_apis = False,
         abi_checker_diff_flags = [],
+        native_coverage = True,
         tags = [],
         fdo_profile = None,
+        tidy = None,
+        tidy_checks = None,
+        tidy_checks_as_errors = None,
+        tidy_flags = None,
+        tidy_disabled_srcs = None,
+        tidy_timeout_srcs = None,
         **kwargs):
     "Bazel macro to correspond with the cc_library_shared Soong module."
 
@@ -138,16 +144,20 @@ def cc_library_shared(
     linkopts = linkopts + stl_info.linkopts
     copts = copts + stl_info.cppflags
 
-    features = features + select({
-        "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
-        "//conditions:default": [],
-    })
+    extra_archive_deps = []
+    if not native_coverage:
+        features = features + ["-coverage"]
+    else:
+        features = features + select({
+            "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
+            "//conditions:default": [],
+        })
 
-    # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
-    implementation_deps = implementation_deps + select({
-        "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
-        "//conditions:default": [],
-    })
+        # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
+        extra_archive_deps = select({
+            "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
+            "//conditions:default": [],
+        })
 
     # The static library at the root of the shared library.
     # This may be distinct from the static version of the library if e.g.
@@ -180,6 +190,13 @@ def cc_library_shared(
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
+        native_coverage = native_coverage,
+        tidy = tidy,
+        tidy_checks = tidy_checks,
+        tidy_checks_as_errors = tidy_checks_as_errors,
+        tidy_flags = tidy_flags,
+        tidy_disabled_srcs = tidy_disabled_srcs,
+        tidy_timeout_srcs = tidy_timeout_srcs,
     )
 
     sanitizer_deps_name = name + "_sanitizer_deps"
@@ -237,7 +254,7 @@ def cc_library_shared(
         static_deps = ["//:__subpackages__"] + [shared_root_name, imp_deps_stub, deps_stub],
         dynamic_deps = shared_dynamic_deps,
         additional_linker_inputs = additional_linker_inputs,
-        roots = [shared_root_name, imp_deps_stub, deps_stub] + whole_archive_deps,
+        roots = [shared_root_name, imp_deps_stub, deps_stub] + whole_archive_deps + extra_archive_deps,
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -283,10 +300,10 @@ def cc_library_shared(
     # explicitly disabled
     if abi_checker_enabled == False:
         abi_root = None
-    elif abi_checker_enabled == True or has_stubs:
+    elif abi_checker_enabled == True or stubs_symbol_file:
         # The logic comes from here:
         # https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/library.go;l=2288;drc=73feba33308bf9432aea43e069ed24a2f0312f1b
-        if not abi_checker_symbol_file and has_stubs and stubs_symbol_file:
+        if not abi_checker_symbol_file and stubs_symbol_file:
             abi_checker_symbol_file = stubs_symbol_file
     else:
         abi_root = None
@@ -299,7 +316,7 @@ def cc_library_shared(
         shared = stripped_name,
         root = abi_root,
         soname = soname,
-        has_stubs = has_stubs,
+        has_stubs = stubs_symbol_file != None,
         enabled = abi_checker_enabled,
         explicitly_disabled = abi_checker_explicitly_disabled,
         symbol_file = abi_checker_symbol_file,
@@ -319,7 +336,7 @@ def cc_library_shared(
         table_of_contents = toc_name,
         output_file = soname,
         target_compatible_with = target_compatible_with,
-        has_stubs = has_stubs,
+        has_stubs = stubs_symbol_file != None,
         runtime_deps = runtime_deps,
         abi_dump = abi_dump_name,
         fdo_profile = fdo_profile,
