@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//build/bazel/rules/aidl:interface.bzl", "aidl_interface")
 load("//build/bazel/rules:sh_binary.bzl", "sh_binary")
 load("//build/bazel/rules/android:android_app_certificate.bzl", "android_app_certificate")
 load("//build/bazel/rules/cc:cc_binary.bzl", "cc_binary")
@@ -134,11 +135,11 @@ def _test_canned_fs_config_binaries():
             "/ 1000 1000 0755",
             "/apex_manifest.json 1000 1000 0644",
             "/apex_manifest.pb 1000 1000 0644",
-            "/lib{64_OR_BLANK}/libc++.so 1000 1000 0644",
+            "/bin 0 2000 0755",
             "/bin/bin_cc 0 2000 0755",
             "/bin/bin_sh 0 2000 0755",
-            "/bin 0 2000 0755",
             "/lib{64_OR_BLANK} 0 2000 0755",
+            "/lib{64_OR_BLANK}/libc++.so 1000 1000 0644",
             "",  # ends with a newline
         ],
         target_compatible_with = ["//build/bazel/platforms/os:android"],
@@ -175,9 +176,9 @@ def _test_canned_fs_config_native_shared_libs_arm():
             "/ 1000 1000 0755",
             "/apex_manifest.json 1000 1000 0644",
             "/apex_manifest.pb 1000 1000 0644",
+            "/lib 0 2000 0755",
             "/lib/apex_canned_fs_config_native_shared_libs_arm_lib_cc.so 1000 1000 0644",
             "/lib/libc++.so 1000 1000 0644",
-            "/lib 0 2000 0755",
             "",  # ends with a newline
         ],
         target_compatible_with = ["//build/bazel/platforms/arch:arm"],
@@ -214,12 +215,12 @@ def _test_canned_fs_config_native_shared_libs_arm64():
             "/ 1000 1000 0755",
             "/apex_manifest.json 1000 1000 0644",
             "/apex_manifest.pb 1000 1000 0644",
+            "/lib 0 2000 0755",
             "/lib/apex_canned_fs_config_native_shared_libs_arm64_lib_cc.so 1000 1000 0644",
             "/lib/libc++.so 1000 1000 0644",
+            "/lib64 0 2000 0755",
             "/lib64/apex_canned_fs_config_native_shared_libs_arm64_lib2_cc.so 1000 1000 0644",
             "/lib64/libc++.so 1000 1000 0644",
-            "/lib 0 2000 0755",
-            "/lib64 0 2000 0755",
             "",  # ends with a newline
         ],
         target_compatible_with = ["//build/bazel/platforms/arch:arm64"],
@@ -269,11 +270,11 @@ def _test_canned_fs_config_prebuilts():
             "/ 1000 1000 0755",
             "/apex_manifest.json 1000 1000 0644",
             "/apex_manifest.pb 1000 1000 0644",
+            "/etc 0 2000 0755",
             "/etc/file 1000 1000 0644",
+            "/etc/nested 0 2000 0755",
             "/etc/nested/nested_file_in_dir 1000 1000 0644",
             "/etc/renamed_file3.txt 1000 1000 0644",
-            "/etc 0 2000 0755",
-            "/etc/nested 0 2000 0755",
             "",  # ends with a newline
         ],
     )
@@ -321,13 +322,13 @@ def _test_canned_fs_config_prebuilts_sort_order():
             "/ 1000 1000 0755",
             "/apex_manifest.json 1000 1000 0644",
             "/apex_manifest.pb 1000 1000 0644",
-            "/etc/a/c/file_a_c 1000 1000 0644",
-            "/etc/a/file_a 1000 1000 0644",
-            "/etc/b/file_b 1000 1000 0644",
             "/etc 0 2000 0755",
             "/etc/a 0 2000 0755",
             "/etc/a/c 0 2000 0755",
+            "/etc/a/c/file_a_c 1000 1000 0644",
+            "/etc/a/file_a 1000 1000 0644",
             "/etc/b 0 2000 0755",
+            "/etc/b/file_b 1000 1000 0644",
             "",  # ends with a newline
         ],
     )
@@ -384,13 +385,13 @@ def _test_canned_fs_config_runtime_deps():
             "/ 1000 1000 0755",
             "/apex_manifest.json 1000 1000 0644",
             "/apex_manifest.pb 1000 1000 0644",
+            "/bin 0 2000 0755",
+            "/bin/%s_bin_cc 0 2000 0755" % name,
+            "/lib{64_OR_BLANK} 0 2000 0755",
             "/lib{64_OR_BLANK}/%s_runtime_dep_1.so 1000 1000 0644" % name,
             "/lib{64_OR_BLANK}/%s_runtime_dep_2.so 1000 1000 0644" % name,
             "/lib{64_OR_BLANK}/%s_runtime_dep_3.so 1000 1000 0644" % name,
             "/lib{64_OR_BLANK}/libc++.so 1000 1000 0644",
-            "/bin/%s_bin_cc 0 2000 0755" % name,
-            "/bin 0 2000 0755",
-            "/lib{64_OR_BLANK} 0 2000 0755",
             "",  # ends with a newline
         ],
         target_compatible_with = ["//build/bazel/platforms/os:android"],
@@ -1812,6 +1813,22 @@ def _test_apex_deps_validation():
     name = "apex_deps_validation"
     test_name = name + "_test"
 
+    aidl_interface_name = name + "_aidl_interface"
+    aidl_interface(
+        name = aidl_interface_name,
+        ndk_config = {
+            "enabled": True,
+            "min_sdk_version": "28",
+        },
+        srcs = ["Foo.aidl"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=" + name,
+            "apex_available=//apex_available:platform",
+        ],
+    )
+
     specific_apex_available_name = name + "_specific_apex_available"
     cc_library_shared(
         name = specific_apex_available_name,
@@ -1829,6 +1846,7 @@ def _test_apex_deps_validation():
     cc_library_shared(
         name = any_apex_available_name,
         srcs = [name + "_lib.cc"],
+        implementation_dynamic_deps = [aidl_interface_name + "-V1-ndk"],
         tags = [
             "manual",
             "apex_available_checked_manual_for_testing",
@@ -1895,6 +1913,8 @@ def _test_apex_deps_validation():
             specific_apex_available_name + "(minSdkVersion:30)",
             any_apex_available_name + "(minSdkVersion:30)",
             platform_available_but_dep_with_no_platform_available_name + "(minSdkVersion:30)",
+            aidl_interface_name + "-V1-ndk(minSdkVersion:28)",
+            "jni_headers(minSdkVersion:29)",
         ],
         tags = ["manual"],
     )
