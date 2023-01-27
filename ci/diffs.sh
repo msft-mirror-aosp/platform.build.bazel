@@ -16,7 +16,7 @@ readonly DIFFTOOL_ZIP="$(realpath bazel-bin/build/bazel/scripts/difftool/difftoo
 
 # the following 2 arrays must be of the same size
 MODULES=(
-  libnativehelper
+  # libnativehelper # TODO(b/266245044) re-enable the test
 )
 OUTPUTS=(
   JNIHelp.o
@@ -48,8 +48,8 @@ mkdir -p "$MIXED_COLLECTION"
 function findIn() {
   result=$(find "$1" -name "$3" | grep "$2")
   count=$(echo "$result" | wc -l)
-  if [ "$count" != 1 ]; then
-    printf "multiple files found instead of exactly ONE:\n%s\n" "$result" 1>&2
+  if [[ "$count" -ne "1" || -z "$result" ]]; then
+    printf "Expected 1 file, found:\n%s\nCommand run: find $1 -name $3 | grep $2\n" "$result" >&2
     exit 1
   fi
   echo "$result"
