@@ -17,6 +17,11 @@ constraint_value(
 )
 
 constraint_value(
+    name = "riscv64",
+    constraint_setting = "@platforms//cpu:cpu",
+)
+
+constraint_value(
     name = "x86",
     constraint_setting = "@platforms//cpu:cpu",
 )
@@ -25,5 +30,5 @@ constraint_value(
 # correctly with --tool_java_runtime_version=local_jdk and the checked-in JDK.
 alias(
     name = "x86_64",
-    actual = "@platforms//cpu:x86_64"
+    actual = "@platforms//cpu:x86_64",
 )

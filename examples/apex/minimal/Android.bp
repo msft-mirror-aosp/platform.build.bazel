@@ -34,16 +34,50 @@ android_app_certificate {
 }
 
 filegroup {
-  name: "build.bazel.examples.apex.minimal-file_contexts",
-  srcs: [
-    "file_contexts",
-  ],
+    name: "build.bazel.examples.apex.minimal-file_contexts",
+    srcs: [
+        "file_contexts",
+    ],
 }
 
 cc_library {
     name: "build.bazel.examples.apex.minimal_dummy_cc_lib",
 
     srcs: ["dummy_cc_lib.cc"],
+
+    apex_available: [
+        "build.bazel.examples.apex.minimal",
+        "build.bazel.examples.apex.minimal_compressed",
+    ],
+
+    // Because the APEX sets this
+    product_specific: true,
+
+    // Because the APEX sets this
+    min_sdk_version: "30",
+}
+
+cc_library {
+    name: "build.bazel.examples.apex.minimal_dummy_cc_lib_2",
+
+    srcs: ["dummy_cc_lib_2.cc"],
+
+    apex_available: [
+        "build.bazel.examples.apex.minimal",
+        "build.bazel.examples.apex.minimal_compressed",
+    ],
+
+    // Because the APEX sets this
+    product_specific: true,
+
+    // Because the APEX sets this
+    min_sdk_version: "30",
+}
+
+cc_library {
+    name: "build.bazel.examples.apex.minimal_dummy_cc_lib_3",
+
+    srcs: ["dummy_cc_lib_3.cc"],
 
     apex_available: [
         "build.bazel.examples.apex.minimal",
@@ -81,8 +115,11 @@ cc_binary {
 
     apex_available: [
         "build.bazel.examples.apex.minimal",
-        "build.bazel.examples.apex.minimal_compressed"
+        "build.bazel.examples.apex.minimal_compressed",
     ],
+
+    shared_libs: ["build.bazel.examples.apex.minimal_dummy_cc_lib_2"],
+    runtime_libs: ["build.bazel.examples.apex.minimal_dummy_cc_lib_3"],
 
     // Because the APEX sets these
     product_specific: true,
@@ -101,13 +138,13 @@ apex_defaults {
     min_sdk_version: "30",
 
     native_shared_libs: [
-       "build.bazel.examples.apex.minimal_dummy_cc_lib",
+        "build.bazel.examples.apex.minimal_dummy_cc_lib",
     ],
 
     prebuilts: [
-       "build.bazel.examples.apex.minimal_dummy_named_prebuilt_etc",
-       "build.bazel.examples.apex.minimal_dummy_unnamed_prebuilt_etc",
-       "build.bazel.examples.apex.minimal_dummy_prebuilt_etc_without_subdir",
+        "build.bazel.examples.apex.minimal_dummy_named_prebuilt_etc",
+        "build.bazel.examples.apex.minimal_dummy_unnamed_prebuilt_etc",
+        "build.bazel.examples.apex.minimal_dummy_prebuilt_etc_without_subdir",
     ],
 
     binaries: [
@@ -121,7 +158,14 @@ apex {
     name: "build.bazel.examples.apex.minimal",
     defaults: [
         "build.bazel.examples.apex.minimal_defaults",
-    ]
+    ],
+}
+
+override_apex {
+    name: "build.bazel.examples.apex.override.minimal",
+    base: "build.bazel.examples.apex.minimal",
+    package_name: "build.bazel.examples.apex.override.minimal",
+    logging_parent: "build.bazel.logging.parent",
 }
 
 apex {
@@ -129,5 +173,5 @@ apex {
     compressible: true,
     defaults: [
         "build.bazel.examples.apex.minimal_defaults",
-    ]
+    ],
 }
