@@ -1,8 +1,9 @@
-load("//build/bazel/rules/apex:mainline_modules.bzl", "apex_aab")
+load("//build/bazel/rules/apex:apex_aab.bzl", "apex_aab")
 
 modules = [
     "//build/bazel/examples/apex/minimal:build.bazel.examples.apex.minimal",
 ]
+
 name_label_map = {module[module.index(":") + 1:]: module for module in modules}
 
 [
