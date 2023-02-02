@@ -14,16 +14,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-load("//build/bazel/product_variables:constants.bzl", "constants")
-load(
-    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
-    "CPP_COMPILE_ACTION_NAME",
-    "C_COMPILE_ACTION_NAME",
-)
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
 load("@soong_injection//android:constants.bzl", android_constants = "constants")
+load("//build/bazel/rules:common.bzl", "strip_bp2build_label_suffix")
 
 _bionic_targets = ["//bionic/libc", "//bionic/libdl", "//bionic/libm"]
 _static_bionic_targets = ["//bionic/libc:libc_bp2build_cc_library_static", "//bionic/libdl:libdl_bp2build_cc_library_static", "//bionic/libm:libm_bp2build_cc_library_static"]
@@ -131,11 +126,14 @@ sanitizer_deps = rule(
     },
 )
 
+def sdk_version_feature_from_parsed_version(version):
+    return "sdk_version_" + str(version)
+
 def _create_sdk_version_features_map():
     version_feature_map = {}
     for api in api_levels.values():
-        version_feature_map["//build/bazel/rules/apex:min_sdk_version_" + str(api)] = ["sdk_version_" + str(api)]
-    version_feature_map["//conditions:default"] = ["sdk_version_" + str(future_version)]
+        version_feature_map["//build/bazel/rules/apex:min_sdk_version_" + str(api)] = [sdk_version_feature_from_parsed_version(api)]
+    version_feature_map["//conditions:default"] = [sdk_version_feature_from_parsed_version(future_version)]
 
     return version_feature_map
 
@@ -231,9 +229,9 @@ def is_external_directory(package_name):
 def parse_sdk_version(version):
     if version == "apex_inherit":
         # use the version determined by the transition value.
-        return sdk_version_features + ["sdk_version_apex_inherit"]
+        return sdk_version_features + [sdk_version_feature_from_parsed_version("apex_inherit")]
 
-    return ["sdk_version_" + str(parse_apex_sdk_version(version))]
+    return [sdk_version_feature_from_parsed_version(parse_apex_sdk_version(version))]
 
 def parse_apex_sdk_version(version):
     if version == "" or version == "current":
@@ -376,3 +374,36 @@ def is_bionic_lib(name):
 
 def is_bootstrap_lib(name):
     return name in _bootstrap_libs
+
+CcAndroidMkInfo = provider(
+    "Provides information to be passed to AndroidMk in Soong",
+    fields = {
+        "local_static_libs": "list of target names passed to LOCAL_STATIC_LIBRARIES AndroidMk variable",
+        "local_whole_static_libs": "list of target names passed to LOCAL_WHOLE_STATIC_LIBRARIES AndroidMk variable",
+        "local_shared_libs": "list of target names passed to LOCAL_SHARED_LIBRARIES AndroidMk variable",
+    },
+)
+
+def create_cc_androidmk_provider(*, static_deps, whole_archive_deps, dynamic_deps):
+    # Since this information is provided to Soong for mixed builds,
+    # we are just taking the Soong module name rather than the Bazel
+    # label.
+    # TODO(b/266197834) consider moving this logic to the mixed builds
+    # handler in Soong
+    local_static_libs = [
+        strip_bp2build_label_suffix(d.label.name)
+        for d in static_deps
+    ]
+    local_whole_static_libs = [
+        strip_bp2build_label_suffix(d.label.name)
+        for d in whole_archive_deps
+    ]
+    local_shared_libs = [
+        strip_bp2build_label_suffix(d.label.name)
+        for d in dynamic_deps
+    ]
+    return CcAndroidMkInfo(
+        local_static_libs = local_static_libs,
+        local_whole_static_libs = local_whole_static_libs,
+        local_shared_libs = local_shared_libs,
+    )

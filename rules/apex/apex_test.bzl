@@ -18,12 +18,13 @@ load("//build/bazel/rules/android:android_app_certificate.bzl", "android_app_cer
 load("//build/bazel/rules/cc:cc_binary.bzl", "cc_binary")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
+load("//build/bazel/rules/cc:cc_library_headers.bzl", "cc_library_headers")
 load("//build/bazel/rules/cc:cc_stub_library.bzl", "cc_stub_suite")
 load("//build/bazel/rules:common.bzl", "get_dep_targets")
 load("//build/bazel/rules/test_common:rules.bzl", "expect_failure_test", "target_under_test_exist_test")
 load("//build/bazel/rules:prebuilt_file.bzl", "prebuilt_file")
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load(":apex_info.bzl", "ApexInfo")
+load(":apex_info.bzl", "ApexInfo", "ApexMkInfo")
 load(":apex_deps_validation.bzl", "ApexDepsInfo", "apex_dep_infos_to_allowlist_strings")
 load(":apex_test_helpers.bzl", "test_apex")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
@@ -499,6 +500,11 @@ def _apex_native_libs_requires_provides_test(ctx):
         [t.label for t in ctx.attr.provides_native_libs],
         target_under_test[ApexInfo].provides_native_libs,
     )
+    asserts.equals(
+        env,
+        ctx.attr.make_modules_to_install,
+        target_under_test[ApexMkInfo].make_modules_to_install,
+    )
 
     # Compare the argv of the jsonmodify action that updates the apex
     # manifest with information about provided and required libs.
@@ -526,8 +532,9 @@ def _apex_native_libs_requires_provides_test(ctx):
 apex_native_libs_requires_provides_test = analysistest.make(
     _apex_native_libs_requires_provides_test,
     attrs = {
-        "requires_native_libs": attr.label_list(),
-        "provides_native_libs": attr.label_list(),
+        "requires_native_libs": attr.label_list(doc = "bazel target names of libs required for dynamic linking"),
+        "provides_native_libs": attr.label_list(doc = "bazel target names of libs provided for dynamic linking"),
+        "make_modules_to_install": attr.string_list(doc = "make module names that should be installed to system"),
         "requires_argv": attr.string_list(),
         "provides_argv": attr.string_list(),
     },
@@ -555,6 +562,7 @@ def _test_apex_manifest_dependencies_nodep():
         target_under_test = name,
         requires_native_libs = [],
         provides_native_libs = [],
+        make_modules_to_install = [],
     )
 
     return test_name
@@ -584,6 +592,7 @@ def _test_apex_manifest_dependencies_cc_library_shared_bionic_deps():
             "//bionic/libm",
         ],
         provides_native_libs = [],
+        make_modules_to_install = [],
     )
 
     return test_name
@@ -612,6 +621,7 @@ def _test_apex_manifest_dependencies_cc_binary_bionic_deps():
             "//bionic/libm",
         ],
         provides_native_libs = [],
+        make_modules_to_install = [],
     )
 
     return test_name
@@ -681,6 +691,7 @@ def _test_apex_manifest_dependencies_requires():
         target_under_test = name,
         requires_native_libs = [name + "_libfoo"],
         provides_native_libs = [name + "_lib_with_dep"],
+        make_modules_to_install = [name + "_libfoo"],
         target_compatible_with = ["//build/bazel/platforms/os:android"],
     )
 
@@ -724,6 +735,7 @@ def _test_apex_manifest_dependencies_provides():
         target_under_test = name,
         requires_native_libs = [],
         provides_native_libs = [name + "_libfoo"],
+        make_modules_to_install = [],
     )
 
     return test_name
@@ -802,6 +814,7 @@ def _test_apex_manifest_dependencies_selfcontained():
             name + "_lib_with_dep",
             name + "_libfoo",
         ],
+        make_modules_to_install = [],
         target_compatible_with = ["//build/bazel/platforms/os:android"],
     )
 
@@ -890,6 +903,10 @@ def _test_apex_manifest_dependencies_cc_binary():
         name = test_name,
         target_under_test = name,
         requires_native_libs = [
+            name + "_librequires",
+            name + "_librequires2",
+        ],
+        make_modules_to_install = [
             name + "_librequires",
             name + "_librequires2",
         ],
@@ -1653,10 +1670,35 @@ analysis_success_test = analysistest.make(_analysis_success_test)
 def _test_apex_available():
     name = "apex_available"
     test_name = name + "_test"
+    static_lib_name = name + "_lib_cc_static"
+    lib_headers_name = name + "_lib_cc_headers"
 
+    cc_library_static(
+        name = static_lib_name,
+        srcs = ["src.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            # anyapex.
+            "apex_available=//apex_available:anyapex",
+        ],
+    )
+    cc_library_headers(
+        name = lib_headers_name,
+        absolute_includes = ["include_dir"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+            "apex_available=//apex_available:anyapex",
+        ],
+    )
     cc_library_shared(
         name = name + "_lib_cc",
         srcs = [name + "_lib.cc"],
+        deps = [
+            static_lib_name,
+            lib_headers_name,
+        ],
         tags = [
             "manual",
             "apex_available_checked_manual_for_testing",
@@ -1664,7 +1706,6 @@ def _test_apex_available():
             "apex_available=" + name,
         ],
     )
-
     cc_library_shared(
         name = name + "_lib2_cc",
         srcs = [name + "_lib2.cc"],
@@ -1675,7 +1716,6 @@ def _test_apex_available():
             "apex_available=//apex_available:anyapex",
         ],
     )
-
     test_apex(
         name = name,
         native_shared_libs_32 = [
@@ -1695,10 +1735,32 @@ def _test_apex_available():
 def _test_apex_available_failure():
     name = "apex_available_failure"
     test_name = name + "_test"
+    static_lib_name = name + "_lib_cc_static"
+    lib_headers_name = name + "_lib_cc_headers"
 
+    cc_library_static(
+        name = static_lib_name,
+        srcs = ["src.cc"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+        ],
+    )
+    cc_library_headers(
+        name = lib_headers_name,
+        absolute_includes = ["include_dir"],
+        tags = [
+            "manual",
+            "apex_available_checked_manual_for_testing",
+        ],
+    )
     cc_library_shared(
         name = name + "_lib_cc",
         srcs = [name + "_lib.cc"],
+        deps = [
+            static_lib_name,
+            lib_headers_name,
+        ],
         tags = [
             "manual",
             "apex_available_checked_manual_for_testing",
@@ -1726,9 +1788,11 @@ def _test_apex_available_failure():
     expect_failure_test(
         name = test_name,
         target_under_test = name,
-        failure_message = "@//build/bazel/rules/apex:apex_available_failure_lib_cc" +
-                          " is a dependency of @//build/bazel/rules/apex:apex_available_failure" +
-                          " apex, but does not include the apex in its apex_available tags: []",
+        failure_message = """
+Error in fail: `@//build/bazel/rules/apex:apex_available_failure` apex has transitive dependencies that do not include the apex in their apex_available tags:
+    @//build/bazel/rules/apex:apex_available_failure_lib_cc_static; apex_available tags: []
+    @//build/bazel/rules/apex:apex_available_failure_lib_cc_headers; apex_available tags: []
+    @//build/bazel/rules/apex:apex_available_failure_lib_cc; apex_available tags: []""",
     )
     return test_name
 
@@ -2033,9 +2097,9 @@ def _test_no_static_linking_for_stubs_lib():
     expect_failure_test(
         name = test_name,
         target_under_test = name,
-        failure_message = "@//build/bazel/rules/apex:no_static_linking_for_stubs_lib_static_unavailable_to_apex is " +
-                          "a dependency of @//build/bazel/rules/apex:no_static_linking_for_stubs_lib apex, " +
-                          "but does not include the apex in its apex_available tags: []",
+        failure_message = """
+Error in fail: `@//build/bazel/rules/apex:no_static_linking_for_stubs_lib` apex has transitive dependencies that do not include the apex in their apex_available tags:
+    @//build/bazel/rules/apex:no_static_linking_for_stubs_lib_static_unavailable_to_apex; apex_available tags: []""",
     )
 
     return test_name

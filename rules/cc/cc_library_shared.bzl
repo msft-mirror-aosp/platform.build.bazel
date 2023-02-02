@@ -16,9 +16,10 @@ limitations under the License.
 
 load(
     ":cc_library_common.bzl",
+    "CcAndroidMkInfo",
     "add_lists_defaulting_to_none",
+    "create_cc_androidmk_provider",
     "disable_crt_link",
-    "get_sanitizer_lib_info",
     "parse_sdk_version",
     "sanitizer_deps",
     "system_dynamic_deps_defaults",
@@ -186,7 +187,8 @@ def cc_library_shared(
         implementation_dynamic_deps = implementation_dynamic_deps + stl_info.shared_deps,
         implementation_whole_archive_deps = implementation_whole_archive_deps,
         system_dynamic_deps = system_dynamic_deps,
-        deps = deps + whole_archive_deps,
+        deps = deps,
+        whole_archive_deps = whole_archive_deps + extra_archive_deps,
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -254,7 +256,7 @@ def cc_library_shared(
         static_deps = ["//:__subpackages__"] + [shared_root_name, imp_deps_stub, deps_stub],
         dynamic_deps = shared_dynamic_deps,
         additional_linker_inputs = additional_linker_inputs,
-        roots = [shared_root_name, imp_deps_stub, deps_stub] + whole_archive_deps + extra_archive_deps,
+        roots = [shared_root_name, imp_deps_stub, deps_stub],
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -455,6 +457,7 @@ def _cc_library_shared_proxy_impl(ctx):
         # as cc_shared_library identifies which libraries can be linked dynamically based on the
         # linker_inputs of the roots
         ctx.attr.deps[0][CcInfo],
+        ctx.attr.deps[0][CcAndroidMkInfo],
         CcStubLibrariesInfo(has_stubs = ctx.attr.has_stubs),
         ctx.attr.shared[0][OutputGroupInfo],
         CcSharedLibraryOutputInfo(output_file = ctx.outputs.output_file),
@@ -492,7 +495,23 @@ _cc_library_shared_proxy = rule(
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
+        "androidmk_static_deps": attr.label_list(
+            providers = [CcInfo],
+            doc = "All the whole archive deps of the lib. This is used to propagate" +
+                  " information to AndroidMk about LOCAL_STATIC_LIBRARIES.",
+        ),
+        "androidmk_whole_archive_deps": attr.label_list(
+            providers = [CcInfo],
+            doc = "All the whole archive deps of the lib. This is used to propagate" +
+                  " information to AndroidMk about LOCAL_WHOLE_STATIC_LIBRARIES.",
+        ),
+        "androidmk_dynamic_deps": attr.label_list(
+            providers = [CcInfo],
+            doc = "All the dynamic deps of the lib. This is used to propagate" +
+                  " information to AndroidMk about LOCAL_SHARED_LIBRARIES.",
+        ),
     },
+    provides = [CcAndroidMkInfo],
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
