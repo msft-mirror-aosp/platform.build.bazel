@@ -1,10 +1,10 @@
-"""A repository rule similar to new_local_repository, but allows to ignore certain files.
+"""Custom repository rules.
 
 Requires bazel 6.0.0+ due to usage of repository_ctx.workspace_root
 """
 
 def _default_workspace_file_content(name):
-    return """# DO NOT EDIT: automatically generated WORKSPACE file for selective_local_repository rule
+    return """# DO NOT EDIT: automatically generated WORKSPACE file
 workspace(name = \"{name}\")
 """.format(name = name)
 
