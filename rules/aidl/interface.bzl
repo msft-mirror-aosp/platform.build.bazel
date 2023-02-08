@@ -26,13 +26,24 @@ NDK = "ndk"
 #TODO(b/246803961) Add support for rust backend
 
 def _check_versions(versions):
-    versions = sorted([int(i) for i in versions])  # ensure that all versions are ints
-    for i, v in enumerate(versions):
-        if i > 0 and v == versions[i - 1]:
-            fail("duplicate version found:", v)
+    sorted_versions = sorted([int(i) for i in versions])  # ensure that all versions are ints
+
+    for i, v in enumerate(sorted_versions):
+        if i > 0:
+            if v == sorted_versions[i - 1]:
+                fail("duplicate version found:", v)
+            if v < sorted_versions[i - 1]:
+                fail("versions should be sorted")
         if v <= 0:
             fail("all versions should be > 0, but found version:", v)
-    return [str(i) for i in versions]
+    return [str(i) for i in sorted_versions]
+
+def _check_versions_with_info(versions_with_info):
+    for version_with_info in versions_with_info:
+        for dep in version_with_info.get("deps", []):
+            parts = dep.split("-V")
+            if len(parts) < 2 or not parts[-1].isdigit():
+                fail("deps in versions_with_info must specify its version, but", dep)
 
 def _create_latest_version_aliases(name, last_version_name, backend_configs, **kwargs):
     latest_name = name + "-latest"
@@ -128,14 +139,19 @@ def aidl_interface(
     if is_config_enabled(ndk_config):
         enabled_backend_configs[NDK] = ndk_config
 
-    # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=329;drc=e88d9a9b14eafb064a234d555a5cd96de97ca9e2
-    # only vintf is allowed currently
-    if stability != None and stability in ["vintf"]:
-        aidl_flags.append("--stability=" + stability)
+    if stability != None:
+        if unstable == True:
+            fail("stability must be unset when unstable is true")
+        if stability == "vintf":
+            aidl_flags.append("--stability=" + stability)
 
-        # TODO(b/245738285): Add support for vintf stability in java backend
-        if JAVA in enabled_backend_configs:
-            enabled_backend_configs.pop(JAVA)
+            # TODO(b/245738285): Add support for vintf stability in java backend
+            if JAVA in enabled_backend_configs:
+                enabled_backend_configs.pop(JAVA)
+        else:
+            # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=329;drc=e88d9a9b14eafb064a234d555a5cd96de97ca9e2
+            # only vintf is allowed currently
+            fail("stability must be unset or \"vintf\"")
 
     # next_version will be the last specified version + 1.
     # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=791?q=system%2Ftools%2Faidl%2Fbuild%2Faidl_interface.go
@@ -147,6 +163,7 @@ def aidl_interface(
             version_with_info["version"]
             for version_with_info in versions_with_info
         ])
+        _check_versions_with_info(versions_with_info)
         next_version = _next_version(versions, False)
         for version_with_info in versions_with_info:
             create_aidl_binding_for_backends(
@@ -322,21 +339,32 @@ def _cc_aidl_libraries(
         **kwargs
     )
 
-    cc_library_shared(
-        name = name,
+    if hasattr(kwargs, "tidy_checks_as_errors"):
+        fail("tidy_checks_as_errors cannot be overriden for aidl_interface cc_libraries")
+    tidy_checks_as_errors = [
+        "*",
+        "-clang-analyzer-deadcode.DeadStores",  # b/253079031
+        "-clang-analyzer-cplusplus.NewDeleteLeaks",  # b/253079031
+        "-clang-analyzer-optin.performance.Padding",  # b/253079031
+    ]
+
+    shared_arguments_with_kwargs = dict(
+        kwargs,
         srcs = [":" + aidl_code_gen],
         implementation_deps = implementation_deps,
         deps = [aidl_code_gen],
         dynamic_deps = dynamic_deps,
         min_sdk_version = min_sdk_version,
-        **kwargs
+        tidy = True,
+        tidy_checks_as_errors = tidy_checks_as_errors,
+        tidy_gen_header_filter = True,
+    )
+
+    cc_library_shared(
+        name = name,
+        **shared_arguments_with_kwargs
     )
     cc_library_static(
         name = name + "_bp2build_cc_library_static",
-        srcs = [":" + aidl_code_gen],
-        implementation_deps = implementation_deps,
-        deps = [aidl_code_gen],
-        dynamic_deps = dynamic_deps,
-        min_sdk_version = min_sdk_version,
-        **kwargs
+        **shared_arguments_with_kwargs
     )
