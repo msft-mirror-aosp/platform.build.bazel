@@ -28,6 +28,7 @@ _CAPTURED_ENV_VARS = [
     "USE_CCACHE",
     "LLVM_NEXT",
     "ALLOW_UNKNOWN_WARNING_OPTION",
+    "TARGET_PAGE_SIZE",
 
     # Overrides the version in the apex_manifest.json. The version is unique for
     # each branch (internal, aosp, mainline releases, dessert releases).  This

@@ -23,3 +23,16 @@ def is_env_true(value):
         if the value is truthy
     """
     return value != None and value.lower() in ["1", "y", "yes", "on", "true"]
+
+def get_default_page_size(value):
+    """return the default page size
+
+    Args:
+        value (str): the environment variable value to test
+    Returns:
+        4096 as the default page size if value is None
+    """
+    if value != None:
+        return value
+
+    return 4096
