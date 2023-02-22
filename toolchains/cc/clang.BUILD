@@ -7,7 +7,7 @@ load(
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
 # The clang path definition for each platform
-CLANG_LINUX_X64 = "linux-x86/clang-r450784d"
+CLANG_LINUX_X64 = "linux-x86/clang-r487747"
 
 target_linux_x64 = ":" + CLANG_LINUX_X64
 
@@ -61,7 +61,7 @@ cc_toolchain_import(
     hdrs = glob(
         [
             CLANG_LINUX_X64 + "/include/c++/v1/**",
-            CLANG_LINUX_X64 + "/lib64/clang/14.0.6/include/**",
+            CLANG_LINUX_X64 + "/lib64/clang/17/include/**",
         ],
         allow_empty = False,
     ),
@@ -71,7 +71,7 @@ cc_toolchain_import(
     ],
     include_paths = [
         target_linux_x64 + "/include/c++/v1",
-        target_linux_x64 + "/lib64/clang/14.0.6/include",
+        target_linux_x64 + "/lib64/clang/17/include",
     ],
     is_runtime_lib = True,
     static_mode_libs = [

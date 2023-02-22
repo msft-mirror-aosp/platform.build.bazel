@@ -12,10 +12,10 @@ gcc_target = ":" + GCC
 cc_toolchain_import(
     name = "start_libs",
     dynamic_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/crt1.o",
+        gcc_target + "/sysroot/usr/lib/Scrt1.o",
         gcc_target + "/sysroot/usr/lib/crti.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbegin.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtend.o",
+        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
+        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtendS.o",
         gcc_target + "/sysroot/usr/lib/crtn.o",
     ],
     so_linked_objects = [
@@ -25,10 +25,10 @@ cc_toolchain_import(
         gcc_target + "/sysroot/usr/lib/crtn.o",
     ],
     static_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/crt1.o",
+        gcc_target + "/sysroot/usr/lib/Scrt1.o",
         gcc_target + "/sysroot/usr/lib/crti.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbegin.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtend.o",
+        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
+        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtendS.o",
         gcc_target + "/sysroot/usr/lib/crtn.o",
     ],
 )

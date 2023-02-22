@@ -22,6 +22,7 @@ cc_toolchain_config(
     identifier = "linux_clang_x64",
     link_flags = [
         "-fuse-ld=lld",
+        "-Wno-unused-command-line-argument",
     ],
     toolchain_imports = [
         "@clang//:linux_x64_libcxx",
