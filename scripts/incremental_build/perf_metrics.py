@@ -206,7 +206,10 @@ def _get_column_headers(rows: list[Row], allow_cycles: bool) -> list[str]:
 
 def get_build_info_and_perf(d: Path) -> dict[str, any]:
   perf = read_pbs(d)
-  with open(d.joinpath(util.BUILD_INFO_JSON), 'r') as f:
+  build_info_json = d.joinpath(util.BUILD_INFO_JSON)
+  if not build_info_json.exists():
+    return perf
+  with open(build_info_json, 'r') as f:
     build_info = json.load(f)
     return build_info | perf
 
@@ -249,7 +252,7 @@ def main():
     formatter_class=argparse.RawTextHelpFormatter,
     description='read archived perf metrics from [LOG_DIR] and '
                 f'summarize them into {util.SUMMARY_CSV}')
-  default_log_dir = util.get_out_dir().joinpath(util.DEFAULT_TIMING_LOGS_DIR)
+  default_log_dir = util.get_default_log_dir()
   p.add_argument('-l', '--log-dir', type=Path, default=default_log_dir,
                  help=textwrap.dedent('''
                  Directory for timing logs. Defaults to %(default)s
@@ -261,7 +264,8 @@ def main():
   options = p.parse_args()
 
   if options.add_manual_build:
-    build_info = {'build_type': 'MANUAL', 'description': options.description}
+    build_info = {'build_type': 'MANUAL',
+                  'description': options.add_manual_build}
     run_dir = next(util.next_path(options.log_dir.joinpath('run')))
     run_dir.mkdir(parents=True, exist_ok=False)
     archive_run(run_dir, build_info)
