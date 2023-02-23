@@ -19,6 +19,7 @@ load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCerti
 load("//build/bazel/rules/apex:cc.bzl", "ApexCcInfo", "ApexCcMkInfo", "apex_cc_aspect")
 load("//build/bazel/rules/apex:transition.bzl", "apex_transition", "shared_lib_transition_32", "shared_lib_transition_64")
 load("//build/bazel/rules/cc:stripped_cc_common.bzl", "StrippedCcBinaryInfo")
+load("//build/bazel/rules/cc:clang_tidy.bzl", "collect_deps_clang_tidy_info")
 load("//build/bazel/rules:prebuilt_file.bzl", "PrebuiltFileInfo")
 load("//build/bazel/rules:sh_binary.bzl", "ShBinaryInfo")
 load("//build/bazel/rules:toolchain_utils.bzl", "verify_toolchain_exists")
@@ -36,7 +37,6 @@ load(":apex_key.bzl", "ApexKeyInfo")
 load(":apex_info.bzl", "ApexInfo", "ApexMkInfo")
 load(":bundle.bzl", "apex_zip_files")
 load(":apex_deps_validation.bzl", "ApexDepsInfo", "apex_deps_validation_aspect", "validate_apex_deps")
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@soong_injection//apex_toolchain:constants.bzl", "default_manifest_version")
@@ -369,7 +369,6 @@ def _run_apexer(ctx, apex_toolchain):
     args.add_all(["--key", privkey.path])
     args.add_all(["--pubkey", pubkey.path])
     args.add_all(["--payload_type", "image"])
-    args.add_all(["--target_sdk_version", "10000"])
     args.add_all(["--payload_fs_type", "ext4"])
     args.add_all(["--assets_dir", notices_file.dirname])
 
@@ -380,12 +379,18 @@ def _run_apexer(ctx, apex_toolchain):
     if ctx.attr.logging_parent:
         args.add_all(["--logging_parent", ctx.attr.logging_parent])
 
+    # TODO(b/243393960): Support API fingerprinting for APEXes for pre-release SDKs.
+    # TODO(b/269574334): target_sdk_version should be the default Platform SDK version of the branch.
+    args.add_all(["--target_sdk_version", "10000"])
+
     # TODO(b/215339575): This is a super rudimentary way to convert "current" to a numerical number.
     # Generalize this to API level handling logic in a separate Starlark utility, preferably using
     # API level maps dumped from api_levels.go
     min_sdk_version = ctx.attr.min_sdk_version
     if min_sdk_version == "current":
         min_sdk_version = "10000"
+
+    # TODO(b/243393960): Support API fingerprinting for APEXes for pre-release SDKs.
     args.add_all(["--min_sdk_version", min_sdk_version])
 
     # apexer needs the list of directories containing all auxilliary tools invoked during
@@ -671,6 +676,7 @@ def _apex_rule_impl(ctx):
         ),
         ApexDepsInfo(transitive_deps = transitive_apex_deps),
         ApexMkInfo(make_modules_to_install = apexer_outputs.make_modules_to_install),
+        collect_deps_clang_tidy_info(ctx),
     ]
 
 # These are the standard aspects that should be applied on all edges that

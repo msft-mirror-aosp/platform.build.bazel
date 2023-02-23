@@ -34,6 +34,7 @@ import cuj_catalog
 import perf_metrics
 import ui
 import util
+import pretty
 
 MAX_RUN_COUNT: Final[int] = 5
 
@@ -92,6 +93,8 @@ def _build(user_input: ui.UserInput, logfile: Path) -> (int, dict[str, any]):
   ninja_log_file = util.get_out_dir().joinpath('.ninja_log')
 
   def get_action_count() -> int:
+    if not ninja_log_file.exists():
+      return 0
     with open(ninja_log_file, 'r') as ninja_log:
       # subtracting 1 to account for "# ninja log v5" in the first line
       return sum(1 for _ in ninja_log) - 1
@@ -108,11 +111,9 @@ def _build(user_input: ui.UserInput, logfile: Path) -> (int, dict[str, any]):
       stdout=f, stderr=f)
 
   with open(logfile, mode='w') as f:
-    if ninja_log_file.exists():
+    action_count_before = get_action_count()
+    if action_count_before > 0:
       recompact_ninja_log()
-      action_count_before = get_action_count()
-    else:
-      action_count_before = 0
     f.write(f'Command: {cmd}\n')
     f.write(f'Environment Variables:\n{textwrap.indent(env_str, "  ")}\n\n\n')
     f.flush()
@@ -147,7 +148,7 @@ def main():
         time rebuild
         collect metrics
   """
-  user_input = ui.handle_user_input()
+  user_input = ui.get_user_input()
 
   logging.warning(textwrap.dedent('''
   If you kill this process, make sure to revert unwanted changes.
@@ -158,18 +159,18 @@ def main():
   '''))
 
   run_dir_gen = util.next_path(user_input.log_dir.joinpath(util.RUN_DIR_PREFIX))
-  clean = not util.get_out_dir().joinpath('soong/bootstrap.ninja').exists()
   for counter, cuj_index in enumerate(user_input.chosen_cujgroups):
     cujgroup = cuj_catalog.get_cujgroups()[cuj_index]
-    logging.info('START %s [%d out of %d]', cujgroup.description, counter + 1,
+    logging.info('START %s [%d out of %d]\n', cujgroup.description, counter + 1,
                  len(user_input.chosen_cujgroups))
     for cujstep in cujgroup.steps:
       desc = f'{cujstep.verb} {cujgroup.description}'
       logging.info('START %s', desc)
-      cujstep.action()
+      cujstep.apply_change()
       run = 0
       while True:
-        # build
+        is_clean = not util.get_out_dir().joinpath(
+          'soong/bootstrap.ninja').exists()
         d = next(run_dir_gen)
         d.mkdir(parents=True, exist_ok=False)
         (exit_code, build_info) = _build(user_input, d.joinpath('output.txt'))
@@ -178,7 +179,7 @@ def main():
           build_result = cuj_catalog.BuildResult.FAILED.name
         else:
           try:
-            cujstep.verify(user_input)
+            cujstep.verify()
             build_result = cuj_catalog.BuildResult.SUCCESS.name
           except Exception as e:
             logging.error(e)
@@ -192,9 +193,8 @@ def main():
                      } | build_info
         logging.info('%s after %s: %s',
                      build_info["build_result"], build_info["time"], log_desc)
-        if clean:
+        if is_clean:
           build_info['build_type'] = 'CLEAN ' + build_info['build_type']
-          clean = False  # we don't clean subsequently
 
         perf_metrics.archive_run(d, build_info)
         if util.is_ninja_dry_run() or run > MAX_RUN_COUNT or build_info[
@@ -202,10 +202,11 @@ def main():
           # dry run or build has stabilized
           break
         run += 1
-      logging.info(' DONE %s', desc)
+      logging.info(' DONE %s\n', desc)
 
   perf_metrics.write_summary_csv(user_input.log_dir)
   perf_metrics.show_summary(user_input.log_dir)
+  pretty.pretty(str(user_input.log_dir.joinpath(util.SUMMARY_CSV)), True)
 
 
 if __name__ == '__main__':

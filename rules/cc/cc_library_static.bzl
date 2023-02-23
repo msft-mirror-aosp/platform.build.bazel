@@ -29,12 +29,12 @@ load(
     "system_dynamic_deps_defaults",
 )
 load(":stl.bzl", "stl_info_from_attr")
-load(":clang_tidy.bzl", "ClangTidyInfo", "generate_clang_tidy_actions")
+load(":clang_tidy.bzl", "ClangTidyInfo", "clang_tidy_for_dir", "generate_clang_tidy_actions")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("//build/bazel/rules:common.bzl", "get_dep_targets")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 
 CcStaticLibraryInfo = provider(fields = ["root_static_archive", "objects"])
 
@@ -55,7 +55,6 @@ def cc_library_static(
         absolute_includes = [],
         hdrs = [],
         native_bridge_supported = False,  # TODO: not supported yet.
-        use_libcrt = True,
         rtti = False,
         stl = "",
         cpp_std = "",
@@ -113,8 +112,6 @@ def cc_library_static(
 
     if rtti:
         toolchain_features += ["rtti"]
-    if not use_libcrt:
-        toolchain_features += ["use_libcrt"]
     if cpp_std:
         toolchain_features += [cpp_std, "-cpp_std_default"]
     if c_std:
@@ -249,12 +246,7 @@ def cc_library_static(
         tidy_gen_header_filter = tidy_gen_header_filter,
     )
 
-def _generate_tidy_actions(ctx):
-    with_tidy = ctx.attr._with_tidy[BuildSettingInfo].value
-    allow_local_tidy_true = ctx.attr._allow_local_tidy_true[BuildSettingInfo].value
-    if not with_tidy and not (allow_local_tidy_true and ctx.attr.tidy):
-        return []
-
+def _generate_tidy_files(ctx):
     disabled_srcs = [] + ctx.files.tidy_disabled_srcs
     tidy_timeout = ctx.attr._tidy_timeout[BuildSettingInfo].value
     if tidy_timeout != "":
@@ -302,14 +294,38 @@ def _generate_tidy_actions(ctx):
         ctx.attr.tidy_checks_as_errors,
         tidy_timeout,
     )
+    return cpp_tidy_outs + c_tidy_outs
 
-    tidy_files = depset(cpp_tidy_outs + c_tidy_outs)
+def _generate_tidy_actions(ctx):
+    transitive_tidy_files = []
+    for ts in get_dep_targets(ctx.attr, predicate = lambda t: ClangTidyInfo in t).values():
+        for t in ts:
+            transitive_tidy_files.append(t[ClangTidyInfo].transitive_tidy_files)
+
+    with_tidy = ctx.attr._with_tidy[BuildSettingInfo].value
+    allow_local_tidy_true = ctx.attr._allow_local_tidy_true[BuildSettingInfo].value
+    tidy_external_vendor = ctx.attr._tidy_external_vendor[BuildSettingInfo].value
+    tidy_enabled = with_tidy or (allow_local_tidy_true and ctx.attr.tidy)
+    should_run_for_current_package = clang_tidy_for_dir(tidy_external_vendor, ctx.label.package)
+    if tidy_enabled and should_run_for_current_package:
+        direct_tidy_files = _generate_tidy_files(ctx)
+    else:
+        direct_tidy_files = None
+
+    tidy_files = depset(
+        direct = direct_tidy_files,
+    )
+    transitive_tidy_files = depset(
+        direct = direct_tidy_files,
+        transitive = transitive_tidy_files,
+    )
     return [
         OutputGroupInfo(
             _validation = tidy_files,
         ),
         ClangTidyInfo(
             tidy_files = tidy_files,
+            transitive_tidy_files = transitive_tidy_files,
         ),
     ]
 
@@ -567,6 +583,9 @@ _cc_library_combiner = rule(
         ),
         "_tidy_timeout": attr.label(
             default = "//build/bazel/flags/cc/tidy:tidy_timeout",
+        ),
+        "_tidy_external_vendor": attr.label(
+            default = "//build/bazel/flags/cc/tidy:tidy_external_vendor",
         ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
