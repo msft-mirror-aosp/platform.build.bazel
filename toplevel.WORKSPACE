@@ -1,5 +1,5 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//build/bazel/rules:selective_local_repository.bzl", "selective_local_repository")
+load("//build/bazel/rules:repository.bzl", "selective_local_repository")
 
 # Skylib provides common utilities for writing bazel rules and functions.
 # For docs see https://github.com/bazelbuild/bazel-skylib/blob/main/README.md
@@ -40,6 +40,12 @@ selective_local_repository(
         "BUILD.bazel",
     ],
     path = "prebuilts/gcc/linux-x86/host",
+)
+
+new_local_repository(
+    name = "boringssl",
+    path = "external/boringssl",
+    build_file = "external/boringssl/BUILD",
 )
 
 # CC toolchains
