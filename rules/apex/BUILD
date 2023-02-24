@@ -1,3 +1,5 @@
+load("@env//:env.bzl", "env")
+load("//build/bazel/flags:common.bzl", "is_env_true")
 load("//build/bazel/product_variables:constants.bzl", "constants")
 load("//build/bazel/rules/apex:toolchain.bzl", "apex_toolchain")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "bool_setting", "string_list_setting", "string_setting")
@@ -5,6 +7,7 @@ load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 load(":apex_test.bzl", "apex_test_suite")
 load(":apex_aab_test.bzl", "apex_aab_test_suite")
 load(":apex_key_test.bzl", "apex_key_test_suite")
+load("@env//:env.bzl", "env")
 
 string_setting(
     name = "apex_name",
@@ -18,10 +21,23 @@ string_setting(
     visibility = ["//visibility:public"],
 )
 
+string_setting(
+    name = "override_apex_manifest_default_version",
+    build_setting_default = env.get("OVERRIDE_APEX_MANIFEST_DEFAULT_VERSION", ""),
+    visibility = ["//visibility:public"],
+)
+
 bool_setting(
-    name = "in_apex",
+    name = "within_apex",
     build_setting_default = False,
     visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "in_apex",
+    flag_values = {
+        ":within_apex": "True",
+    },
 )
 
 config_setting(
@@ -37,7 +53,7 @@ config_setting(
         constants.ArchVariantToConstraints["android"],
     ],
     flag_values = {
-        ":in_apex": "True",
+        ":within_apex": "True",
     },
 )
 
@@ -47,7 +63,7 @@ config_setting(
         constants.ArchVariantToConstraints["android"],
     ],
     flag_values = {
-        ":in_apex": "False",
+        ":within_apex": "False",
     },
 )
 
@@ -57,7 +73,7 @@ config_setting(
         constants.ArchVariantToConstraints["linux_bionic"],
     ],
     flag_values = {
-        ":in_apex": "True",
+        ":within_apex": "True",
     },
 )
 
@@ -67,7 +83,7 @@ config_setting(
         constants.ArchVariantToConstraints["linux_bionic"],
     ],
     flag_values = {
-        ":in_apex": "False",
+        ":within_apex": "False",
     },
 )
 
@@ -98,6 +114,12 @@ string_setting(
     )
     for api in api_levels.values()
 ]
+
+bool_flag(
+    name = "unsafe_disable_apex_allowed_deps_check",
+    build_setting_default = is_env_true(env.get("UNSAFE_DISABLE_APEX_ALLOWED_DEPS_CHECK")),
+    visibility = ["//visibility:public"],
+)
 
 toolchain_type(name = "apex_toolchain_type")
 

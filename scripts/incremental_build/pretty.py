@@ -13,21 +13,32 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import argparse
 import csv
 import functools
+import re
 import statistics
 import sys
 from decimal import Decimal
 from typing import Callable
 
-NA = "--:--"
+from typing.io import TextIO
+
+import util
+
+NA = "   --:--"
 
 
 def mark_if_clean(line: dict) -> dict:
   if line['build_type'].startswith("CLEAN "):
     line["description"] = "CLEAN " + line["description"]
     line["build_type"] = line["build_type"].replace("CLEAN ", "", 1)
+  return line
+
+
+def normalize_rebuild(line: dict) -> dict:
+  line['description'] = re.sub(r'^(rebuild)-[\d+](.*)$', '\\1\\2',
+                               line['description'])
   return line
 
 
@@ -55,7 +66,7 @@ def pretty_time(t_secs: Decimal) -> str:
   return f'{as_str:>8s}'
 
 
-def write_table(out, rows):
+def write_table(out: TextIO, rows: list[list[str]]):
   def cell_width(prev, row):
     for i in range(len(row)):
       if len(prev) <= i:
@@ -63,15 +74,22 @@ def write_table(out, rows):
       prev[i] = max(prev[i], len(str(row[i])))
     return prev
 
-  separators = ["-" * len(cell) for cell in rows[0]]
-  rows.insert(1, separators)
   widths = functools.reduce(cell_width, rows, [])
   fmt = "  ".join([f"%-{width}s" for width in widths]) + "\n"
-  for r in rows:
+
+  def draw_separator():
+    table_width: int = functools.reduce(lambda a, b: a + b + 2, widths)
+    out.write("—" * table_width + "\n")
+
+  draw_separator()
+  out.write(fmt % tuple(str(header) for header in rows[0]))
+  draw_separator()
+  for r in rows[1:]:
     out.write(fmt % tuple([str(cell) for cell in r]))
+  draw_separator()
 
 
-def seconds(s, acc=Decimal(0.0)):
+def seconds(s, acc=Decimal(0.0)) -> Decimal:
   colonpos = s.find(':')
   if colonpos > 0:
     left_part = s[0:colonpos]
@@ -84,40 +102,59 @@ def seconds(s, acc=Decimal(0.0)):
     return acc
 
 
-def pretty(filename):
-  with open(filename) as f:
-    lines = [mark_if_clean(line) for line in csv.DictReader(f) if
-             not line['description'].startswith('rebuild-')]
+def _get_build_types(xs: list[dict]) -> list[str]:
+  build_types = []
+  for x in xs:
+    b = x["build_type"]
+    if b not in build_types:
+      build_types.append(b)
+  return build_types
 
-  for line in lines:
+
+def pretty(filename: str, include_rebuilds: bool):
+  with open(filename) as f:
+    csv_lines = [mark_if_clean(normalize_rebuild(line)) for line in
+                 csv.DictReader(f) if
+                 include_rebuilds or not line['description'].startswith(
+                     'rebuild-')]
+
+  lines: list[dict] = []
+  for line in csv_lines:
     if line["build_result"] != "SUCCESS":
       print(f"{line['build_result']}: "
             f"{line['description']} / {line['build_type']}")
+    else:
+      lines.append(line)
+
+  build_types = _get_build_types(lines)
+  headers = ["cuj", "targets"] + build_types
+  rows: list[list[str]] = [headers]
 
   by_cuj = groupby(lines, lambda l: l["description"])
-  by_cuj_by_build_type = {
-      k: groupby(v, lambda l: l["build_type"]) for k, v in
-      by_cuj.items()}
-
-  build_types = []
-  for line in lines:
-    build_type = line["build_type"]
-    if build_type not in build_types:
-      build_types.append(line["build_type"])
-
-  rows = [["cuj", "build command"] + build_types]  # headers
-  for cuj, by_build_type in by_cuj_by_build_type.items():
-    targets = next(iter(by_build_type.values()))[0]["targets"]
-    row = [cuj, f"m {targets}"]
-    for build_type in build_types:
-      lines = by_build_type.get(build_type)
-      times = [seconds(line['time']) for line in lines]
-      median = statistics.median(times)
-      row.append(NA if not lines else pretty_time(median))
-    rows.append(row)
+  for (cuj, cuj_rows) in by_cuj.items():
+    for (targets, target_rows) in groupby(cuj_rows,
+                                          lambda l: l["targets"]).items():
+      row = [cuj, targets]
+      by_build_type = groupby(target_rows, lambda l: l["build_type"])
+      for build_type in build_types:
+        selected_lines = by_build_type.get(build_type)
+        if not selected_lines:
+          row.append(NA)
+        else:
+          times = [seconds(l['time']) for l in selected_lines]
+          cell = pretty_time(statistics.median(times))
+          if len(selected_lines) > 1:
+            cell = f'{cell}[N={len(selected_lines)}]'
+          row.append(cell)
+      rows.append(row)
 
   write_table(sys.stdout, rows)
 
 
 if __name__ == "__main__":
-  pretty(sys.argv[1])
+  p = argparse.ArgumentParser()
+  p.add_argument('--include-rebuilds', default=False, action='store_true')
+  default_summary_file = util.get_default_log_dir().joinpath(util.SUMMARY_CSV)
+  p.add_argument('summary_file', nargs='?', default=default_summary_file)
+  options = p.parse_args()
+  pretty(options.summary_file, options.include_rebuilds)

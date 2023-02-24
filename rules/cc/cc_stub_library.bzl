@@ -13,9 +13,10 @@
 # limitations under the License.
 
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load(":cc_library_common.bzl", "disable_crt_link")
 load(":cc_library_static.bzl", "cc_library_static")
 load(":cc_library_shared.bzl", "CcStubLibrariesInfo")
+load(":fdo_profile_transitions.bzl", "drop_fdo_profile_transition")
+load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
 
 # This file contains the implementation for the cc_stub_library rule.
 #
@@ -109,28 +110,29 @@ def cc_stub_library_shared(name, stubs_symbol_file, version, export_includes, so
     )
 
     # Disable coverage for stub libraries.
-    features = features + ["-coverage"]
+    features = features + ["-coverage", "-link_crt"]
 
     # The static library at the root of the stub shared library.
     cc_library_static(
         name = name + "_root",
         srcs_c = [name + "_files"],  # compile the stub.c file
         copts = ["-fno-builtin"],  # ignore conflicts with builtin function signatures
-        features = disable_crt_link(features) +
-                   [
-                       # Enable the stub library compile flags
-                       "stub_library",
-                       # Disable all include-related features to avoid including any headers
-                       # that may cause conflicting type errors with the symbols in the
-                       # generated stubs source code.
-                       #  e.g.
-                       #  double acos(double); // in header
-                       #  void acos() {} // in the generated source code
-                       # See https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/library.go;l=942-946;drc=d8a72d7dc91b2122b7b10b47b80cf2f7c65f9049
-                       "-toolchain_include_directories",
-                       "-includes",
-                       "-include_paths",
-                   ],
+        features = [
+            # Don't link the C runtime
+            "-link_crt",
+            # Enable the stub library compile flags
+            "stub_library",
+            # Disable all include-related features to avoid including any headers
+            # that may cause conflicting type errors with the symbols in the
+            # generated stubs source code.
+            #  e.g.
+            #  double acos(double); // in header
+            #  void acos() {} // in the generated source code
+            # See https://cs.android.com/android/platform/superproject/+/master:build/soong/cc/library.go;l=942-946;drc=d8a72d7dc91b2122b7b10b47b80cf2f7c65f9049
+            "-toolchain_include_directories",
+            "-includes",
+            "-include_paths",
+        ],
         target_compatible_with = target_compatible_with,
         stl = "none",
         system_dynamic_deps = [],
@@ -158,7 +160,7 @@ def cc_stub_library_shared(name, stubs_symbol_file, version, export_includes, so
         additional_linker_inputs = [stub_map],
         user_link_flags = [soname_flag, version_script_flag],
         roots = [name + "_root"],
-        features = disable_crt_link(features),
+        features = features + ["-link_crt"],
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
     )
@@ -170,6 +172,7 @@ def cc_stub_library_shared(name, stubs_symbol_file, version, export_includes, so
         library_target = name + "_so",
         deps = [name + "_root"],
         source_library = source_library,
+        version = version,
         tags = tags,
     )
 
@@ -180,11 +183,22 @@ def _cc_stub_library_shared_impl(ctx):
     # a label_list attribute named "deps".
     if len(ctx.attr.deps) != 1:
         fail("Exactly one 'deps' must be specified for cc_stub_library_shared")
+
+    api_level = str(_parse_api_level_from_stub_version(ctx.attr.version))
+    version_macro_name = "__" + ctx.attr.source_library.label.name.upper() + "__API__=" + api_level
+    compilation_context = cc_common.create_compilation_context(
+        defines = depset([version_macro_name]),
+    )
+
+    cc_infos = [ctx.attr.deps[0][CcInfo]]
+    cc_infos.append(CcInfo(compilation_context = compilation_context))
+    cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos)
+
     return [
         ctx.attr.library_target[DefaultInfo],
         ctx.attr.library_target[CcSharedLibraryInfo],
         ctx.attr.stub_target[CcStubInfo],
-        ctx.attr.deps[0][CcInfo],
+        cc_info,
         CcStubLibrariesInfo(has_stubs = True),
         OutputGroupInfo(rule_impl_debug_files = depset()),
         CcStubLibrarySharedInfo(source_library = ctx.attr.source_library),
@@ -193,6 +207,9 @@ def _cc_stub_library_shared_impl(ctx):
 _cc_stub_library_shared = rule(
     implementation = _cc_stub_library_shared_impl,
     doc = "Top level rule to merge CcStubInfo and CcSharedLibraryInfo into a single target",
+    # Incoming transition to reset //command_line_option:fdo_profile to None
+    # to converge the configurations of the stub targets
+    cfg = drop_fdo_profile_transition,
     attrs = {
         "stub_target": attr.label(mandatory = True),
         "library_target": attr.label(mandatory = True),
@@ -200,6 +217,10 @@ _cc_stub_library_shared = rule(
         # See _cc_stub_library_shared_impl comment for explanation.
         "deps": attr.label_list(mandatory = True),
         "source_library": attr.label(mandatory = True),
+        "version": attr.string(mandatory = True),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
+        ),
     },
 )
 
@@ -226,3 +247,19 @@ def cc_stub_suite(name, source_library, versions, symbol_file, export_includes =
         actual = name + "-" + versions[-1],
         tags = tags,
     )
+
+# _parse_api_level_from_stub_version is a Starlark implementation of ApiLevelFromUser
+# at https://cs.android.com/android/platform/superproject/+/master:build/soong/android/api_levels.go;l=221-250;drc=5095a6c4b484f34d5c4f55a855d6174e00fb7f5e
+def _parse_api_level_from_stub_version(version):
+    if version == "":
+        fail("version must be non-empty")
+
+    if version == "current":
+        return 10000
+
+    if version in api_levels.keys():
+        return api_levels[version]
+    elif version.isdigit():
+        return int(version)
+    else:
+        fail("version could not be parsed as integer and is not a recognized codename")

@@ -15,8 +15,8 @@ limitations under the License.
 """
 
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("//build/bazel/rules/cc:cc_object.bzl", "cc_object")
-load(":tradefed.bzl", "tradefed_device_test", "tradefed_deviceless_test")
+load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
+load(":tradefed.bzl", "tradefed_device_test", "tradefed_host_driven_test")
 load(
     "//build/bazel/rules/test_common:paths.bzl",
     "get_output_and_package_dir_based_path",
@@ -52,14 +52,17 @@ def tradefed_cc_outputs():
     name = "cc"
     target = "cc_target"
 
-    cc_object(
+    cc_library_static(
         name = target,
+        srcs = ["foo.c"],
         tags = ["manual"],
     )
     tradefed_device_test(
         name = name,
+        test_identifier = target,
         tags = ["manual"],
         test = target,
+        test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
         target_compatible_with = ["//build/bazel/platforms/os:linux"],
     )
 
@@ -69,24 +72,27 @@ def tradefed_cc_outputs():
         target_under_test = name,
         expected_outputs = [
             "tradefed_test_" + name + ".sh",
-            name + ".tradefed.config",
+            "result-reporters.xml",
+            target + ".config",
         ],
         target_compatible_with = ["//build/bazel/platforms/os:linux"],
     )
-    return name
+    return name + "_test"
 
 def tradefed_cc_host_outputs():
     name = "cc_host"
     target = "cc_host_target"
 
-    cc_object(
+    cc_library_static(
         name = target,
         tags = ["manual"],
     )
-    tradefed_deviceless_test(
+    tradefed_host_driven_test(
         name = name,
+        test_identifier = target,
         tags = ["manual"],
         test = target,
+        test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
         target_compatible_with = ["//build/bazel/platforms/os:linux"],
     )
 
@@ -96,28 +102,32 @@ def tradefed_cc_host_outputs():
         target_under_test = name,
         expected_outputs = [
             "tradefed_test_" + name + ".sh",
-            name + ".tradefed.config",
+            "result-reporters.xml",
+            target + ".config",
         ],
         target_compatible_with = ["//build/bazel/platforms/os:linux"],
     )
-    return name
+    return name + "_test"
 
-def tradefed_cc_host_outputs_with_existing_tf_config():
-    name = "cc_host_with_example_config"
-    target = "cc_host_target_with_example_config"
+def tradefed_cc_host_outputs_generate_test_config():
+    name = "cc_host_generate_config"
+    target = "cc_host_target_generate_config"
 
-    cc_object(
+    cc_library_static(
         name = target,
         tags = ["manual"],
     )
-    tradefed_deviceless_test(
+    tradefed_host_driven_test(
         name = name,
+        test_identifier = target,
         tags = ["manual"],
         test = target,
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
-        tradefed_configs = [
-            "//build/bazel/rules/tradefed/test:example_configs",
+        template_test_config = "//build/make/core:native_host_test_config_template.xml",
+        template_configs = [
+            "<option name=\"config-descriptor:metadata\" key=\"parameter\" value=\"not_multi_abi\" />",
+            "<option name=\"config-descriptor:metadata\" key=\"parameter\" value=\"secondary_user\" />",
         ],
+        target_compatible_with = ["//build/bazel/platforms/os:linux"],
     )
 
     # check for expected output files (.config file  and .sh script)
@@ -126,11 +136,12 @@ def tradefed_cc_host_outputs_with_existing_tf_config():
         target_under_test = name,
         expected_outputs = [
             "tradefed_test_" + name + ".sh",
-            "example_config.xml.tradefed.config",
+            "result-reporters.xml",
+            target + ".config",
         ],
         target_compatible_with = ["//build/bazel/platforms/os:linux"],
     )
-    return name
+    return name + "_test"
 
 def tradefed_test_suite(name):
     native.test_suite(
@@ -138,6 +149,6 @@ def tradefed_test_suite(name):
         tests = [
             tradefed_cc_outputs(),
             tradefed_cc_host_outputs(),
-            tradefed_cc_host_outputs_with_existing_tf_config(),
+            tradefed_cc_host_outputs_generate_test_config(),
         ],
     )

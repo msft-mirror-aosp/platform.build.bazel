@@ -83,14 +83,14 @@ def _abi_dump_aspect_impl(target, ctx):
 
 abi_dump_aspect = aspect(
     implementation = _abi_dump_aspect_impl,
-    attr_aspects = ["static_deps"],
+    attr_aspects = ["static_deps", "whole_archive_deps"],
     attrs = {
         "_skip_abi_checks": attr.label(
             default = "//build/bazel/flags/cc/abi:skip_abi_checks",
         ),
         # Need this in order to call _abi_diff_enabled in the aspects code.
-        "_in_apex": attr.label(
-            default = "//build/bazel/rules/apex:in_apex",
+        "_within_apex": attr.label(
+            default = "//build/bazel/rules/apex:within_apex",
         ),
         "_abi_dumper": attr.label(
             allow_files = True,
@@ -127,16 +127,23 @@ def _create_abi_dumps(ctx, target, srcs, user_flags, action_name):
         compilation_context.direct_public_headers +
         compilation_context.direct_textual_headers
     )
+    objects = []
+    linker_inputs = target[CcInfo].linking_context.linker_inputs.to_list()
+
+    # These are created in cc_library_static and there should be only one
+    # linker_inputs and one libraries
+    if CcInfo in target and len(linker_inputs) == 1 and len(linker_inputs[0].libraries) == 1:
+        objects = linker_inputs[0].libraries[0].objects
     for file in sources:
-        output = _create_abi_dump(ctx, target, file, header_inputs, compilation_context, compilation_flags)
+        output = _create_abi_dump(ctx, target, file, objects, header_inputs, compilation_flags)
         dumps.append(output)
 
     return dumps
 
 def _include_flag(flag):
-    return "-I %s" % flag
+    return ["-I", flag]
 
-def _create_abi_dump(ctx, target, src, header_inputs, compilation_context, compilation_flags):
+def _create_abi_dump(ctx, target, src, objects, header_inputs, compilation_flags):
     """ Utility function to generate abi dump file."""
 
     file = paths.join(src.dirname, target.label.name + "." + src.basename + ".sdump")
@@ -160,7 +167,7 @@ def _create_abi_dump(ctx, target, src, header_inputs, compilation_context, compi
     args.add("-isystem", "prebuilts/clang-tools/linux-x86/clang-headers")
 
     ctx.actions.run(
-        inputs = [src] + header_inputs,
+        inputs = [src] + header_inputs + objects,
         executable = ctx.executable._abi_dumper,
         outputs = [output],
         arguments = [args],
@@ -292,6 +299,9 @@ def _run_abi_diff(ctx, arch, version, dump_file, abi_reference_file, prev_versio
         executable = ctx.executable._abi_diff,
         outputs = [diff_file],
         arguments = [args],
+        execution_requirements = {
+            "no-sandbox": "1",
+        },
         mnemonic = "AbiDiff",
     )
 
@@ -334,7 +344,7 @@ def _abi_diff_enabled(ctx, lib_name, is_aspect):
         return False
     if ctx.coverage_instrumented():
         return False
-    if ctx.attr._in_apex[BuildSettingInfo].value:
+    if ctx.attr._within_apex[BuildSettingInfo].value:
         if not is_aspect and not ctx.attr.has_stubs:
             return False
 
@@ -355,6 +365,7 @@ def _abi_dump_impl(ctx):
         diff_files = depset(create_abi_diff(ctx, linked_dump_file))
 
     return ([
+        DefaultInfo(files = diff_files),
         AbiDiffInfo(diff_files = diff_files),
     ])
 
@@ -377,8 +388,8 @@ abi_dump = rule(
         "_skip_abi_checks": attr.label(
             default = "//build/bazel/flags/cc/abi:skip_abi_checks",
         ),
-        "_in_apex": attr.label(
-            default = "//build/bazel/rules/apex:in_apex",
+        "_within_apex": attr.label(
+            default = "//build/bazel/rules/apex:within_apex",
         ),
         # TODO(b/254625084): For the following tools we need to support darwin as well.
         "_abi_dumper": attr.label(

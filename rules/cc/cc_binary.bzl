@@ -18,12 +18,13 @@ load(
     ":cc_library_common.bzl",
     "add_lists_defaulting_to_none",
     "parse_sdk_version",
+    "sanitizer_deps",
     "system_dynamic_deps_defaults",
     "system_static_deps_defaults",
 )
 load(":cc_library_static.bzl", "cc_library_static")
 load(":stl.bzl", "stl_info_from_attr")
-load(":stripped_cc_common.bzl", "stripped_binary")
+load(":stripped_cc_common.bzl", "stripped_binary", "stripped_test")
 load(":versioned_cc_common.bzl", "versioned_binary")
 
 def cc_binary(
@@ -66,6 +67,7 @@ def cc_binary(
         tidy_flags = None,
         tidy_disabled_srcs = None,
         tidy_timeout_srcs = None,
+        native_coverage = True,
         **kwargs):
     "Bazel macro to correspond with the cc_binary Soong module."
 
@@ -73,6 +75,7 @@ def cc_binary(
     unstripped_name = name + "_unstripped"
 
     toolchain_features = []
+    toolchain_features.extend(["-pic", "pie"])
     if linkshared:
         toolchain_features.extend(["dynamic_executable", "dynamic_linker"])
     else:
@@ -97,6 +100,20 @@ def cc_binary(
         system_dynamic_deps = system_deps
     else:
         system_static_deps = system_deps
+
+    if not native_coverage:
+        toolchain_features += ["-coverage"]
+    else:
+        toolchain_features += select({
+            "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
+            "//conditions:default": [],
+        })
+
+        # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
+        whole_archive_deps = whole_archive_deps + select({
+            "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
+            "//conditions:default": [],
+        })
 
     stl_info = stl_info_from_attr(stl, linkshared, is_binary = True)
     linkopts = linkopts + stl_info.linkopts
@@ -136,6 +153,8 @@ def cc_binary(
         tidy_checks_as_errors = tidy_checks_as_errors,
         tidy_flags = tidy_flags,
         tidy_disabled_srcs = tidy_disabled_srcs,
+        tidy_timeout_srcs = tidy_timeout_srcs,
+        native_coverage = native_coverage,
     )
 
     binary_dynamic_deps = add_lists_defaulting_to_none(
@@ -144,56 +163,51 @@ def cc_binary(
         stl_info.shared_deps,
     )
 
-    toolchain_features += select({
-        "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
-        "//conditions:default": [],
-    })
+    sanitizer_deps_name = name + "_sanitizer_deps"
+    sanitizer_deps(
+        name = sanitizer_deps_name,
+        dep = root_name,
+        tags = ["manual"],
+    )
 
-    # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
-    extra_implementation_deps = select({
-        "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
-        "//conditions:default": [],
-    })
-
+    # cc_test and cc_binary are almost identical rules, so fork the top level
+    # rule classes here.
+    unstripped_cc_rule = native.cc_binary
+    stripped_cc_rule = stripped_binary
     if generate_cc_test:
-        native.cc_test(
-            name = name,
-            deps = [root_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
-            dynamic_deps = binary_dynamic_deps,
-            features = toolchain_features,
-            linkopts = linkopts,
-            additional_linker_inputs = additional_linker_inputs,
-            target_compatible_with = target_compatible_with,
-            **kwargs
-        )
-    else:
-        native.cc_binary(
-            name = unstripped_name,
-            deps = [root_name] + deps + system_static_deps + stl_info.static_deps + extra_implementation_deps,
-            dynamic_deps = binary_dynamic_deps,
-            features = toolchain_features,
-            linkopts = linkopts,
-            additional_linker_inputs = additional_linker_inputs,
-            target_compatible_with = target_compatible_with,
-            tags = ["manual"],
-            **kwargs
-        )
+        unstripped_cc_rule = native.cc_test
+        stripped_cc_rule = stripped_test
 
-        versioned_name = name + "_versioned"
-        versioned_binary(
-            name = versioned_name,
-            src = unstripped_name,
-            stamp_build_number = use_version_lib,
-            tags = ["manual"],
-        )
+    unstripped_cc_rule(
+        name = unstripped_name,
+        deps = [root_name, sanitizer_deps_name] + deps + system_static_deps + stl_info.static_deps,
+        dynamic_deps = binary_dynamic_deps,
+        features = toolchain_features,
+        linkopts = linkopts,
+        additional_linker_inputs = additional_linker_inputs,
+        target_compatible_with = target_compatible_with,
+        tags = ["manual"],
+        **kwargs
+    )
 
-        stripped_binary(
-            name = name,
-            suffix = suffix,
-            src = versioned_name,
-            runtime_deps = runtime_deps,
-            target_compatible_with = target_compatible_with,
-            tags = tags,
-            unstripped = unstripped_name,
-            **strip
-        )
+    versioned_name = name + "_versioned"
+    versioned_binary(
+        name = versioned_name,
+        src = unstripped_name,
+        stamp_build_number = use_version_lib,
+        tags = ["manual"],
+        testonly = generate_cc_test,
+    )
+
+    stripped_cc_rule(
+        name = name,
+        suffix = suffix,
+        src = versioned_name,
+        runtime_deps = runtime_deps,
+        target_compatible_with = target_compatible_with,
+        tags = tags,
+        unstripped = unstripped_name,
+        testonly = generate_cc_test,
+        androidmk_deps = [root_name],
+        **strip
+    )
