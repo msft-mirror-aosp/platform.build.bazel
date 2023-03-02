@@ -75,6 +75,11 @@ new_local_repository(
 )
 
 local_repository(
+    name = "com_github_cares_cares",
+    path = "external/cares",
+)
+
+local_repository(
     name = "com_github_google_benchmark",
     path = "external/google-benchmark",
 )
