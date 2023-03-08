@@ -1,24 +1,23 @@
-"""
-Copyright (C) 2021 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2021 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
 load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo", "android_app_certificate_with_default_cert")
 load("//build/bazel/rules/apex:cc.bzl", "ApexCcInfo", "ApexCcMkInfo", "apex_cc_aspect")
 load("//build/bazel/rules/apex:transition.bzl", "apex_transition", "shared_lib_transition_32", "shared_lib_transition_64")
 load("//build/bazel/rules/cc:stripped_cc_common.bzl", "StrippedCcBinaryInfo")
+load("//build/bazel/rules/cc:clang_tidy.bzl", "collect_deps_clang_tidy_info")
 load("//build/bazel/rules:prebuilt_file.bzl", "PrebuiltFileInfo")
 load("//build/bazel/rules:sh_binary.bzl", "ShBinaryInfo")
 load("//build/bazel/rules:toolchain_utils.bzl", "verify_toolchain_exists")
@@ -36,11 +35,12 @@ load(":apex_key.bzl", "ApexKeyInfo")
 load(":apex_info.bzl", "ApexInfo", "ApexMkInfo")
 load(":bundle.bzl", "apex_zip_files")
 load(":apex_deps_validation.bzl", "ApexDepsInfo", "apex_deps_validation_aspect", "validate_apex_deps")
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@soong_injection//apex_toolchain:constants.bzl", "default_manifest_version")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
+load("//build/bazel/rules/apex:sdk_versions.bzl", "maybe_override_min_sdk_version")
+load("//build/bazel/rules/common:api.bzl", "default_app_target_sdk")
 
 def _create_file_mapping(ctx):
     """Create a file mapping for the APEX filesystem image.
@@ -80,7 +80,9 @@ def _create_file_mapping(ctx):
 
     if platforms.get_target_bitness(ctx.attr._platform_utils) == 64:
         _add_lib_files("lib64", ctx.attr.native_shared_libs_64)
-        if product_vars["DeviceSecondaryArch"] != "":
+
+        # TODO(b/269577299): Make this read from //build/bazel/product_config:product_vars instead.
+        if ctx.attr._device_secondary_arch[BuildSettingInfo].value != "":
             _add_lib_files("lib", ctx.attr.native_shared_libs_32)
     else:
         _add_lib_files("lib", ctx.attr.native_shared_libs_32)
@@ -369,7 +371,6 @@ def _run_apexer(ctx, apex_toolchain):
     args.add_all(["--key", privkey.path])
     args.add_all(["--pubkey", pubkey.path])
     args.add_all(["--payload_type", "image"])
-    args.add_all(["--target_sdk_version", "10000"])
     args.add_all(["--payload_fs_type", "ext4"])
     args.add_all(["--assets_dir", notices_file.dirname])
 
@@ -380,12 +381,20 @@ def _run_apexer(ctx, apex_toolchain):
     if ctx.attr.logging_parent:
         args.add_all(["--logging_parent", ctx.attr.logging_parent])
 
+    # TODO(b/243393960): Support API fingerprinting for APEXes for pre-release SDKs.
+    args.add_all(["--target_sdk_version", default_app_target_sdk()])
+
     # TODO(b/215339575): This is a super rudimentary way to convert "current" to a numerical number.
     # Generalize this to API level handling logic in a separate Starlark utility, preferably using
     # API level maps dumped from api_levels.go
     min_sdk_version = ctx.attr.min_sdk_version
     if min_sdk_version == "current":
         min_sdk_version = "10000"
+
+    override_min_sdk_version = ctx.attr._apex_global_min_sdk_version_override[BuildSettingInfo].value
+    min_sdk_version = maybe_override_min_sdk_version(min_sdk_version, override_min_sdk_version)
+
+    # TODO(b/243393960): Support API fingerprinting for APEXes for pre-release SDKs.
     args.add_all(["--min_sdk_version", min_sdk_version])
 
     # apexer needs the list of directories containing all auxilliary tools invoked during
@@ -634,12 +643,19 @@ def _apex_rule_impl(ctx):
     apex_key_info = ctx.attr.key[ApexKeyInfo]
 
     arch = platforms.get_target_arch(ctx.attr._platform_utils)
-    zip_files = apex_zip_files(actions = ctx.actions, name = ctx.label.name, tools = struct(
-        aapt2 = apex_toolchain.aapt2,
-        zip2zip = ctx.executable._zip2zip,
-        merge_zips = ctx.executable._merge_zips,
-        soong_zip = apex_toolchain.soong_zip,
-    ), apex_file = signed_apex, arch = arch)
+    zip_files = apex_zip_files(
+        actions = ctx.actions,
+        name = ctx.label.name,
+        tools = struct(
+            aapt2 = apex_toolchain.aapt2,
+            zip2zip = ctx.executable._zip2zip,
+            merge_zips = ctx.executable._merge_zips,
+            soong_zip = apex_toolchain.soong_zip,
+        ),
+        apex_file = signed_apex,
+        arch = arch,
+        secondary_arch = ctx.attr._device_secondary_arch[BuildSettingInfo].value,
+    )
 
     transitive_apex_deps, transitive_unvalidated_targets_output_file, apex_deps_validation_files = _validate_apex_deps(ctx)
 
@@ -671,6 +687,7 @@ def _apex_rule_impl(ctx):
         ),
         ApexDepsInfo(transitive_deps = transitive_apex_deps),
         ApexMkInfo(make_modules_to_install = apexer_outputs.make_modules_to_install),
+        collect_deps_clang_tidy_info(ctx),
     ]
 
 # These are the standard aspects that should be applied on all edges that
@@ -695,7 +712,13 @@ _apex = rule(
             providers = [AndroidAppCertificateInfo],
             mandatory = True,
         ),
-        "min_sdk_version": attr.string(default = "current"),
+        "min_sdk_version": attr.string(
+            default = "current",
+            doc = """The minimum SDK version that this APEX must support at minimum. This is usually set to
+the SDK version that the APEX was first introduced.
+
+When not set, defaults to 10000 (or "current").""",
+        ),
         "updatable": attr.bool(default = True),
         "installable": attr.bool(default = True),
         "compressible": attr.bool(default = False),
@@ -787,6 +810,14 @@ _apex = rule(
         "_override_apex_manifest_default_version": attr.label(
             default = "//build/bazel/rules/apex:override_apex_manifest_default_version",
             doc = "If specified, override 'version: 0' in apex_manifest.json with this value instead of the branch default. Non-zero versions will not be changed.",
+        ),
+        "_apex_global_min_sdk_version_override": attr.label(
+            default = "//build/bazel/rules/apex:apex_global_min_sdk_version_override",
+            doc = "If specified, override the min_sdk_version of this apex and in the transition and checks for dependencies.",
+        ),
+        "_device_secondary_arch": attr.label(
+            default = "//build/bazel/rules/apex:device_secondary_arch",
+            doc = "If specified, also include the libraries from the secondary arch.",
         ),
     },
     # The apex toolchain is not mandatory so that we don't get toolchain resolution errors even

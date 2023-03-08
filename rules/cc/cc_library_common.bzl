@@ -1,21 +1,19 @@
-"""
-Copyright (C) 2021 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2021 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load("@soong_injection//api_levels:api_levels.bzl", "api_levels")
+load("//build/bazel/rules/common:api.bzl", api_levels = "api_levels_with_previews")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
 load("@soong_injection//android:constants.bzl", android_constants = "constants")
 load("//build/bazel/rules:common.bzl", "strip_bp2build_label_suffix")
@@ -124,6 +122,7 @@ sanitizer_deps = rule(
                   "behavior sanitizer library to be used",
         ),
     },
+    provides = [CcInfo],
 )
 
 def sdk_version_feature_from_parsed_version(version):
@@ -149,10 +148,6 @@ def add_lists_defaulting_to_none(*args):
             combined += arg
 
     return combined
-
-# By default, crtbegin/crtend linking is enabled for shared libraries and cc_binary.
-def disable_crt_link(features):
-    return features + ["-link_crt"]
 
 # get_includes_paths expects a rule context, a list of directories, and
 # whether the directories are package-relative and returns a list of exec
@@ -234,7 +229,7 @@ def parse_sdk_version(version):
     return [sdk_version_feature_from_parsed_version(parse_apex_sdk_version(version))]
 
 def parse_apex_sdk_version(version):
-    if version == "" or version == "current":
+    if version == "" or version == "current" or version == "10000":
         return future_version
     elif version in api_levels.keys():
         return api_levels[version]

@@ -1,18 +1,16 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("//build/bazel/rules/aidl:library.bzl", "AidlGenInfo", "aidl_file_utils")
 
@@ -52,8 +50,8 @@ _java_aidl_gen_aspect = aspect(
         ),
         "_sdk_dependency": attr.label_list(
             default = [
-                # TODO(b/220869005) remove forced dependency on current public android.jar
-                "//prebuilts/sdk:public_current_android_sdk_java_import",
+                # TODO(b/215230098) remove forced dependency on current public android.jar
+                "//prebuilts/sdk:system_current_android_sdk_java_import",
                 # TODO(b/229251008) remove hard-coded dependency on framework-connectivity
                 "//prebuilts/sdk:current_module_lib_framework_connectivity",
             ],

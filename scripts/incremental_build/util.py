@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import csv
+import datetime
 import functools
 import glob
 import logging
@@ -19,18 +20,28 @@ import os
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Final
 from typing import Generator
 
-DEFAULT_TIMING_LOGS_DIR: Final[str] = 'timing_logs'
 INDICATOR_FILE: Final[str] = 'build/soong/soong_ui.bash'
 SUMMARY_CSV: Final[str] = 'summary.csv'
 RUN_DIR_PREFIX: Final[str] = 'run'
 BUILD_INFO_JSON: Final[str] = 'build_info.json'
 
-IMPORTANT_METRICS: set[str] = {'soong/bootstrap', 'soong_build/*.bazel',
-                               'ninja/ninja', 'bp2build/', 'symlink_forest/'}
+
+@functools.cache
+def _is_important(column) -> bool:
+  patterns = {
+      'description', 'build_type', r'build\.ninja(\.size)?', 'targets',
+      'log', 'actions', 'time',
+      r'soong_build/\*\.bazel', 'bp2build/', r'symlink_forest/', 'ninja/ninja',
+      r'.*write_files.*'}
+  for pattern in patterns:
+    if re.fullmatch(pattern, column):
+      return True
+  return False
 
 
 def get_csv_columns_cmd(d: Path) -> str:
@@ -54,11 +65,10 @@ def get_summary_cmd(d: Path) -> str:
       reader = csv.DictReader(r)
       headers = reader.fieldnames or []
 
-  columns: list[int] = [i for i, h in enumerate(headers) if
-                        h in IMPORTANT_METRICS]
-  columns.sort()
+  columns: list[int] = [i for i, h in enumerate(headers) if _is_important(h)]
   f = ','.join(str(i + 1) for i in columns)
-  return f'cut -d, -f1-8,{f} "{summary_csv.absolute()}" | column -t -s,'
+  return f'grep -v rebuild- "{summary_csv}" | grep -v FAILED | ' \
+         f'cut -d, -f{f} | column -t -s,'
 
 
 @functools.cache
@@ -81,9 +91,15 @@ def get_out_dir() -> Path:
   return Path(out_dir) if out_dir else get_top_dir().joinpath('out')
 
 
+@functools.cache
+def get_default_log_dir() -> Path:
+  return get_top_dir().parent.joinpath(
+    f'timing-{date.today().strftime("%b%d")}')
+
+
 def is_interactive_shell() -> bool:
   return sys.__stdin__.isatty() and sys.__stdout__.isatty() \
-         and sys.__stderr__.isatty()
+    and sys.__stderr__.isatty()
 
 
 # see test_next_path_helper() for examples
@@ -117,10 +133,10 @@ def has_uncommitted_changes() -> bool:
   """
   for cmd in ['diff', 'diff --staged']:
     diff = subprocess.run(
-        args=f'repo forall -c git {cmd} --quiet --exit-code'.split(),
-        cwd=get_top_dir(), text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL)
+      args=f'repo forall -c git {cmd} --quiet --exit-code'.split(),
+      cwd=get_top_dir(), text=True,
+      stdout=subprocess.DEVNULL,
+      stderr=subprocess.DEVNULL)
     if diff.returncode != 0:
       return True
   return False
@@ -143,8 +159,8 @@ def count_explanations(process_log_file: Path) -> int:
   """
   explanations = 0
   pattern = re.compile(
-      r'^ninja explain:(?! edge with output .* is a phony output,'
-      r' so is always dirty$)')
+    r'^ninja explain:(?! edge with output .* is a phony output,'
+    r' so is always dirty$)')
   with open(process_log_file) as f:
     for line in f:
       if pattern.match(line):
@@ -203,7 +219,7 @@ def any_match_under(root: Path, *patterns: str) -> (Path, list[str]):
           pattern = pattern.removeprefix('!')
         try:
           found_match = next(
-              glob.iglob(pattern, root_dir=first, recursive=True))
+            glob.iglob(pattern, root_dir=first, recursive=True))
         except StopIteration:
           found_match = None
         if negate and found_match is not None:
@@ -226,3 +242,10 @@ def any_match_under(root: Path, *patterns: str) -> (Path, list[str]):
     children.sort()
     bfs.extend(children)
   raise RuntimeError(f'No suitable directory for {patterns}')
+
+
+def hhmmss(t: datetime.timedelta) -> str:
+  h, f = divmod(t.seconds, 60 * 60)
+  m, f = divmod(f, 60)
+  s = f + t.microseconds / 1000_000
+  return f'{h:02d}:{m:02d}:{s:06.3f}'

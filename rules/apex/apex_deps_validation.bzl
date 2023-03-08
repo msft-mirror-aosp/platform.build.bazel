@@ -1,18 +1,16 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load(":apex_info.bzl", "ApexInfo")
@@ -214,7 +212,7 @@ def validate_apex_deps(ctx, transitive_deps, allowed_deps_manifest):
             touch {validation_marker};
         else
             echo -e "\n******************************";
-            echo "ERROR: go/apex-allowed-deps-error";
+            echo "ERROR: go/apex-allowed-deps-error contains more information";
             echo "******************************";
             echo "Detected changes to allowed dependencies in updatable modules.";
             echo "There are $diff_size dependencies of APEX {target_label} on modules not in {allowed_deps_manifest}:";
@@ -223,10 +221,10 @@ def validate_apex_deps(ctx, transitive_deps, allowed_deps_manifest):
             echo -e "$ (croot && packages/modules/common/build/update-apex-allowed-deps.sh)\n";
             echo "When submitting the generated CL, you must include the following information";
             echo "in the commit message if you are adding a new dependency:";
-            echo "Apex-Size-Increase:";
-            echo "Previous-Platform-Support:";
-            echo "Aosp-First:";
-            echo "Test-Info:";
+            echo "Apex-Size-Increase: Expected binary size increase for affected APEXes (or the size of the .jar / .so file of the new library)";
+            echo "Previous-Platform-Support: Are the maintainers of the new dependency committed to supporting previous platform releases?";
+            echo "Aosp-First: Is the new dependency being developed AOSP-first or internal?";
+            echo "Test-Info: What’s the testing strategy for the new dependency? Does it have its own tests, and are you adding integration tests? How/when are the tests run?";
             echo "You do not need OWNERS approval to submit the change, but mainline-modularization@";
             echo "will periodically review additions and may require changes.";
             echo -e "******************************\n";

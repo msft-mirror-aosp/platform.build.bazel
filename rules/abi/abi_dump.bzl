@@ -1,18 +1,16 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
 load(
@@ -154,7 +152,7 @@ def _create_abi_dump(ctx, target, src, objects, header_inputs, compilation_flags
     args.add("-o", output)
     args.add(src)
 
-    args.add_all(ctx.rule.attr.exports[CcInfo].compilation_context.includes.to_list(), map_each = _include_flag)
+    args.add_all(ctx.rule.attr.exports[0][CcInfo].compilation_context.includes.to_list(), map_each = _include_flag)
 
     args.add("--")
     args.add_all(compilation_flags)

@@ -1,18 +1,16 @@
-"""
-Copyright (C) 2021 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2021 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load(
     ":cc_library_common.bzl",
@@ -24,7 +22,7 @@ load(
 )
 load(":cc_library_static.bzl", "cc_library_static")
 load(":stl.bzl", "stl_info_from_attr")
-load(":stripped_cc_common.bzl", "stripped_binary")
+load(":stripped_cc_common.bzl", "stripped_binary", "stripped_test")
 load(":versioned_cc_common.bzl", "versioned_binary")
 
 def cc_binary(
@@ -170,8 +168,15 @@ def cc_binary(
         tags = ["manual"],
     )
 
-    cc_rule = native.cc_test if generate_cc_test else native.cc_binary
-    cc_rule(
+    # cc_test and cc_binary are almost identical rules, so fork the top level
+    # rule classes here.
+    unstripped_cc_rule = native.cc_binary
+    stripped_cc_rule = stripped_binary
+    if generate_cc_test:
+        unstripped_cc_rule = native.cc_test
+        stripped_cc_rule = stripped_test
+
+    unstripped_cc_rule(
         name = unstripped_name,
         deps = [root_name, sanitizer_deps_name] + deps + system_static_deps + stl_info.static_deps,
         dynamic_deps = binary_dynamic_deps,
@@ -192,7 +197,7 @@ def cc_binary(
         testonly = generate_cc_test,
     )
 
-    stripped_binary(
+    stripped_cc_rule(
         name = name,
         suffix = suffix,
         src = versioned_name,

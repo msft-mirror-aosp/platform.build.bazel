@@ -35,6 +35,12 @@ env_repository(
     name = "env",
 )
 
+# This repository is a containter for API surface stub libraries.
+local_repository(
+    name = "api_surfaces",
+    path = "build/bazel/api_surfaces",
+)
+
 load("//build/bazel_common_rules/workspace:external.bzl", "import_external_repositories")
 
 import_external_repositories(
@@ -136,7 +142,7 @@ local_repository(
 
 new_local_repository(
     name = "kotlinc",
-    build_file = "@rules_kotlin//bazel:kotlinc.BUILD",
+    build_file = "//build/bazel/rules/kotlin:kotlinc.BUILD",
     path = "external/kotlinc",
 )
 

@@ -1,18 +1,16 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("//build/bazel/rules/aidl:library.bzl", "aidl_library")
 load("//build/bazel/rules/java:aidl_library.bzl", "java_aidl_library")
@@ -26,13 +24,24 @@ NDK = "ndk"
 #TODO(b/246803961) Add support for rust backend
 
 def _check_versions(versions):
-    versions = sorted([int(i) for i in versions])  # ensure that all versions are ints
-    for i, v in enumerate(versions):
-        if i > 0 and v == versions[i - 1]:
-            fail("duplicate version found:", v)
+    sorted_versions = sorted([int(i) for i in versions])  # ensure that all versions are ints
+
+    for i, v in enumerate(sorted_versions):
+        if i > 0:
+            if v == sorted_versions[i - 1]:
+                fail("duplicate version found:", v)
+            if v < sorted_versions[i - 1]:
+                fail("versions should be sorted")
         if v <= 0:
             fail("all versions should be > 0, but found version:", v)
-    return [str(i) for i in versions]
+    return [str(i) for i in sorted_versions]
+
+def _check_versions_with_info(versions_with_info):
+    for version_with_info in versions_with_info:
+        for dep in version_with_info.get("deps", []):
+            parts = dep.split("-V")
+            if len(parts) < 2 or not parts[-1].isdigit():
+                fail("deps in versions_with_info must specify its version, but", dep)
 
 def _create_latest_version_aliases(name, last_version_name, backend_configs, **kwargs):
     latest_name = name + "-latest"
@@ -49,7 +58,7 @@ def _create_latest_version_aliases(name, last_version_name, backend_configs, **k
             **kwargs
         )
 
-def versioned_name(name, version):
+def _versioned_name(name, version):
     if version == "":
         return name
 
@@ -65,8 +74,15 @@ def _next_version(versions, unstable):
 
     return str(int(versions[-1]) + 1)
 
-def is_config_enabled(config):
-    return config != None and "enabled" in config and config["enabled"] == True
+def _is_config_enabled(config):
+    if config == None:
+        return False
+
+    for key in config:
+        if key not in ["enabled", "min_sdk_version", "tags"]:
+            fail("unknown property in aidl configuration: " + str(key))
+
+    return config.get("enabled", False) == True
 
 def aidl_interface(
         name,
@@ -83,7 +99,9 @@ def aidl_interface(
         versions = None,
         versions_with_info = None,
         unstable = False,
+        tags = [],
         # TODO(b/261208761): Support frozen attr
+        frozen = False,
         **kwargs):
     """aidl_interface creates a versioned aidl_libraries and language-specific *_aidl_libraries
 
@@ -112,8 +130,11 @@ def aidl_interface(
     if (versions == None and versions_with_info == None and srcs == None):
         fail("must specify at least versions, versions_with_info, or srcs")
 
-    # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=872;drc=5390d9a42f5e4f99ccb3a84068f554d948cb62b9
-    if versions != None and unstable:
+    if versions == None and versions_with_info == None:
+        if frozen == True:
+            fail("frozen cannot be set without versions or versions_with_info attr being set")
+    elif unstable == True:
+        # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=872;drc=5390d9a42f5e4f99ccb3a84068f554d948cb62b9
         fail("cannot have versions for unstable interface")
 
     aidl_flags = ["--structured"]
@@ -121,21 +142,26 @@ def aidl_interface(
         aidl_flags.extend(flags)
 
     enabled_backend_configs = {}
-    if is_config_enabled(java_config):
+    if _is_config_enabled(java_config):
         enabled_backend_configs[JAVA] = java_config
-    if is_config_enabled(cpp_config):
+    if _is_config_enabled(cpp_config):
         enabled_backend_configs[CPP] = cpp_config
-    if is_config_enabled(ndk_config):
+    if _is_config_enabled(ndk_config):
         enabled_backend_configs[NDK] = ndk_config
 
-    # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=329;drc=e88d9a9b14eafb064a234d555a5cd96de97ca9e2
-    # only vintf is allowed currently
-    if stability != None and stability in ["vintf"]:
-        aidl_flags.append("--stability=" + stability)
+    if stability != None:
+        if unstable == True:
+            fail("stability must be unset when unstable is true")
+        if stability == "vintf":
+            aidl_flags.append("--stability=" + stability)
 
-        # TODO(b/245738285): Add support for vintf stability in java backend
-        if JAVA in enabled_backend_configs:
-            enabled_backend_configs.pop(JAVA)
+            # TODO(b/245738285): Add support for vintf stability in java backend
+            if JAVA in enabled_backend_configs:
+                enabled_backend_configs.pop(JAVA)
+        else:
+            # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=329;drc=e88d9a9b14eafb064a234d555a5cd96de97ca9e2
+            # only vintf is allowed currently
+            fail("stability must be unset or \"vintf\"")
 
     # next_version will be the last specified version + 1.
     # https://cs.android.com/android/platform/superproject/+/master:system/tools/aidl/build/aidl_interface.go;l=791?q=system%2Ftools%2Faidl%2Fbuild%2Faidl_interface.go
@@ -147,6 +173,7 @@ def aidl_interface(
             version_with_info["version"]
             for version_with_info in versions_with_info
         ])
+        _check_versions_with_info(versions_with_info)
         next_version = _next_version(versions, False)
         for version_with_info in versions_with_info:
             create_aidl_binding_for_backends(
@@ -155,13 +182,15 @@ def aidl_interface(
                 deps = version_with_info.get("deps"),
                 aidl_flags = aidl_flags,
                 backend_configs = enabled_backend_configs,
+                tags = tags,
                 **kwargs
             )
         if len(versions_with_info) > 0:
             _create_latest_version_aliases(
                 name,
-                versioned_name(name, versions[-1]),
+                _versioned_name(name, versions[-1]),
                 enabled_backend_configs,
+                tags = tags,
                 **kwargs
             )
     elif versions != None and len(versions) > 0:
@@ -174,13 +203,15 @@ def aidl_interface(
                 deps = deps,
                 aidl_flags = aidl_flags,
                 backend_configs = enabled_backend_configs,
+                tags = tags,
                 **kwargs
             )
         if len(versions) > 0:
             _create_latest_version_aliases(
                 name,
-                versioned_name(name, versions[-1]),
+                _versioned_name(name, versions[-1]),
                 enabled_backend_configs,
+                tags = tags,
                 **kwargs
             )
     else:
@@ -197,10 +228,20 @@ def aidl_interface(
             deps = deps,
             aidl_flags = aidl_flags,
             backend_configs = enabled_backend_configs,
+            tags = tags,
             **kwargs
         )
 
-def create_aidl_binding_for_backends(name, version = None, srcs = None, strip_import_prefix = "", deps = None, aidl_flags = [], backend_configs = {}, **kwargs):
+def create_aidl_binding_for_backends(
+        name,
+        version = None,
+        srcs = None,
+        strip_import_prefix = "",
+        deps = None,
+        aidl_flags = [],
+        backend_configs = {},
+        tags = [],
+        **kwargs):
     """
     Create aidl_library target and corrending <backend>_aidl_library target for a given version
 
@@ -214,7 +255,7 @@ def create_aidl_binding_for_backends(name, version = None, srcs = None, strip_im
         aidl_flags:             List[string], a list of flags to pass to the AIDL compiler
         backends:               List[string], a list of the languages to generate bindings for
     """
-    aidl_library_name = versioned_name(name, version)
+    aidl_library_name = _versioned_name(name, version)
 
     # srcs is None when create_aidl_binding_for_backends is called with a
     # frozen version specified via versions or versions_with_info.
@@ -234,6 +275,8 @@ def create_aidl_binding_for_backends(name, version = None, srcs = None, strip_im
         strip_import_prefix = strip_import_prefix,
         srcs = srcs,
         flags = aidl_flags,
+        # The language-specific backends will set more appropriate apex_available values.
+        tags = tags + ["apex_available=//apex_available:anyapex"],
         **kwargs
     )
 
@@ -247,7 +290,8 @@ def create_aidl_binding_for_backends(name, version = None, srcs = None, strip_im
             java_aidl_library(
                 name = aidl_library_name + "-java",
                 deps = [":" + aidl_library_name],
-                # TODO(b/249276008): Pass aidl_flags_for_backend to java_aidl_library
+                tags = tags + config.get("tags", []),
+                # TODO(b/249276008): Pass min_sdk_version to java_aidl_library
                 **kwargs
             )
         elif lang == CPP or lang == NDK:
@@ -277,6 +321,7 @@ def create_aidl_binding_for_backends(name, version = None, srcs = None, strip_im
                 dynamic_deps = dynamic_deps,
                 lang = lang,
                 min_sdk_version = min_sdk_version,
+                tags = tags + config.get("tags", []),
                 **kwargs
             )
 
@@ -294,6 +339,7 @@ def _cc_aidl_libraries(
         dynamic_deps = [],
         lang = None,
         min_sdk_version = "",
+        tags = [],
         **kwargs):
     """
     Generate AIDL stub code for cpp or ndk backend and wrap it in cc libraries (both shared and static variant)
@@ -319,24 +365,37 @@ def _cc_aidl_libraries(
         deps = [aidl_library],
         lang = lang,
         min_sdk_version = min_sdk_version,
+        tags = tags,
         **kwargs
+    )
+
+    if hasattr(kwargs, "tidy_checks_as_errors"):
+        fail("tidy_checks_as_errors cannot be overriden for aidl_interface cc_libraries")
+    tidy_checks_as_errors = [
+        "*",
+        "-clang-analyzer-deadcode.DeadStores",  # b/253079031
+        "-clang-analyzer-cplusplus.NewDeleteLeaks",  # b/253079031
+        "-clang-analyzer-optin.performance.Padding",  # b/253079031
+    ]
+
+    shared_arguments_with_kwargs = dict(
+        kwargs,
+        srcs = [":" + aidl_code_gen],
+        implementation_deps = implementation_deps,
+        deps = [aidl_code_gen],
+        dynamic_deps = dynamic_deps,
+        min_sdk_version = min_sdk_version,
+        tidy = True,
+        tidy_checks_as_errors = tidy_checks_as_errors,
+        tidy_gen_header_filter = True,
+        tags = tags,
     )
 
     cc_library_shared(
         name = name,
-        srcs = [":" + aidl_code_gen],
-        implementation_deps = implementation_deps,
-        deps = [aidl_code_gen],
-        dynamic_deps = dynamic_deps,
-        min_sdk_version = min_sdk_version,
-        **kwargs
+        **shared_arguments_with_kwargs
     )
     cc_library_static(
         name = name + "_bp2build_cc_library_static",
-        srcs = [":" + aidl_code_gen],
-        implementation_deps = implementation_deps,
-        deps = [aidl_code_gen],
-        dynamic_deps = dynamic_deps,
-        min_sdk_version = min_sdk_version,
-        **kwargs
+        **shared_arguments_with_kwargs
     )
