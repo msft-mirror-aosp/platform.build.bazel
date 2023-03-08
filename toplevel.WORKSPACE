@@ -16,6 +16,32 @@ load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
 
 bazel_skylib_workspace()
 
+# Python rules (https://github.com/bazelbuild/rules_python)
+http_archive(
+    name = "rules_python",
+    sha256 = "36362b4d54fcb17342f9071e4c38d63ce83e2e57d7d5599ebdde4670b9760664",
+    strip_prefix = "rules_python-0.18.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.18.0/rules_python-0.18.0.tar.gz",
+)
+
+load("@rules_python//python:repositories.bzl", "py_repositories")
+
+py_repositories()
+
+# Package rules (https://github.com/bazelbuild/rules_pkg)
+http_archive(
+    name = "rules_pkg",
+    sha256 = "8c20f74bca25d2d442b327ae26768c02cf3c99e93fad0381f32be9aab1967675",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+        "https://github.com/bazelbuild/rules_pkg/releases/download/0.8.1/rules_pkg-0.8.1.tar.gz",
+    ],
+)
+
+load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
+
+rules_pkg_dependencies()
+
 # Repository that provides the clang compilers
 selective_local_repository(
     name = "clang",
@@ -46,6 +72,36 @@ new_local_repository(
     name = "boringssl",
     path = "external/boringssl",
     build_file = "external/boringssl/BUILD",
+)
+
+local_repository(
+    name = "com_github_google_benchmark",
+    path = "external/google-benchmark",
+)
+
+local_repository(
+    name = "com_google_absl",
+    path = "external/webrtc/third_party/abseil-cpp",
+)
+
+local_repository(
+    name = "com_google_googletest",
+    path = "external/googletest",
+)
+
+local_repository(
+    name = "com_google_protobuf",
+    path = "external/protobuf",
+)
+
+local_repository(
+    name = "com_googlesource_code_re2",
+    path = "external/qemu/android/third_party/re2",
+)
+
+local_repository(
+    name = "zlib",
+    path = "external/zlib",
 )
 
 # CC toolchains
