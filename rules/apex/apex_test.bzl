@@ -433,11 +433,22 @@ def _apex_manifest_test(ctx):
 
     return analysistest.end(env)
 
-apex_manifest_test = analysistest.make(
-    _apex_manifest_test,
+apex_manifest_test_attr = dict(
+    impl = _apex_manifest_test,
     attrs = {
         "expected_min_sdk_version": attr.string(),
     },
+)
+
+apex_manifest_test = analysistest.make(
+    **apex_manifest_test_attr
+)
+
+apex_manifest_global_min_sdk_override_tiramisu_test = analysistest.make(
+    config_settings = {
+        "@//build/bazel/rules/apex:apex_global_min_sdk_version_override": "Tiramisu",
+    },
+    **apex_manifest_test_attr
 )
 
 def _test_apex_manifest():
@@ -483,6 +494,23 @@ def _test_apex_manifest_min_sdk_version_current():
         name = test_name,
         target_under_test = name,
         expected_min_sdk_version = "10000",
+    )
+
+    return test_name
+
+def _test_apex_manifest_min_sdk_version_override():
+    name = "apex_manifest_min_sdk_version_override"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+        min_sdk_version = "30",
+    )
+
+    apex_manifest_global_min_sdk_override_tiramisu_test(
+        name = test_name,
+        target_under_test = name,
+        expected_min_sdk_version = "33",  # overriden to 33
     )
 
     return test_name
@@ -1254,7 +1282,7 @@ def _feature_check_aspect_impl(target, ctx):
     elif ctx.rule.kind in rules_propagate_src and hasattr(ctx.rule.attr, "src"):
         argv = ctx.rule.attr.src[ActionArgsInfo].argv
     elif ctx.rule.kind == "_cc_library_shared_proxy" and hasattr(ctx.rule.attr, "shared"):
-        argv = ctx.rule.attr.shared[ActionArgsInfo].argv
+        argv = ctx.rule.attr.shared[0][ActionArgsInfo].argv
     elif ctx.rule.kind == "_apex" and hasattr(ctx.rule.attr, "native_shared_libs_32"):
         argv = ctx.rule.attr.native_shared_libs_32[0][ActionArgsInfo].argv
 
@@ -1267,13 +1295,17 @@ def _feature_check_aspect_impl(target, ctx):
 feature_check_aspect = aspect(
     implementation = _feature_check_aspect_impl,
     attrs = {
-        "cc_target": attr.string(values = ["min_sdk_version_apex_inherit_lib_cc_unstripped"]),
+        "cc_target": attr.string(values = [
+            # This has to mirror the test impl library names
+            "min_sdk_version_apex_inherit_lib_cc_unstripped",
+            "min_sdk_version_apex_inherit_override_min_sdk_tiramisu_lib_cc_unstripped",
+        ]),
     },
     attr_aspects = ["native_shared_libs_32", "shared", "src"],
 )
 
-min_sdk_version_apex_inherit_test = analysistest.make(
-    _min_sdk_version_apex_inherit_test_impl,
+min_sdk_version_apex_inherit_test_attrs = dict(
+    impl = _min_sdk_version_apex_inherit_test_impl,
     attrs = {
         "apex_min": attr.string(),
         "cc_target": attr.string(),
@@ -1282,6 +1314,17 @@ min_sdk_version_apex_inherit_test = analysistest.make(
     # target as the result of the transition, checking the dependencies directly
     # using names will give you the info before the transition takes effect.
     extra_target_under_test_aspects = [feature_check_aspect],
+)
+
+min_sdk_version_apex_inherit_test = analysistest.make(
+    **min_sdk_version_apex_inherit_test_attrs
+)
+
+min_sdk_version_apex_inherit_override_min_sdk_tiramisu_test = analysistest.make(
+    config_settings = {
+        "@//build/bazel/rules/apex:apex_global_min_sdk_version_override": "Tiramisu",
+    },
+    **min_sdk_version_apex_inherit_test_attrs
 )
 
 def _test_min_sdk_version_apex_inherit():
@@ -1307,6 +1350,34 @@ def _test_min_sdk_version_apex_inherit():
         name = test_name,
         target_under_test = name,
         apex_min = apex_min,
+        cc_target = cc_name + "_unstripped",
+    )
+
+    return test_name
+
+def _test_min_sdk_version_apex_inherit_override_min_sdk_tiramisu():
+    name = "min_sdk_version_apex_inherit_override_min_sdk_tiramisu"
+    test_name = name + "_test"
+    cc_name = name + "_lib_cc"
+    apex_min = "29"
+
+    cc_library_shared(
+        name = cc_name,
+        srcs = [name + "_lib.cc"],
+        tags = ["manual"],
+        min_sdk_version = "apex_inherit",
+    )
+
+    test_apex(
+        name = name,
+        native_shared_libs_32 = [cc_name],
+        min_sdk_version = "29",
+    )
+
+    min_sdk_version_apex_inherit_override_min_sdk_tiramisu_test(
+        name = test_name,
+        target_under_test = name,
+        apex_min = "33",  # the apex transition forced the apex min_sdk_version to be 33
         cc_target = cc_name + "_unstripped",
     )
 
@@ -2161,6 +2232,280 @@ def _test_directly_included_stubs_lib_with_indirectly_static_variant():
 
     return test_name
 
+def cc_library_shared_with_stubs(name):
+    cc_library_shared(
+        name = name,
+        system_dynamic_deps = [],
+        stl = "none",
+        tags = ["manual"],
+        stubs_symbol_file = name + ".map.txt",
+    )
+
+    native.genrule(
+        name = name + "_genrule_map_txt",
+        outs = [name + ".map.txt"],
+        cmd = "touch $@",
+        tags = ["manual"],
+    )
+
+    cc_stub_suite(
+        name = name + "_stub_libs",
+        soname = name + ".so",
+        source_library = ":" + name,
+        symbol_file = name + ".map.txt",
+        versions = ["30"],
+        tags = ["manual"],
+    )
+
+    return [
+        name,
+        name + "_stub_libs",
+    ]
+
+def _apex_in_unbundled_build_test(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    mk_modules_to_install = target_under_test[ApexMkInfo].make_modules_to_install
+    asserts.true(
+        env,
+        "apex_in_unbundled_build_libfoo" not in mk_modules_to_install,
+        "stub libs apex_in_unbundled_build_libfoo should not be propagated " +
+        "to make for installation in unbundled mode",
+    )
+    return analysistest.end(env)
+
+apex_in_unbundled_build_test = analysistest.make(
+    _apex_in_unbundled_build_test,
+    config_settings = {
+        "@//build/bazel/rules/apex:unbundled_build": True,
+    },
+)
+
+def _test_apex_in_unbundled_build():
+    name = "apex_in_unbundled_build"
+    test_name = name + "_test"
+
+    [cc_library_shared_name, cc_stub_suite_name] = cc_library_shared_with_stubs(name + "_libfoo")
+
+    cc_binary(
+        name = name + "_bar",
+        tags = [
+            "apex_available=" + name,
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+        dynamic_deps = select({
+            "//build/bazel/rules/apex:android-in_apex": [cc_stub_suite_name + "_current"],
+            "//build/bazel/rules/apex:android-non_apex": [cc_library_shared_name],
+        }),
+    )
+
+    test_apex(
+        name = name,
+        binaries = [name + "_bar"],
+    )
+
+    apex_in_unbundled_build_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _apex_in_bundled_build_test(ctx):
+    env = analysistest.begin(ctx)
+    target_under_test = analysistest.target_under_test(env)
+    mk_modules_to_install = target_under_test[ApexMkInfo].make_modules_to_install
+    asserts.true(
+        env,
+        "apex_in_bundled_build_libfoo" in mk_modules_to_install,
+        "stub libs apex_in_unbundled_build_libfoo should be propagated " +
+        "to make for installation in unbundled mode",
+    )
+
+    return analysistest.end(env)
+
+apex_in_bundled_build_test = analysistest.make(
+    _apex_in_bundled_build_test,
+    config_settings = {
+        "@//build/bazel/rules/apex:unbundled_build": False,
+    },
+)
+
+def _test_apex_in_bundled_build():
+    name = "apex_in_bundled_build"
+    test_name = name + "_test"
+
+    [cc_library_shared_name, cc_stub_suite_name] = cc_library_shared_with_stubs(name + "_libfoo")
+
+    cc_binary(
+        name = name + "_bar",
+        tags = [
+            "apex_available=" + name,
+            "apex_available_checked_manual_for_testing",
+            "manual",
+        ],
+        dynamic_deps = select({
+            "//build/bazel/rules/apex:android-in_apex": [cc_stub_suite_name + "_current"],
+            "//build/bazel/rules/apex:android-non_apex": [cc_library_shared_name],
+        }),
+    )
+
+    test_apex(
+        name = name,
+        binaries = [name + "_bar"],
+    )
+
+    apex_in_bundled_build_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _apex_compression_test(ctx):
+    env = analysistest.begin(ctx)
+
+    target = analysistest.target_under_test(env)
+    asserts.true(
+        env,
+        target[ApexInfo].signed_compressed_output != None,
+        "ApexInfo.signed_compressed_output should exist from compressible apex",
+    )
+
+    return analysistest.end(env)
+
+apex_compression_test = analysistest.make(
+    _apex_compression_test,
+    config_settings = {
+        "@//build/bazel/rules/apex:compression_enabled": True,
+    },
+)
+
+def _test_apex_compression():
+    name = "apex_compression"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+        compressible = True,
+    )
+
+    apex_compression_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _apex_no_compression_test(ctx):
+    env = analysistest.begin(ctx)
+
+    target = analysistest.target_under_test(env)
+    asserts.true(
+        env,
+        target[ApexInfo].signed_compressed_output == None,
+        "ApexInfo.signed_compressed_output should not exist when compression_enabled is not specified",
+    )
+
+    return analysistest.end(env)
+
+apex_no_compression_test = analysistest.make(
+    _apex_no_compression_test,
+    config_settings = {
+        "@//build/bazel/rules/apex:compression_enabled": False,
+    },
+)
+
+def _test_apex_no_compression():
+    name = "apex_no_compression"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+    )
+
+    apex_no_compression_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
+def _min_target_sdk_version_api_fingerprint_test(ctx):
+    env = analysistest.begin(ctx)
+    actions = analysistest.target_actions(env)
+
+    apexer_action = None
+    for action in actions:
+        if action.argv == None:
+            continue
+        if "--min_sdk_version" in action.argv:
+            apexer_action = action
+            break
+
+    asserts.true(
+        env,
+        apexer_action != None,
+        "There is no apexer action in all the actions",
+    )
+
+    argv = apexer_action.argv
+    api_fingerprint_in_input = False
+    api_fingerprint_path = None
+    for f in apexer_action.inputs.to_list():
+        if f.basename == "api_fingerprint.txt":
+            api_fingerprint_in_input = True
+            api_fingerprint_path = f.path
+            break
+
+    asserts.true(
+        env,
+        api_fingerprint_in_input,
+        "api_fingerprint.txt is not in the input files",
+    )
+
+    expected_sdk_version = "123" + ".$$(cat {})".format(api_fingerprint_path)
+    asserts.equals(
+        env,
+        expected = expected_sdk_version,
+        actual = argv[argv.index("--min_sdk_version") + 1],
+    )
+
+    asserts.equals(
+        env,
+        expected = expected_sdk_version,
+        actual = argv[argv.index("--target_sdk_version") + 1],
+    )
+
+    return analysistest.end(env)
+
+min_target_sdk_version_api_fingerprint_test = analysistest.make(
+    _min_target_sdk_version_api_fingerprint_test,
+    config_settings = {
+        "@//build/bazel/rules/apex:unbundled_build": True,
+        "@//build/bazel/rules/apex:always_use_prebuilt_sdks": False,
+        "@//build/bazel/rules/apex:unbundled_build_target_sdk_with_api_fingerprint": True,
+        "@//build/bazel/rules/apex:platform_sdk_codename": "123",
+    },
+)
+
+def _test_min_target_sdk_version_api_fingerprint():
+    name = "min_target_sdk_version_api_fingerprint"
+    test_name = name + "_test"
+
+    test_apex(
+        name = name,
+        min_sdk_version = "current",
+    )
+
+    min_target_sdk_version_api_fingerprint_test(
+        name = test_name,
+        target_under_test = name,
+    )
+
+    return test_name
+
 def apex_test_suite(name):
     native.test_suite(
         name = name,
@@ -2175,6 +2520,7 @@ def apex_test_suite(name):
             _test_apex_manifest(),
             _test_apex_manifest_min_sdk_version(),
             _test_apex_manifest_min_sdk_version_current(),
+            _test_apex_manifest_min_sdk_version_override(),
             _test_apex_manifest_dependencies_nodep(),
             _test_apex_manifest_dependencies_cc_binary_bionic_deps(),
             _test_apex_manifest_dependencies_cc_library_shared_bionic_deps(),
@@ -2192,6 +2538,7 @@ def apex_test_suite(name):
             _test_apex_certificate_name(),
             _test_apex_certificate_label(),
             _test_min_sdk_version_apex_inherit(),
+            _test_min_sdk_version_apex_inherit_override_min_sdk_tiramisu(),
             _test_apex_testonly_with_manifest(),
             _test_apex_provides_base_zip_files(),
             _test_apex_testonly_without_manifest(),
@@ -2206,5 +2553,10 @@ def apex_test_suite(name):
             _test_apex_deps_validation(),
             _test_no_static_linking_for_stubs_lib(),
             _test_directly_included_stubs_lib_with_indirectly_static_variant(),
+            _test_apex_in_unbundled_build(),
+            _test_apex_in_bundled_build(),
+            _test_apex_compression(),
+            _test_apex_no_compression(),
+            _test_min_target_sdk_version_api_fingerprint(),
         ] + _test_apex_transition(),
     )

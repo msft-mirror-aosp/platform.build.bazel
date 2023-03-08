@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import csv
+import datetime
 import functools
 import glob
 import logging
@@ -29,8 +30,18 @@ SUMMARY_CSV: Final[str] = 'summary.csv'
 RUN_DIR_PREFIX: Final[str] = 'run'
 BUILD_INFO_JSON: Final[str] = 'build_info.json'
 
-IMPORTANT_METRICS: set[str] = {'soong/bootstrap', 'soong_build/*.bazel',
-                               'ninja/ninja', 'bp2build/', 'symlink_forest/'}
+
+@functools.cache
+def _is_important(column) -> bool:
+  patterns = {
+      'description', 'build_type', r'build\.ninja(\.size)?', 'targets',
+      'log', 'actions', 'time',
+      r'soong_build/\*\.bazel', 'bp2build/', r'symlink_forest/', 'ninja/ninja',
+      r'.*write_files.*'}
+  for pattern in patterns:
+    if re.fullmatch(pattern, column):
+      return True
+  return False
 
 
 def get_csv_columns_cmd(d: Path) -> str:
@@ -54,11 +65,10 @@ def get_summary_cmd(d: Path) -> str:
       reader = csv.DictReader(r)
       headers = reader.fieldnames or []
 
-  columns: list[int] = [i for i, h in enumerate(headers) if
-                        h in IMPORTANT_METRICS]
-  columns.sort()
-  f = ''.join(',' + str(i + 1) for i in columns)
-  return f'cut -d, -f1-9{f} "{summary_csv.absolute()}" | column -t -s,'
+  columns: list[int] = [i for i, h in enumerate(headers) if _is_important(h)]
+  f = ','.join(str(i + 1) for i in columns)
+  return f'grep -v rebuild- "{summary_csv}" | grep -v FAILED | ' \
+         f'cut -d, -f{f} | column -t -s,'
 
 
 @functools.cache
@@ -232,3 +242,10 @@ def any_match_under(root: Path, *patterns: str) -> (Path, list[str]):
     children.sort()
     bfs.extend(children)
   raise RuntimeError(f'No suitable directory for {patterns}')
+
+
+def hhmmss(t: datetime.timedelta) -> str:
+  h, f = divmod(t.seconds, 60 * 60)
+  m, f = divmod(f, 60)
+  s = f + t.microseconds / 1000_000
+  return f'{h:02d}:{m:02d}:{s:06.3f}'
