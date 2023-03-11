@@ -1,19 +1,25 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load(
+    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
+    "CPP_COMPILE_ACTION_NAME",
+    "C_COMPILE_ACTION_NAME",
+)
+load("@soong_injection//product_config:product_variables.bzl", "product_vars")
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
 load(
     "//build/bazel/rules/cc:cc_library_common.bzl",
@@ -24,15 +30,6 @@ load(
     "parse_apex_sdk_version",
 )
 load("//build/bazel/rules/cc:cc_library_static.bzl", "CcStaticLibraryInfo")
-load("@soong_injection//product_config:product_variables.bzl", "product_vars")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-load(
-    "@bazel_tools//tools/build_defs/cc:action_names.bzl",
-    "CPP_COMPILE_ACTION_NAME",
-    "C_COMPILE_ACTION_NAME",
-)
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
 AbiDumpInfo = provider(fields = ["dump_files"])
 AbiDiffInfo = provider(fields = ["diff_files"])
@@ -154,7 +151,7 @@ def _create_abi_dump(ctx, target, src, objects, header_inputs, compilation_flags
     args.add("-o", output)
     args.add(src)
 
-    args.add_all(ctx.rule.attr.exports[CcInfo].compilation_context.includes.to_list(), map_each = _include_flag)
+    args.add_all(ctx.rule.attr.exports[0][CcInfo].compilation_context.includes.to_list(), map_each = _include_flag)
 
     args.add("--")
     args.add_all(compilation_flags)

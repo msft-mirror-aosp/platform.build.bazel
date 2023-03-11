@@ -1,27 +1,25 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
 load("//build/bazel/rules/cc:cc_stub_library.bzl", "cc_stub_suite")
-load(":cc_library_common_test.bzl", "target_provides_androidmk_info_test")
-load("//build/bazel/rules/test_common:paths.bzl", "get_package_dir_based_path")
 load("//build/bazel/rules/test_common:flags.bzl", "action_flags_present_only_for_mnemonic_test")
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
-load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("//build/bazel/rules/test_common:paths.bzl", "get_package_dir_based_path")
+load(":cc_library_common_test.bzl", "target_provides_androidmk_info_test")
 
 def _cc_library_shared_suffix_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -731,11 +729,28 @@ def _cc_library_set_defines_for_stubs():
     )
 
     cc_library_shared(
+        name = name + "_libbaz",
+        system_dynamic_deps = [],
+        stl = "none",
+        tags = ["manual"],
+        stubs_symbol_file = name + "_libbaz.map.txt",
+    )
+
+    cc_stub_suite(
+        name = name + "_libbaz_stub_libs",
+        soname = name + "_libbaz.so",
+        source_library = ":" + name + "_libbaz",
+        symbol_file = name + "_libbaz.map.txt",
+        versions = ["30"],
+    )
+
+    cc_library_shared(
         name = name + "_lib_with_stub_deps",
         srcs = ["foo.cpp"],
         implementation_dynamic_deps = [
             name + "_libfoo_stub_libs_current",
             name + "_libbar_stub_libs_current",
+            name + "_libbaz_stub_libs-30",  # depend on an old version explicitly
         ],
         tags = ["manual"],
     )
@@ -745,8 +760,9 @@ def _cc_library_set_defines_for_stubs():
         target_under_test = name + "_lib_with_stub_deps__internal_root_cpp",
         mnemonics = ["CppCompile"],
         expected_flags = [
-            "-D__CC_LIBRARY_SET_DEFINES_FOR_STUBS_LIBFOO__API__=40",
+            "-D__CC_LIBRARY_SET_DEFINES_FOR_STUBS_LIBFOO__API__=10000",
             "-D__CC_LIBRARY_SET_DEFINES_FOR_STUBS_LIBBAR__API__=10000",
+            "-D__CC_LIBRARY_SET_DEFINES_FOR_STUBS_LIBBAZ__API__=30",
         ],
     )
     return test_name

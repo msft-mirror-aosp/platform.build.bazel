@@ -1,8 +1,7 @@
-load(":apex_diff_test.bzl", "apex_diff_test")
-load(":apex_compression_test.bzl", "apex_compression_test")
-load(":apex_aab_test.bzl", "apex_aab_test")
-load(":apex_package_name_test.bzl", "apex_package_name_test")
 load("@bazel_skylib//rules:diff_test.bzl", "diff_test")
+load(":apex_compression_test.bzl", "apex_compression_test")
+load(":apex_diff_test.bzl", "apex_diff_test")
+load(":apex_package_name_test.bzl", "apex_package_name_test")
 
 # Test that the compressed apex and uncompressed apex have the same contents
 apex_diff_test(
@@ -24,10 +23,49 @@ apex_compression_test(
     compressed = True,
 )
 
-apex_aab_test(
-    name = "build.bazel.examples.apex.minimal_mainline-module",
-    apex = "//build/bazel/examples/apex/minimal:build.bazel.examples.apex.minimal",
-    golden = ":build.bazel.examples.apex.minimal.aab",
+genrule(
+    name = "build.bazel.examples.apex.minimal_android_manifest",
+    testonly = True,
+    srcs = ["//build/bazel/examples/apex/minimal:build.bazel.examples.apex.minimal.apex"],
+    outs = ["minimal_apex_android_manifest.txt"],
+    cmd = "$(location //frameworks/base/tools/aapt2) dump xmltree --file AndroidManifest.xml $< > $@",
+    tools = ["//frameworks/base/tools/aapt2"],
+)
+
+diff_test(
+    name = "minimal_apex_android_manifest_test",
+    file1 = "minimal_apex_android_manifest.txt",
+    file2 = "minimal_apex_android_manifest.golden",
+)
+
+genrule(
+    name = "adbd_aab_zipinfo",
+    testonly = True,
+    srcs = ["//build/bazel/vendor/google:com.android.adbd_apex_aab"],
+    outs = ["adbd_aab_zipinfo.actual"],
+    cmd = "$(location @bazel_tools//tools/zip:zipper) v $< | sort > $@",
+    tools = ["@bazel_tools//tools/zip:zipper"],
+)
+
+diff_test(
+    name = "aab_filelist_diff_test",
+    file1 = "adbd_aab_zipinfo.golden",
+    file2 = "adbd_aab_zipinfo.actual",
+)
+
+genrule(
+    name = "adbd_apks_zipinfo",
+    testonly = True,
+    srcs = ["//build/bazel/vendor/google:com.android.adbd_apks"],
+    outs = ["adbd_apks_zipinfo.actual"],
+    cmd = "$(location @bazel_tools//tools/zip:zipper) v $< | sort > $@",
+    tools = ["@bazel_tools//tools/zip:zipper"],
+)
+
+diff_test(
+    name = "apks_filelist_diff_test",
+    file1 = "adbd_apks_zipinfo.golden",
+    file2 = "adbd_apks_zipinfo.actual",
 )
 
 apex_package_name_test(

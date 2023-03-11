@@ -1,24 +1,22 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("//build/bazel/rules/aidl:library.bzl", "aidl_library")
-load("//build/bazel/rules/java:aidl_library.bzl", "java_aidl_library")
 load("//build/bazel/rules/cc:cc_aidl_code_gen.bzl", "cc_aidl_code_gen")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
+load("//build/bazel/rules/java:aidl_library.bzl", "java_aidl_library")
 
 JAVA = "java"
 CPP = "cpp"
@@ -294,7 +292,7 @@ def create_aidl_binding_for_backends(
                 deps = [":" + aidl_library_name],
                 tags = tags + config.get("tags", []),
                 # TODO(b/249276008): Pass min_sdk_version to java_aidl_library
-                **kwargs
+                **(kwargs | {"target_compatible_with": ["//build/bazel/platforms/os:android"]})
             )
         elif lang == CPP or lang == NDK:
             dynamic_deps = []

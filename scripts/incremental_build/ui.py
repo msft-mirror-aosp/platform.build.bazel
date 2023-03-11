@@ -22,6 +22,7 @@ import textwrap
 from datetime import date
 from enum import Enum
 from pathlib import Path
+from typing import Optional
 
 from future.moves import sys
 
@@ -59,6 +60,7 @@ class BuildType(Enum):
 class UserInput:
   build_types: list[BuildType]
   chosen_cujgroups: list[int]
+  description: Optional[str]
   log_dir: Path
   targets: list[str]
 
@@ -112,6 +114,8 @@ def get_user_input() -> UserInput:
                  type=validate_cujgroups,
                  help='Index number(s) or substring match(es) for the CUJ(s) '
                       'to be excluded')
+  p.add_argument('-d', '--description', type=str, default='',
+                 help='Any additional tag/description for the set of builds')
 
   log_levels = dict(getattr(logging, '_levelToName')).values()
   p.add_argument('-v', '--verbosity', choices=log_levels, default='INFO',
@@ -129,7 +133,9 @@ def get_user_input() -> UserInput:
                     {util.get_csv_columns_cmd(default_log_dir)}''').strip())
   p.add_argument('-b', '--build-types', nargs='+',
                  type=BuildType.from_flag,
-                 default=[[BuildType.SOONG_ONLY, BuildType.MIXED_PROD]],
+                 default=[[BuildType.SOONG_ONLY,
+                           BuildType.MIXED_PROD,
+                           BuildType.MIXED_STAGING]],
                  help='Defaults to "%(default)s". Choose from '
                       f'{[e.name.lower() for e in BuildType]}')
   p.add_argument('--ignore-repo-diff', default=False, action='store_true',
@@ -187,5 +193,6 @@ def get_user_input() -> UserInput:
   return UserInput(
     build_types=build_types,
     chosen_cujgroups=chosen_cujgroups,
-    log_dir=Path(options.log_dir),
+    description=options.description,
+    log_dir=Path(options.log_dir).resolve(),
     targets=options.targets)

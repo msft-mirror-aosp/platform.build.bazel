@@ -13,10 +13,12 @@
 # limitations under the License.
 
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load(":cc_library_static.bzl", "cc_library_static")
+load("//build/bazel/rules/apis:api_surface.bzl", "MODULE_LIB_API")
+load("//build/bazel/rules/common:api.bzl", "api")
+load(":cc_library_headers.bzl", "cc_library_headers")
 load(":cc_library_shared.bzl", "CcStubLibrariesInfo")
+load(":cc_library_static.bzl", "cc_library_static")
 load(":fdo_profile_transitions.bzl", "drop_fdo_profile_transition")
-load("//build/bazel/rules/common:api.bzl", api_levels = "api_levels_with_previews")
 
 # This file contains the implementation for the cc_stub_library rule.
 #
@@ -184,7 +186,7 @@ def _cc_stub_library_shared_impl(ctx):
     if len(ctx.attr.deps) != 1:
         fail("Exactly one 'deps' must be specified for cc_stub_library_shared")
 
-    api_level = str(_parse_api_level_from_stub_version(ctx.attr.version))
+    api_level = str(api.parse_api_level_from_version(ctx.attr.version))
     version_macro_name = "__" + ctx.attr.source_library.label.name.upper() + "__API__=" + api_level
     compilation_context = cc_common.create_compilation_context(
         defines = depset([version_macro_name]),
@@ -225,6 +227,10 @@ _cc_stub_library_shared = rule(
 )
 
 def cc_stub_suite(name, source_library, versions, symbol_file, export_includes = [], soname = "", deps = [], data = [], target_compatible_with = [], features = [], tags = ["manual"]):
+    # Implicitly add "current" to versions. This copies the behavior from Soong (aosp/1641782)
+    if "current" not in versions:
+        versions.append("current")
+
     for version in versions:
         cc_stub_library_shared(
             # Use - as the seperator of name and version. "current" might be the version of some libraries.
@@ -240,26 +246,18 @@ def cc_stub_suite(name, source_library, versions, symbol_file, export_includes =
             tags = tags,
         )
 
+    # Create a header library target for this API surface (ModuleLibApi)
+    # The external @api_surfaces repository will contain an alias to this header library.
+    cc_library_headers(
+        name = "%s_%s_headers" % (name, MODULE_LIB_API),
+        export_includes = export_includes,
+        deps = deps,  # Necessary for exporting headers that might exist in a different directory (e.g. libEGL)
+    )
+
     native.alias(
         # Use _ as the seperator of name and version in alias. So there is no
         # duplicated name if "current" is one of the versions of a library.
         name = name + "_current",
-        actual = name + "-" + versions[-1],
+        actual = name + "-" + "current",
         tags = tags,
     )
-
-# _parse_api_level_from_stub_version is a Starlark implementation of ApiLevelFromUser
-# at https://cs.android.com/android/platform/superproject/+/master:build/soong/android/api_levels.go;l=221-250;drc=5095a6c4b484f34d5c4f55a855d6174e00fb7f5e
-def _parse_api_level_from_stub_version(version):
-    if version == "":
-        fail("version must be non-empty")
-
-    if version == "current":
-        return 10000
-
-    if version in api_levels.keys():
-        return api_levels[version]
-    elif version.isdigit():
-        return int(version)
-    else:
-        fail("version could not be parsed as integer and is not a recognized codename")

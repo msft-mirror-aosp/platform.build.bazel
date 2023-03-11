@@ -1,19 +1,22 @@
-"""
-Copyright (C) 2021 The Android Open Source Project
+# Copyright (C) 2021 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("//build/bazel/rules:common.bzl", "get_dep_targets")
 load(
     ":cc_library_common.bzl",
     "CPP_EXTENSIONS",
@@ -28,13 +31,9 @@ load(
     "parse_sdk_version",
     "system_dynamic_deps_defaults",
 )
-load(":stl.bzl", "stl_info_from_attr")
 load(":clang_tidy.bzl", "ClangTidyInfo", "clang_tidy_for_dir", "generate_clang_tidy_actions")
-load("@bazel_skylib//lib:paths.bzl", "paths")
-load("//build/bazel/rules:common.bzl", "get_dep_targets")
-load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load(":lto_transitions.bzl", "lto_deps_transition")
+load(":stl.bzl", "stl_info_from_attr")
 
 CcStaticLibraryInfo = provider(fields = ["root_static_archive", "objects"])
 
@@ -486,10 +485,17 @@ def _cc_library_combiner_impl(ctx):
 _cc_library_combiner = rule(
     implementation = _cc_library_combiner_impl,
     attrs = {
-        "roots": attr.label_list(providers = [CcInfo]),
-        "deps": attr.label_list(providers = [CcInfo]),
+        "roots": attr.label_list(
+            providers = [CcInfo],
+            cfg = lto_deps_transition,
+        ),
+        "deps": attr.label_list(
+            providers = [CcInfo],
+            cfg = lto_deps_transition,
+        ),
         "additional_sanitizer_deps": attr.label_list(
             providers = [CcInfo],
+            cfg = lto_deps_transition,
             doc = "Deps used only to check for sanitizer enablement",
         ),
         "runtime_deps": attr.label_list(
@@ -520,7 +526,10 @@ _cc_library_combiner = rule(
                   " collision with the dynamic_deps attribute used in APEX" +
                   " aspects' propagation.",
         ),
-        "exports": attr.label(providers = [CcInfo]),
+        "exports": attr.label(
+            providers = [CcInfo],
+            cfg = lto_deps_transition,
+        ),
         "_cc_toolchain": attr.label(
             default = Label("@local_config_cc//:toolchain"),
             providers = [cc_common.CcToolchainInfo],
@@ -542,7 +551,7 @@ _cc_library_combiner = rule(
         "copts_cpp": attr.string_list(),
         "copts_c": attr.string_list(),
         "hdrs": attr.label_list(allow_files = True),
-        "includes": attr.label_list(),
+        "includes": attr.label_list(cfg = lto_deps_transition),
         "tidy_checks": attr.string_list(),
         "tidy_checks_as_errors": attr.string_list(),
         "tidy_flags": attr.string_list(),
@@ -586,6 +595,9 @@ _cc_library_combiner = rule(
         ),
         "_tidy_external_vendor": attr.label(
             default = "//build/bazel/flags/cc/tidy:tidy_external_vendor",
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],

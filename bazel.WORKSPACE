@@ -35,6 +35,12 @@ env_repository(
     name = "env",
 )
 
+# This repository is a containter for API surface stub libraries.
+load("//build/bazel/rules:api_surfaces_injection.bzl", "api_surfaces_repository")
+
+# TODO: Once BUILD files for stubs are checked-in, this should be converted to a local_repository.
+api_surfaces_repository(name = "api_surfaces")
+
 load("//build/bazel_common_rules/workspace:external.bzl", "import_external_repositories")
 
 import_external_repositories(
