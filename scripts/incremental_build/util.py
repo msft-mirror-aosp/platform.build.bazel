@@ -26,7 +26,8 @@ from typing import Final
 from typing import Generator
 
 INDICATOR_FILE: Final[str] = 'build/soong/soong_ui.bash'
-SUMMARY_CSV: Final[str] = 'summary.csv'
+METRICS_TABLE: Final[str] = 'metrics.csv'
+SUMMARY_TABLE: Final[str] = 'summary.csv'
 RUN_DIR_PREFIX: Final[str] = 'run'
 BUILD_INFO_JSON: Final[str] = 'build_info.json'
 
@@ -47,27 +48,27 @@ def _is_important(column) -> bool:
 def get_csv_columns_cmd(d: Path) -> str:
   """
   :param d: the log directory
-  :return: a quick shell command to view columns in summary.csv
+  :return: a quick shell command to view columns in metrics.csv
   """
-  summary_csv = d.joinpath(SUMMARY_CSV)
-  return f'head -n 1 "{summary_csv.absolute()}" | sed "s/,/\\n/g" | nl'
+  csv_file = d.joinpath(METRICS_TABLE)
+  return f'head -n 1 "{csv_file.absolute()}" | sed "s/,/\\n/g" | nl'
 
 
-def get_summary_cmd(d: Path) -> str:
+def get_cmd_to_display_tabulated_metrics(d: Path) -> str:
   """
   :param d: the log directory
   :return: a quick shell command to view some collected metrics
   """
-  summary_csv = d.joinpath(SUMMARY_CSV)
+  csv_file = d.joinpath(METRICS_TABLE)
   headers: list[str] = []
-  if summary_csv.exists():
-    with open(summary_csv) as r:
+  if csv_file.exists():
+    with open(csv_file) as r:
       reader = csv.DictReader(r)
       headers = reader.fieldnames or []
 
   columns: list[int] = [i for i, h in enumerate(headers) if _is_important(h)]
   f = ','.join(str(i + 1) for i in columns)
-  return f'grep -v rebuild- "{summary_csv}" | grep -v FAILED | ' \
+  return f'grep -v rebuild- "{csv_file}" | grep -v FAILED | ' \
          f'cut -d, -f{f} | column -t -s,'
 
 
@@ -94,12 +95,12 @@ def get_out_dir() -> Path:
 @functools.cache
 def get_default_log_dir() -> Path:
   return get_top_dir().parent.joinpath(
-    f'timing-{date.today().strftime("%b%d")}')
+      f'timing-{date.today().strftime("%b%d")}')
 
 
 def is_interactive_shell() -> bool:
   return sys.__stdin__.isatty() and sys.__stdout__.isatty() \
-    and sys.__stderr__.isatty()
+         and sys.__stderr__.isatty()
 
 
 # see test_next_path_helper() for examples
@@ -133,10 +134,10 @@ def has_uncommitted_changes() -> bool:
   """
   for cmd in ['diff', 'diff --staged']:
     diff = subprocess.run(
-      args=f'repo forall -c git {cmd} --quiet --exit-code'.split(),
-      cwd=get_top_dir(), text=True,
-      stdout=subprocess.DEVNULL,
-      stderr=subprocess.DEVNULL)
+        args=f'repo forall -c git {cmd} --quiet --exit-code'.split(),
+        cwd=get_top_dir(), text=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL)
     if diff.returncode != 0:
       return True
   return False
@@ -159,8 +160,8 @@ def count_explanations(process_log_file: Path) -> int:
   """
   explanations = 0
   pattern = re.compile(
-    r'^ninja explain:(?! edge with output .* is a phony output,'
-    r' so is always dirty$)')
+      r'^ninja explain:(?! edge with output .* is a phony output,'
+      r' so is always dirty$)')
   with open(process_log_file) as f:
     for line in f:
       if pattern.match(line):
@@ -219,7 +220,7 @@ def any_match_under(root: Path, *patterns: str) -> (Path, list[str]):
           pattern = pattern.removeprefix('!')
         try:
           found_match = next(
-            glob.iglob(pattern, root_dir=first, recursive=True))
+              glob.iglob(pattern, root_dir=first, recursive=True))
         except StopIteration:
           found_match = None
         if negate and found_match is not None:
@@ -245,7 +246,28 @@ def any_match_under(root: Path, *patterns: str) -> (Path, list[str]):
 
 
 def hhmmss(t: datetime.timedelta) -> str:
+  """pretty prints time periods, prefers mm:ss.sss and resorts to hh:mm:ss.sss
+  only if t >= 1 hour.
+  Examples: 02:12.231, 00:00.512, 00:01:11.321, 1:12:13.121
+  See unit test for more examples."""
   h, f = divmod(t.seconds, 60 * 60)
   m, f = divmod(f, 60)
   s = f + t.microseconds / 1000_000
-  return f'{h:02d}:{m:02d}:{s:06.3f}'
+  return f'{h}:{m:02d}:{s:06.3f}' if h else f'{m:02d}:{s:06.3f}'
+
+
+def period_to_seconds(s: str) -> float:
+  """converts a time period into seconds. The input is expected to be in the
+  format used by hhmmss().
+  Example: 02:04.000 -> 125.0
+  See unit test for more examples."""
+  if s == '':
+    return 0.0
+  acc = 0.0
+  while True:
+    [left, *right] = s.split(':', 1)
+    acc = acc * 60 + float(left)
+    if right:
+      s = right[0]
+    else:
+      return acc

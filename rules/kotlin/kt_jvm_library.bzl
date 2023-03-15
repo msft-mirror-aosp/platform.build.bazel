@@ -14,7 +14,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
+load("@rules_kotlin//kotlin:compiler_opt.bzl", "kt_compiler_opt")
 load("@rules_kotlin//kotlin:jvm_library.bzl", _kt_jvm_library = "kt_jvm_library")
+load("//build/bazel/rules/java:rules.bzl", "java_import")
 
 def _kotlin_resources_impl(ctx):
     output_file = ctx.actions.declare_file("kt_resources.jar")
@@ -61,13 +63,14 @@ def kt_jvm_library(
         deps = None,
         resources = None,
         resource_strip_prefix = None,
+        kotlincflags = None,
         **kwargs):
     "Bazel macro wrapping for kt_jvm_library"
 
     if resource_strip_prefix != None:
         java_import_name = name + "resources"
         kt_res_jar_name = name + "resources_jar"
-        native.java_import(
+        java_import(
             name = java_import_name,
             jars = [":" + kt_res_jar_name],
         )
@@ -80,8 +83,18 @@ def kt_jvm_library(
 
         deps = deps + [":" + java_import_name]
 
+    custom_kotlincopts = None
+    if kotlincflags != None:
+        ktcopts_name = name + "_kotlincopts"
+        kt_compiler_opt(
+            name = ktcopts_name,
+            opts = kotlincflags,
+        )
+        custom_kotlincopts = [":" + ktcopts_name]
+
     _kt_jvm_library(
         name = name,
         deps = deps,
+        custom_kotlincopts = custom_kotlincopts,
         **kwargs
     )

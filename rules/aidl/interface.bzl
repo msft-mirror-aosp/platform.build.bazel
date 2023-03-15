@@ -13,10 +13,10 @@
 # limitations under the License.
 
 load("//build/bazel/rules/aidl:library.bzl", "aidl_library")
-load("//build/bazel/rules/java:aidl_library.bzl", "java_aidl_library")
 load("//build/bazel/rules/cc:cc_aidl_code_gen.bzl", "cc_aidl_code_gen")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
+load("//build/bazel/rules/java:aidl_library.bzl", "java_aidl_library")
 
 JAVA = "java"
 CPP = "cpp"
@@ -292,7 +292,7 @@ def create_aidl_binding_for_backends(
                 deps = [":" + aidl_library_name],
                 tags = tags + config.get("tags", []),
                 # TODO(b/249276008): Pass min_sdk_version to java_aidl_library
-                **kwargs
+                **(kwargs | {"target_compatible_with": ["//build/bazel/platforms/os:android"]})
             )
         elif lang == CPP or lang == NDK:
             dynamic_deps = []

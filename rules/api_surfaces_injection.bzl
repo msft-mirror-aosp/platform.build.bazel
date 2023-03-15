@@ -1,4 +1,4 @@
-# Copyright (C) 2021 The Android Open Source Project
+# Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,18 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-def cc_prebuilt_library_static(
-        name,
-        static_library,
-        export_includes = [],
-        export_system_includes = [],
-        **kwargs):
-    "Bazel macro to correspond with the *_cc_prebuilt_library_static Soong module types"
+load("//build/bazel/rules/apis:api_surface.bzl", "ALL_API_SURFACES")
 
-    # TODO: Handle includes similarly to cc_library_static
-    # e.g. includes = ["clang-r416183b/prebuilt_include/llvm/lib/Fuzzer"],
-    native.cc_import(
-        name = name,
-        static_library = static_library,
-        **kwargs
-    )
+def _impl(rctx):
+    rctx.file("WORKSPACE", "")
+    synthetic_build_dir = str(rctx.path(Label("//:BUILD")).dirname)
+    api_surfaces_dir = synthetic_build_dir + "/build/bazel/api_surfaces"
+    for api_surface in ALL_API_SURFACES:
+        rctx.symlink(api_surfaces_dir + "/" + api_surface, api_surface)
+
+api_surfaces_repository = repository_rule(
+    implementation = _impl,
+)
