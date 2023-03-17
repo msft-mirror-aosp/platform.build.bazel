@@ -18,6 +18,10 @@ cc_toolchain_config(
     compile_flags = [
         "-m64",
         "-no-canonical-prefixes",
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
     ],
     identifier = "linux_clang_x64",
     link_flags = [

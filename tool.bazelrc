@@ -5,4 +5,8 @@ build --incompatible_enable_cc_toolchain_resolution
 # (https://github.com/bazelbuild/bazel/issues/17673)
 build --strict_proto_deps=off
 
+# Workaround for action cache issue
+# (https://github.com/bazelbuild/bazel/issues/17819)
+build:linux --disk_cache=~/.cache/bazel/disk-cache
+
 build:linux --host_platform='//build/bazel/platforms:host_clang'
