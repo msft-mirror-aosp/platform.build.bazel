@@ -261,13 +261,14 @@ def create_aidl_binding_for_backends(
     # frozen version specified via versions or versions_with_info.
     # next_version being equal to "" means this is an unstable version and
     # we should use srcs instead
+    if version != "":
+        aidl_flags = aidl_flags + ["--version=" + version]
+
     if srcs == None:
         if version == "":
             fail("need srcs for unversioned interface")
-
         strip_import_prefix = "aidl_api/{}/{}".format(name, version)
         srcs = native.glob([strip_import_prefix + "/**/*.aidl"])
-        aidl_flags = aidl_flags + ["--version=" + version]
 
     aidl_library(
         name = aidl_library_name,
@@ -385,7 +386,7 @@ def _cc_aidl_libraries(
         deps = [aidl_code_gen],
         dynamic_deps = dynamic_deps,
         min_sdk_version = min_sdk_version,
-        tidy = True,
+        tidy = "local",
         tidy_checks_as_errors = tidy_checks_as_errors,
         tidy_gen_header_filter = True,
         tags = tags,

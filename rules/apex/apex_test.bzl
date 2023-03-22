@@ -522,16 +522,19 @@ def _apex_native_libs_requires_provides_test(ctx):
         env,
         [t.label for t in ctx.attr.requires_native_libs],  # expected
         target_under_test[ApexInfo].requires_native_libs,  # actual
+        "did not get expected requires_native_libs",
     )
     asserts.equals(
         env,
         [t.label for t in ctx.attr.provides_native_libs],
         target_under_test[ApexInfo].provides_native_libs,
+        "did not get expected provides_native_libs",
     )
     asserts.equals(
         env,
         ctx.attr.make_modules_to_install,
         target_under_test[ApexMkInfo].make_modules_to_install,
+        "did not get expected make_modules_to_install",
     )
 
     # Compare the argv of the jsonmodify action that updates the apex
@@ -680,7 +683,7 @@ def _test_apex_manifest_dependencies_requires():
     cc_stub_suite(
         name = name + "_lib_with_dep_stub_libs",
         soname = name + "_lib_with_dep.so",
-        source_library = ":" + name + "_lib_with_dep",
+        source_library_label = ":" + name + "_lib_with_dep",
         symbol_file = name + "_lib_with_dep.map.txt",
         versions = ["30"],
     )
@@ -703,7 +706,7 @@ def _test_apex_manifest_dependencies_requires():
     cc_stub_suite(
         name = name + "_libfoo_stub_libs",
         soname = name + "_libfoo.so",
-        source_library = ":" + name + "_libfoo",
+        source_library_label = ":" + name + "_libfoo",
         symbol_file = name + "_libfoo.map.txt",
         versions = ["30"],
     )
@@ -747,7 +750,7 @@ def _test_apex_manifest_dependencies_provides():
     cc_stub_suite(
         name = name + "_libfoo_stub_libs",
         soname = name + "_libfoo.so",
-        source_library = ":" + name + "_libfoo",
+        source_library_label = ":" + name + "_libfoo",
         symbol_file = name + "_libfoo.map.txt",
         versions = ["30"],
     )
@@ -794,7 +797,7 @@ def _test_apex_manifest_dependencies_selfcontained():
     cc_stub_suite(
         name = name + "_lib_with_dep_stub_libs",
         soname = name + "_lib_with_dep.so",
-        source_library = ":" + name + "_lib_with_dep",
+        source_library_label = ":" + name + "_lib_with_dep",
         symbol_file = name + "_lib_with_dep.map.txt",
         versions = ["30"],
     )
@@ -817,7 +820,7 @@ def _test_apex_manifest_dependencies_selfcontained():
     cc_stub_suite(
         name = name + "_libfoo_stub_libs",
         soname = name + "_libfoo.so",
-        source_library = ":" + name + "_libfoo",
+        source_library_label = ":" + name + "_libfoo",
         symbol_file = name + "_libfoo.map.txt",
         versions = ["30"],
     )
@@ -894,7 +897,7 @@ def _test_apex_manifest_dependencies_cc_binary():
     cc_stub_suite(
         name = name + "_librequires_stub_libs",
         soname = name + "_librequires.so",
-        source_library = ":" + name + "_librequires",
+        source_library_label = ":" + name + "_librequires",
         symbol_file = name + "_librequires.map.txt",
         versions = ["30"],
     )
@@ -917,7 +920,7 @@ def _test_apex_manifest_dependencies_cc_binary():
     cc_stub_suite(
         name = name + "_librequires2_stub_libs",
         soname = name + "_librequires2.so",
-        source_library = ":" + name + "_librequires2",
+        source_library_label = ":" + name + "_librequires2",
         symbol_file = name + "_librequires2.map.txt",
         versions = ["30"],
     )
@@ -2250,7 +2253,7 @@ def cc_library_shared_with_stubs(name):
     cc_stub_suite(
         name = name + "_stub_libs",
         soname = name + ".so",
-        source_library = ":" + name,
+        source_library_label = ":" + name,
         symbol_file = name + ".map.txt",
         versions = ["30"],
         tags = ["manual"],
@@ -2464,23 +2467,32 @@ def _min_target_sdk_version_api_fingerprint_test(ctx):
         "api_fingerprint.txt is not in the input files",
     )
 
-    expected_sdk_version = "123" + ".$$(cat {})".format(api_fingerprint_path)
+    expected_target_sdk_version = "123" + ".$$(cat {})".format(api_fingerprint_path)
     asserts.equals(
         env,
-        expected = expected_sdk_version,
-        actual = argv[argv.index("--min_sdk_version") + 1],
+        expected = expected_target_sdk_version,
+        actual = argv[argv.index("--target_sdk_version") + 1],
     )
 
+    if ctx.attr.min_sdk_version in ["current", "10000"]:
+        expected_min_sdk_version = "123" + ".$$(cat {})".format(api_fingerprint_path)
+    else:
+        expected_min_sdk_version = ctx.attr.min_sdk_version
     asserts.equals(
         env,
-        expected = expected_sdk_version,
-        actual = argv[argv.index("--target_sdk_version") + 1],
+        expected = expected_min_sdk_version,
+        actual = argv[argv.index("--min_sdk_version") + 1],
     )
 
     return analysistest.end(env)
 
 min_target_sdk_version_api_fingerprint_test = analysistest.make(
     _min_target_sdk_version_api_fingerprint_test,
+    attrs = {
+        "min_sdk_version": attr.string(
+            default = "current",
+        ),
+    },
     config_settings = {
         "@//build/bazel/rules/apex:unbundled_build": True,
         "@//build/bazel/rules/apex:always_use_prebuilt_sdks": False,
@@ -2489,13 +2501,30 @@ min_target_sdk_version_api_fingerprint_test = analysistest.make(
     },
 )
 
-def _test_min_target_sdk_version_api_fingerprint():
-    name = "min_target_sdk_version_api_fingerprint"
+def _test_min_target_sdk_version_api_fingerprint_min_sdk_version_specified():
+    name = "min_target_sdk_version_api_fingerprint_min_sdk_version_specified"
+    test_name = name + "_test"
+    min_sdk_version = "30"
+
+    test_apex(
+        name = name,
+        min_sdk_version = min_sdk_version,
+    )
+
+    min_target_sdk_version_api_fingerprint_test(
+        name = test_name,
+        target_under_test = name,
+        min_sdk_version = min_sdk_version,
+    )
+
+    return test_name
+
+def _test_min_target_sdk_version_api_fingerprint_min_sdk_version_not_specified():
+    name = "min_target_sdk_version_api_fingerprint_min_sdk_version_not_specified"
     test_name = name + "_test"
 
     test_apex(
         name = name,
-        min_sdk_version = "current",
     )
 
     min_target_sdk_version_api_fingerprint_test(
@@ -2556,6 +2585,7 @@ def apex_test_suite(name):
             _test_apex_in_bundled_build(),
             _test_apex_compression(),
             _test_apex_no_compression(),
-            _test_min_target_sdk_version_api_fingerprint(),
+            _test_min_target_sdk_version_api_fingerprint_min_sdk_version_specified(),
+            _test_min_target_sdk_version_api_fingerprint_min_sdk_version_not_specified(),
         ] + _test_apex_transition(),
     )

@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 
-load(":merged_txts_test.bzl", "merged_txts_test_suite")
-load(":sdk_library_test.bzl", "java_sdk_library_test_suite")
-load(":java_system_modules_test.bzl", "java_system_modules_test_suite")
-load(":bootclasspath_test.bzl", "bootclasspath_test_suite")
+load("@rules_android//rules/android_binary_internal:rule.bzl", "make_rule", "sanitize_attrs")
+load(":impl.bzl", "impl")
 
-java_sdk_library_test_suite(name = "java_sdk_library_tests")
+android_binary_aosp_internal = make_rule(implementation = impl)
 
-merged_txts_test_suite(name = "merged_txts_tests")
+def android_binary_aosp_internal_macro(**attrs):
+    """android_binary_internal rule.
 
-java_system_modules_test_suite(name = "java_system_modules_tests")
-
-bootclasspath_test_suite(name = "bootclasspath_tests")
+    Args:
+      **attrs: Rule attributes
+    """
+    android_binary_aosp_internal(**sanitize_attrs(attrs))
