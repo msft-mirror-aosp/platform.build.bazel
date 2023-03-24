@@ -61,21 +61,21 @@ cc_toolchain_import(
     hdrs = glob(
         [
             CLANG_LINUX_X64 + "/include/c++/v1/**",
-            CLANG_LINUX_X64 + "/lib64/clang/17/include/**",
+            CLANG_LINUX_X64 + "/lib/clang/17/include/**",
         ],
         allow_empty = False,
     ),
     dynamic_mode_libs = [
-        target_linux_x64 + "/lib64/libc++.so",
-        target_linux_x64 + "/lib64/libc++.so.1",
+        target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.so",
+        target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.so.1",
     ],
     include_paths = [
         target_linux_x64 + "/include/c++/v1",
-        target_linux_x64 + "/lib64/clang/17/include",
+        target_linux_x64 + "/lib/clang/17/include",
     ],
     is_runtime_lib = True,
     static_mode_libs = [
-        target_linux_x64 + "/lib64/libc++.a",
+        target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.a",
     ],
     deps = [
         "@gcc_lib//:libc",
