@@ -1,7 +1,7 @@
-load("@//build/bazel/toolchains/cc:cc_toolchain_config.bzl", "cc_tools")
 load(
-    "@//build/bazel/toolchains/cc:cc_toolchain_import.bzl",
+    "@//build/bazel/toolchains/cc:rules.bzl",
     "cc_toolchain_import",
+    "cc_tools",
 )
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
