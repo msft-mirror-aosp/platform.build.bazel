@@ -17,6 +17,7 @@ load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@soong_injection//apex_toolchain:constants.bzl", "default_manifest_version")
 load("@soong_injection//product_config:product_variables.bzl", "product_vars")
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
+load("//build/bazel/product_config:product_variables_providing_rule.bzl", "ProductVariablesInfo")
 load("//build/bazel/rules:common.bzl", "get_dep_targets")
 load("//build/bazel/rules:prebuilt_file.bzl", "PrebuiltFileInfo")
 load("//build/bazel/rules:sh_binary.bzl", "ShBinaryInfo")
@@ -26,7 +27,7 @@ load("//build/bazel/rules/apex:cc.bzl", "ApexCcInfo", "ApexCcMkInfo", "apex_cc_a
 load("//build/bazel/rules/apex:sdk_versions.bzl", "maybe_override_min_sdk_version")
 load("//build/bazel/rules/apex:transition.bzl", "apex_transition", "shared_lib_transition_32", "shared_lib_transition_64")
 load("//build/bazel/rules/cc:clang_tidy.bzl", "collect_deps_clang_tidy_info")
-load("//build/bazel/rules/cc:stripped_cc_common.bzl", "StrippedCcBinaryInfo")
+load("//build/bazel/rules/cc:stripped_cc_common.bzl", "CcUnstrippedInfo", "StrippedCcBinaryInfo")
 load("//build/bazel/rules/common:api.bzl", "api")
 load(
     "//build/bazel/rules/license:license_aspect.bzl",
@@ -45,25 +46,54 @@ load(":bundle.bzl", "apex_zip_files")
 def _create_file_mapping(ctx):
     """Create a file mapping for the APEX filesystem image.
 
-    This returns a Dict[File, str] where the dictionary keys
-    are paths in the apex staging dir / filesystem image, and
-    the values are the files that should be installed there.
+    This returns a Dict[File, str] where the dictionary keys are paths in the
+    apex staging dir / filesystem image, and the values are the files and other
+    metadata that should be installed there.
+
+    It also returns other data structures, such as:
+    - requires: libs that this apex depend on from other apex or the platform
+    - provides: libs that this apex provide to other apex or the platform
+    - make_modules_to_install: make module names of libs that needs to be installed onto the platform in a bundled build (LOCAL_REQUIRED_MODULES)
+    - make_files_info: metadata about this apex's payload to be used for other packaging steps.
     """
 
-    # Dictionary mapping from paths in the apex to the files to be put there
+    # Dictionary mapping from paths in the apex to the files and associated metadata to be put there
     file_mapping = {}
     requires = {}
     provides = {}
     make_modules_to_install = {}
 
-    def add_file_mapping(installed_path, bazel_file):
+    # Generate a str -> str dictionary to define Make modules and variables for the
+    # packaging step in a mixed build. This is necessary as long as there are
+    # Make-derived actions that operate on bazel's outputs. If we move all Make
+    # packaging actions to Bazel, there's no need for this data flow.
+    make_files_info = {}
+
+    arch = platforms.get_target_arch(ctx.attr._platform_utils)
+    is_target_64_bit = platforms.get_target_bitness(ctx.attr._platform_utils) == 64
+
+    def add_file_mapping(install_dir, basename, bazel_file, klass, owner, arch = None, unstripped = None):
+        installed_path = paths.join(install_dir, basename)
         if installed_path in file_mapping and file_mapping[installed_path] != bazel_file:
             # TODO: we should figure this out and make it a failure
             print("Warning: %s in this apex is already installed to %s, overwriting it with %s" %
                   (file_mapping[installed_path].path, installed_path, bazel_file.path))
         file_mapping[installed_path] = bazel_file
 
-    def _add_lib_files(directory, libs):
+        files_info = {
+            "built_file": bazel_file.path,
+            "class": klass,
+            "install_dir": install_dir,
+            "basename": basename,
+            "package": owner.package,
+            "make_module_name": owner.name,
+            "arch": arch,
+        }
+        if unstripped:
+            files_info["unstripped_built_file"] = unstripped.path
+        make_files_info[installed_path] = files_info
+
+    def _add_lib_files(directory, libs, arch):
         for dep in libs:
             apex_cc_info = dep[ApexCcInfo]
             for lib in apex_cc_info.requires_native_libs.to_list():
@@ -71,21 +101,31 @@ def _create_file_mapping(ctx):
             for lib in apex_cc_info.provides_native_libs.to_list():
                 provides[lib] = True
             for lib_file in apex_cc_info.transitive_shared_libs.to_list():
-                add_file_mapping(paths.join(directory, lib_file.basename), lib_file)
+                stripped = lib_file.stripped
+                unstripped = lib_file.unstripped
+                add_file_mapping(
+                    directory,
+                    stripped.basename,
+                    stripped,
+                    "nativeSharedLib",
+                    stripped.owner,
+                    arch = arch,
+                    unstripped = unstripped,
+                )
 
             # For bundled builds.
             apex_cc_mk_info = dep[ApexCcMkInfo]
             for mk_module in apex_cc_mk_info.make_modules_to_install.to_list():
                 make_modules_to_install[mk_module] = True
 
-    if platforms.get_target_bitness(ctx.attr._platform_utils) == 64:
-        _add_lib_files("lib64", ctx.attr.native_shared_libs_64)
+    if is_target_64_bit:
+        _add_lib_files("lib64", ctx.attr.native_shared_libs_64, arch)
 
-        # TODO(b/269577299): Make this read from //build/bazel/product_config:product_vars instead.
-        if ctx.attr._device_secondary_arch[BuildSettingInfo].value != "":
-            _add_lib_files("lib", ctx.attr.native_shared_libs_32)
+        secondary_arch = platforms.get_target_secondary_arch(ctx.attr._platform_utils)
+        if secondary_arch:
+            _add_lib_files("lib", ctx.attr.native_shared_libs_32, secondary_arch)
     else:
-        _add_lib_files("lib", ctx.attr.native_shared_libs_32)
+        _add_lib_files("lib", ctx.attr.native_shared_libs_32, arch)
 
     backing_libs = []
     for lib in file_mapping.values():
@@ -100,7 +140,7 @@ def _create_file_mapping(ctx):
             filename = prebuilt_file_info.filename
         else:
             filename = dep.label.name
-        add_file_mapping(paths.join(prebuilt_file_info.dir, filename), prebuilt_file_info.src)
+        add_file_mapping(prebuilt_file_info.dir, filename, prebuilt_file_info.src, "etc", dep.label, arch = arch)
 
     # Handle binaries
     for dep in ctx.attr.binaries:
@@ -116,15 +156,24 @@ def _create_file_mapping(ctx):
                 if sh_binary_info.filename:
                     filename = sh_binary_info.filename
 
-                add_file_mapping(paths.join(directory, filename), dep[DefaultInfo].files_to_run.executable)
+                add_file_mapping(directory, filename, dep[DefaultInfo].files_to_run.executable, "shBinary", dep.label, arch = arch)
         elif ApexCcInfo in dep:
             # cc_binary just takes the final executable from the runfiles.
-            add_file_mapping(paths.join("bin", dep.label.name), dep[DefaultInfo].files_to_run.executable)
+            add_file_mapping(
+                "bin",
+                dep.label.name,
+                dep[DefaultInfo].files_to_run.executable,
+                "nativeExecutable",
+                dep.label,
+                arch,
+                unstripped = dep[CcUnstrippedInfo].unstripped[0].files.to_list()[0],
+            )
 
-            if platforms.get_target_bitness(ctx.attr._platform_utils) == 64:
-                _add_lib_files("lib64", [dep])
+            # Add transitive shared lib deps of apex binaries to the apex.
+            if is_target_64_bit:
+                _add_lib_files("lib64", [dep], arch)
             else:
-                _add_lib_files("lib", [dep])
+                _add_lib_files("lib", [dep], arch)
 
     return (
         file_mapping,
@@ -132,6 +181,7 @@ def _create_file_mapping(ctx):
         sorted(provides.keys(), key = lambda x: x.name),
         backing_libs,
         sorted(make_modules_to_install),
+        sorted(make_files_info.values(), key = lambda x: ":".join([x["package"], x["make_module_name"], x["arch"]])),
     )
 
 def _add_so(label):
@@ -189,7 +239,6 @@ def _convert_apex_manifest_json_to_pb(ctx, apex_toolchain, apex_manifest_json):
 
     return apex_manifest_pb
 
-# TODO(b/236683936): Add support for custom canned_fs_config concatenation.
 def _generate_canned_fs_config(ctx, filepaths):
     """Generate filesystem config.
 
@@ -200,7 +249,9 @@ def _generate_canned_fs_config(ctx, filepaths):
 
     # Ensure all paths don't start with / and are normalized
     filepaths = [paths.normalize(f).lstrip("/") for f in filepaths]
-    filepaths = [f for f in filepaths if f]
+
+    # Soong also sorts the config lines to be consistent with bazel
+    filepaths = sorted([f for f in filepaths if f])
 
     # First, collect a set of all the directories in the apex
     apex_subdirs_set = {}
@@ -217,21 +268,36 @@ def _generate_canned_fs_config(ctx, filepaths):
     config_lines.append("/apex_manifest.json 1000 1000 0644")
     config_lines.append("/apex_manifest.pb 1000 1000 0644")
 
-    # Readonly if not executable.
+    # Readonly if not executable. filepaths is already sorted.
     config_lines += ["/" + f + " 1000 1000 0644" for f in filepaths if not f.startswith("bin/")]
 
-    # Mark all binaries as executable.
+    # Mark all binaries as executable. filepaths is already sorted.
     config_lines += ["/" + f + " 0 2000 0755" for f in filepaths if f.startswith("bin/")]
 
     # All directories have the same permission.
     config_lines += ["/" + d + " 0 2000 0755" for d in sorted(apex_subdirs_set.keys())]
 
-    file = ctx.actions.declare_file(ctx.attr.name + "_canned_fs_config.txt")
+    output = ctx.actions.declare_file(ctx.attr.name + "_canned_fs_config.txt")
 
-    # Soong also sorts the config lines to be consistent with bazel
-    ctx.actions.write(file, "\n".join(sorted(config_lines)) + "\n")
+    config_lines = "\n".join(config_lines) + "\n"
+    ctx.actions.write(output, config_lines)
 
-    return file
+    if ctx.attr.canned_fs_config:
+        # Append the custom fs config content to the existing file
+        combined_output = ctx.actions.declare_file(ctx.attr.name + "_combined_canned_fs_config.txt")
+        ctx.actions.run_shell(
+            inputs = [ctx.file.canned_fs_config, output],
+            outputs = [combined_output],
+            mnemonic = "AppendCustomFsConfig",
+            command = "cat {i} {canned_fs_config} > {o}".format(
+                i = output.path,
+                o = combined_output.path,
+                canned_fs_config = ctx.file.canned_fs_config.path,
+            ),
+        )
+        output = combined_output
+
+    return output
 
 # Append an entry for apex_manifest.pb to the file_contexts file for this APEX,
 # which is either from /system/sepolicy/apex/<apexname>-file_contexts (set in
@@ -299,7 +365,7 @@ def _generate_installed_files_list(ctx, file_mapping):
     return installed_files
 
 def _generate_notices(ctx, apex_toolchain):
-    licensees = license_map(ctx, ctx.attr.binaries + ctx.attr.prebuilts + ctx.attr.native_shared_libs_32 + ctx.attr.native_shared_libs_64)
+    licensees = license_map(ctx.attr.binaries + ctx.attr.prebuilts + ctx.attr.native_shared_libs_32 + ctx.attr.native_shared_libs_64)
     licenses_file = ctx.actions.declare_file(ctx.attr.name + "_licenses.json")
     ctx.actions.write(licenses_file, "[\n%s\n]\n" % ",\n".join(license_map_to_json(licensees)))
 
@@ -340,7 +406,7 @@ def _run_apexer(ctx, apex_toolchain):
     pubkey = apex_key_info.public_key
     android_jar = apex_toolchain.android_jar
 
-    file_mapping, requires_native_libs, provides_native_libs, backing_libs, make_modules_to_install = _create_file_mapping(ctx)
+    file_mapping, requires_native_libs, provides_native_libs, backing_libs, make_modules_to_install, make_files_info = _create_file_mapping(ctx)
     canned_fs_config = _generate_canned_fs_config(ctx, file_mapping.keys())
     file_contexts = _generate_file_contexts(ctx)
     full_apex_manifest_json = _add_apex_manifest_information(ctx, apex_toolchain, requires_native_libs, provides_native_libs)
@@ -409,7 +475,7 @@ def _run_apexer(ctx, apex_toolchain):
     override_min_sdk_version = ctx.attr._apex_global_min_sdk_version_override[BuildSettingInfo].value
     min_sdk_version = maybe_override_min_sdk_version(min_sdk_version, override_min_sdk_version)
 
-    if use_api_fingerprint:
+    if min_sdk_version == "10000" and use_api_fingerprint:
         min_sdk_version = ctx.attr._platform_sdk_codename[BuildSettingInfo].value + sdk_version_suffix
         args.add(api_fingerprint_file.path)
     args.add_all(["--min_sdk_version", min_sdk_version])
@@ -488,6 +554,7 @@ def _run_apexer(ctx, apex_toolchain):
         java_symbols_used_by_apex = _generate_java_symbols_used_by_apex(ctx, apex_toolchain),
         installed_files = _generate_installed_files_list(ctx, file_mapping),
         make_modules_to_install = make_modules_to_install,
+        make_files_info = make_files_info,
     )
 
 def _run_signapk(ctx, unsigned_file, signed_file, private_key, public_key, mnemonic):
@@ -520,8 +587,10 @@ def _run_signapk(ctx, unsigned_file, signed_file, private_key, public_key, mnemo
 # Hence, we might simplify the logic by just checking product_vars["Unbundled_build"]
 # TODO(b/271474456): Eventually we might default to unbundled mode in bazel-only mode
 # so that we don't need to check Unbundled_apps.
-def compression_enabled():
-    return product_vars.get("CompressedApex", False) and len(product_vars.get("Unbundled_apps", [])) == 0
+def _compression_enabled(ctx):
+    product_vars = ctx.attr._product_variables[ProductVariablesInfo]
+
+    return product_vars.CompressedApex and len(product_vars.Unbundled_apps) == 0
 
 # Compress a file with apex_compression_tool.
 def _run_apex_compression_tool(ctx, apex_toolchain, input_file, output_file_name):
@@ -646,9 +715,24 @@ def _validate_apex_deps(ctx):
     )
     return transitive_deps, transitive_unvalidated_targets_output_file, validation_files
 
+def _verify_updatability(ctx):
+    # TODO(b/274732759): Add these checks as more APEXes are converted to Bazel.
+    #
+    # Keep this in sync with build/soong/apex/apex.go#checkUpdatable.
+    #
+    # - Cannot use platform APIs.
+    # - Cannot use external VNDK libs.
+    # - Does not set future_updatable.
+
+    if not ctx.attr.min_sdk_version:
+        fail("updatable APEXes must set min_sdk_version.")
+
 # See the APEX section in the README on how to use this rule.
 def _apex_rule_impl(ctx):
     verify_toolchain_exists(ctx, "//build/bazel/rules/apex:apex_toolchain_type")
+    if ctx.attr.updatable:
+        _verify_updatability(ctx)
+
     apex_toolchain = ctx.toolchains["//build/bazel/rules/apex:apex_toolchain_type"].toolchain_info
 
     apexer_outputs = _run_apexer(ctx, apex_toolchain)
@@ -658,14 +742,14 @@ def _apex_rule_impl(ctx):
     private_key = apex_cert_info.pk8
     public_key = apex_cert_info.pem
 
-    signed_apex = ctx.outputs.apex_output
+    signed_apex = ctx.actions.declare_file(ctx.attr.name + ".apex")
     signed_capex = None
 
     _run_signapk(ctx, unsigned_apex, signed_apex, private_key, public_key, "BazelApexSigning")
 
-    if ctx.attr.compressible and ctx.attr._compression_enabled[BuildSettingInfo].value:
+    if ctx.attr.compressible and _compression_enabled(ctx):
         compressed_apex_output_file = _run_apex_compression_tool(ctx, apex_toolchain, signed_apex, ctx.attr.name + ".capex.unsigned")
-        signed_capex = ctx.outputs.capex_output
+        signed_capex = ctx.actions.declare_file(ctx.attr.name + ".capex")
         _run_signapk(ctx, compressed_apex_output_file, signed_capex, private_key, public_key, "BazelCompressedApexSigning")
 
     apex_key_info = ctx.attr.key[ApexKeyInfo]
@@ -682,10 +766,14 @@ def _apex_rule_impl(ctx):
         ),
         apex_file = signed_apex,
         arch = arch,
-        secondary_arch = ctx.attr._device_secondary_arch[BuildSettingInfo].value,
+        secondary_arch = platforms.get_target_secondary_arch(ctx.attr._platform_utils),
     )
 
     transitive_apex_deps, transitive_unvalidated_targets_output_file, apex_deps_validation_files = _validate_apex_deps(ctx)
+
+    optional_output_groups = {}
+    if signed_capex:
+        optional_output_groups["signed_compressed_output"] = [signed_capex]
 
     return [
         DefaultInfo(files = depset([signed_apex])),
@@ -712,9 +800,13 @@ def _apex_rule_impl(ctx):
             installed_files = depset([apexer_outputs.installed_files]),
             transitive_unvalidated_targets = depset([transitive_unvalidated_targets_output_file]),
             _validation = apex_deps_validation_files,
+            **optional_output_groups
         ),
         ApexDepsInfo(transitive_deps = transitive_apex_deps),
-        ApexMkInfo(make_modules_to_install = apexer_outputs.make_modules_to_install),
+        ApexMkInfo(
+            make_modules_to_install = apexer_outputs.make_modules_to_install,
+            files_info = apexer_outputs.make_files_info,
+        ),
         collect_deps_clang_tidy_info(ctx),
     ]
 
@@ -735,6 +827,17 @@ _apex = rule(
         "package_name": attr.string(),
         "logging_parent": attr.string(),
         "file_contexts": attr.label(allow_single_file = True, mandatory = True),
+        "canned_fs_config": attr.label(
+            allow_single_file = True,
+            doc = """Path to the canned fs config file for customizing file's
+uid/gid/mod/capabilities. The content of this file is appended to the
+default config, so that the custom entries are preferred.
+
+The format is /<path_or_glob> <uid> <gid> <mode> [capabilities=0x<cap>], where
+path_or_glob is a path or glob pattern for a file or set of files, uid/gid
+are numerial values of user ID and group ID, mode is octal value for the
+file mode, and cap is hexadecimal value for the capability.""",
+        ),
         "key": attr.label(providers = [ApexKeyInfo], mandatory = True),
         "certificate": attr.label(
             providers = [AndroidAppCertificateInfo],
@@ -747,7 +850,10 @@ the SDK version that the APEX was first introduced.
 
 When not set, defaults to 10000 (or "current").""",
         ),
-        "updatable": attr.bool(default = True),
+        "updatable": attr.bool(default = True, doc = """Whether this APEX is considered updatable or not.
+
+When set to true, this will enforce additional rules for making sure that the
+APEX is truly updatable. To be updatable, min_sdk_version should be set as well."""),
         "installable": attr.bool(default = True),
         "compressible": attr.bool(default = False),
         "base_apex_name": attr.string(
@@ -782,10 +888,6 @@ When not set, defaults to 10000 (or "current").""",
             cfg = apex_transition,
             aspects = STANDARD_PAYLOAD_ASPECTS,
         ),
-
-        # APEX predefined outputs.
-        "apex_output": attr.output(doc = "signed .apex output"),
-        "capex_output": attr.output(doc = "signed .capex output"),
 
         # Required to use apex_transition. This is an acknowledgement to the risks of memory bloat when using transitions.
         "_allowlist_function_transition": attr.label(default = "@bazel_tools//tools/allowlists/function_transition_allowlist"),
@@ -843,13 +945,8 @@ When not set, defaults to 10000 (or "current").""",
             default = "//build/bazel/rules/apex:apex_global_min_sdk_version_override",
             doc = "If specified, override the min_sdk_version of this apex and in the transition and checks for dependencies.",
         ),
-        "_device_secondary_arch": attr.label(
-            default = "//build/bazel/rules/apex:device_secondary_arch",
-            doc = "If specified, also include the libraries from the secondary arch.",
-        ),
-        "_compression_enabled": attr.label(
-            default = "//build/bazel/rules/apex:compression_enabled",
-            doc = "If specified along with compressible attribute, run compression tool.",
+        "_product_variables": attr.label(
+            default = "//build/bazel/product_config:product_vars",
         ),
 
         # Api_fingerprint
@@ -894,6 +991,7 @@ def apex(
         prebuilts = [],
         package_name = None,
         logging_parent = None,
+        canned_fs_config = None,
         testonly = False,
         # TODO(b/255400736): tests are not fully supported yet.
         tests = [],
@@ -910,12 +1008,6 @@ def apex(
         compressible = False
     elif tests:
         fail("Apex with tests attribute needs to be testonly.")
-
-    apex_output = name + ".apex"
-    capex_output = None
-
-    if compressible and compression_enabled():
-        capex_output = name + ".capex"
 
     if certificate and certificate_name:
         fail("Cannot use both certificate_name and certificate attributes together. Use only one of them.")
@@ -953,13 +1045,7 @@ def apex(
         prebuilts = prebuilts,
         package_name = package_name,
         logging_parent = logging_parent,
-
-        # Enables predeclared output builds from command line directly, e.g.
-        #
-        # $ bazel build //path/to/module:com.android.module.apex
-        # $ bazel build //path/to/module:com.android.module.capex
-        apex_output = apex_output,
-        capex_output = capex_output,
+        canned_fs_config = canned_fs_config,
         testonly = testonly,
         target_compatible_with = target_compatible_with,
         **kwargs

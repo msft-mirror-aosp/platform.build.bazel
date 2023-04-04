@@ -43,7 +43,7 @@ readonly -a build_types=("$@")
 function build() {
   date
   set -x
-  if ! "$TOP/build/bazel/scripts/incremental_build/incremental_build.py" \
+  if ! "$TOP/build/bazel/scripts/incremental_build/incremental_build.sh" \
     --ignore-repo-diff ${log_dir:+--log-dir "$log_dir"} \
     ${build_types:+--build-types "${build_types[@]}"} \
     "$@"; then
@@ -55,4 +55,5 @@ function build() {
 build --cujs clean 'create bionic/unreferenced.txt' 'modify Android.bp' -- droid
 build --cujs 'modify bionic/.*/stdio.cpp' --append-csv libc
 build --cujs 'modify .*/adb/daemon/main.cpp' --append-csv adbd
+build --cujs 'modify frameworks/.*/View.java' --append-csv framework
 
