@@ -1,6 +1,7 @@
-load(":cc_toolchain_config.bzl", "cc_toolchain_config")
+load("@//build/bazel/toolchains/cc/linux_clang:features.bzl", "cc_features")
 load(
-    "@//build/bazel/toolchains/cc:cc_toolchain_import.bzl",
+    ":rules.bzl",
+    "cc_toolchain_config",
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
@@ -12,9 +13,8 @@ filegroup(
     srcs = [],
 )
 
-cc_toolchain_config(
-    name = "linux_clang_x64_config",
-    cc_tools = "@clang//:linux_x64",
+cc_features(
+    name = "linux_clang_x64_features",
     compile_flags = [
         "-m64",
         "-no-canonical-prefixes",
@@ -23,11 +23,22 @@ cc_toolchain_config(
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
     ],
-    identifier = "linux_clang_x64",
     link_flags = [
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
     ],
+    toolchain_imports = [
+        "@clang//:linux_x64_libcxx",
+        "@gcc_lib//:start_libs",
+    ],
+)
+
+cc_toolchain_config(
+    name = "linux_clang_x64_config",
+    cc_features = ":linux_clang_x64_features",
+    cc_tools = "@clang//:linux_x64",
+    identifier = "linux_clang_x64",
+    target_cpu = "k8",
     toolchain_imports = [
         "@clang//:linux_x64_libcxx",
         "@gcc_lib//:start_libs",
