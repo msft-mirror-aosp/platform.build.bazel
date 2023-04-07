@@ -33,7 +33,11 @@ cc_features(
 cc_toolchain_config(
     name = "x64_config",
     cc_features = ":x64_features",
-    cc_tools = "@clang//:linux_x64",
+    cc_tools = [
+        "@clang//:linux_x64_clang",
+        "@clang//:linux_x64_archiver",
+        "@clang//:linux_x64_strip",
+    ],
     identifier = "linux_clang_x64",
     target_cpu = "k8",
     toolchain_imports = _x64_imports,
@@ -52,15 +56,15 @@ cc_toolchain_static_runtime(
 cc_toolchain(
     name = "x64",
     all_files = ":x64_config",
-    ar_files = "@clang//:linux_x64",
-    as_files = "@clang//:linux_x64",
+    ar_files = "@clang//:linux_x64_archiver",
+    as_files = "@clang//:linux_x64_clang",
     compiler_files = ":x64_config",
     dwp_files = "@//build/bazel/toolchains/cc:empty",
     dynamic_runtime_lib = ":x64_dynamic_runtime",
     linker_files = ":x64_config",
     objcopy_files = "@//build/bazel/toolchains/cc:empty",
     static_runtime_lib = ":x64_static_runtime",
-    strip_files = "@clang//:linux_x64",
+    strip_files = "@clang//:linux_x64_strip",
     supports_param_files = 1,
     toolchain_config = ":x64_config",
 )

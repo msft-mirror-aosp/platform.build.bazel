@@ -1,105 +1,56 @@
 """Platform and tool independent toolchain rules."""
 
-load(":actions.bzl", "create_action_tool_configs")
+load(":actions.bzl", "create_action_configs")
 
-_CcToolsInfo = provider(
-    "A provider that specifies various ToolInfo for a cc toolchain.",
-    fields = [
-        "ar",
-        "ar_features",
-        "cxx",
-        "cxx_features",
-        "gcc",
-        "gcc_features",
-        "ld",
-        "ld_features",
-        "strip",
-        "strip_features",
-    ],
+CcToolInfo = provider(
+    "A provider that specifies metadata for a tool.",
+    fields = {
+        "tool": "A File object to be used as the tool executable.",
+        "applied_actions": "Cc actions where this tool applies.",
+        "with_features": "Feature names that need to be enabled to select this tool.",
+        "with_no_features": "Feature names that need to be disabled to select this tool.",
+    },
 )
 
-def _cc_tools_impl(ctx):
+def _cc_tool_impl(ctx):
+    runfiles = ctx.runfiles(
+        files = [ctx.executable.tool] + ctx.files.runfiles,
+    )
+    runfiles = runfiles.merge(ctx.attr.tool[DefaultInfo].default_runfiles)
     return [
-        _CcToolsInfo(
-            gcc = ctx.executable.gcc,
-            gcc_features = ctx.attr.gcc_features,
-            ld = ctx.executable.ld,
-            ld_features = ctx.attr.ld_features,
-            ar = ctx.executable.ar,
-            ar_features = ctx.attr.ar_features,
-            cxx = ctx.executable.cxx,
-            cxx_features = ctx.attr.cxx_features,
-            strip = ctx.executable.strip,
-            strip_features = ctx.attr.strip_features,
+        CcToolInfo(
+            tool = ctx.executable.tool,
+            applied_actions = ctx.attr.applied_actions,
+            with_features = ctx.features,
+            with_no_features = ctx.disabled_features,
         ),
-        DefaultInfo(files = depset(direct = ctx.files.tool_files)),
+        DefaultInfo(
+            files = depset([ctx.executable.tool]),
+            runfiles = runfiles,
+        ),
     ]
 
-cc_tools = rule(
-    implementation = _cc_tools_impl,
+cc_tool = rule(
+    implementation = _cc_tool_impl,
     attrs = {
-        "tool_files": attr.label_list(
-            doc = "All files needed to run tool binaries.",
+        "tool": attr.label(
+            doc = "The tool target.",
+            allow_single_file = True,
+            executable = True,
+            cfg = "exec",
+            mandatory = True,
+        ),
+        "runfiles": attr.label_list(
+            doc = "Other files needed to run the tool, in addition to what provided by the tool target.",
             allow_files = True,
+        ),
+        "applied_actions": attr.string_list(
+            doc = "A list of cc action names where the tool applies.",
             mandatory = True,
-        ),
-        "ar": attr.label(
-            doc = "Path to the archiver.",
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-        ),
-        "ar_features": attr.string_list(
-            doc = "A list of applicable optional features.",
-            default = [],
-        ),
-        "cxx": attr.label(
-            doc = "Path to the c++ compiler.",
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-        ),
-        "cxx_features": attr.string_list(
-            doc = "A list of applicable optional features.",
-            default = [],
-        ),
-        "gcc": attr.label(
-            doc = "Path to the c compiler.",
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-        ),
-        "gcc_features": attr.string_list(
-            doc = "A list of applicable optional features.",
-            default = [],
-        ),
-        "ld": attr.label(
-            doc = "Path to the linker.",
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-        ),
-        "ld_features": attr.string_list(
-            doc = "A list of applicable optional features.",
-            default = [],
-        ),
-        "strip": attr.label(
-            doc = "Path to the strip utility.",
-            allow_single_file = True,
-            executable = True,
-            cfg = "exec",
-            mandatory = True,
-        ),
-        "strip_features": attr.string_list(
-            doc = "A list of applicable optional features.",
-            default = [],
+            allow_empty = False,
         ),
     },
-    provides = [_CcToolsInfo, DefaultInfo],
+    provides = [CcToolInfo, DefaultInfo],
 )
 
 CcToolchainImportInfo = provider(
@@ -308,8 +259,14 @@ def _toolchain_files(ctx):
         lib[DefaultInfo].files
         for lib in ctx.attr.toolchain_imports
     ]
-    tool_files = [ctx.attr.cc_tools[DefaultInfo].files]
-    return depset(transitive = toolchain_import_files + tool_files)
+    tool_files = [tool[DefaultInfo].files for tool in ctx.attr.cc_tools]
+    tool_runfiles = [
+        tool[DefaultInfo].default_runfiles.files
+        for tool in ctx.attr.cc_tools
+    ]
+    return depset(
+        transitive = toolchain_import_files + tool_files + tool_runfiles,
+    )
 
 def _cc_toolchain_config_impl(ctx):
     return [
@@ -317,7 +274,9 @@ def _cc_toolchain_config_impl(ctx):
             ctx = ctx,
             toolchain_identifier = ctx.attr.identifier,
             features = ctx.attr.cc_features[CcFeatureConfigInfo].features,
-            action_configs = create_action_tool_configs(ctx.attr.cc_tools[_CcToolsInfo]),
+            action_configs = create_action_configs(
+                [tool[CcToolInfo] for tool in ctx.attr.cc_tools],
+            ),
             builtin_sysroot = ctx.file.sysroot.path if ctx.file.sysroot else None,
             target_cpu = ctx.attr.target_cpu,
             # The attributes below are required by the constructor, but don't
@@ -340,10 +299,11 @@ cc_toolchain_config = rule(
             doc = "Unique toolchain identifier.",
             mandatory = True,
         ),
-        "cc_tools": attr.label(
-            doc = "A target that provides _CcToolsInfo.",
+        "cc_tools": attr.label_list(
+            doc = "A list of targets that provides CcToolInfo.",
             mandatory = True,
-            providers = [_CcToolsInfo, DefaultInfo],
+            allow_empty = False,
+            providers = [CcToolInfo, DefaultInfo],
         ),
         "cc_features": attr.label(
             doc = "A target that provides CcFeatureConfigInfo.",

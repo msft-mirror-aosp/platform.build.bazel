@@ -1,8 +1,16 @@
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
+    "cc_tool",
     "cc_toolchain_import",
-    "cc_tools",
 )
+load(
+    "@//build/bazel/toolchains/cc:actions.bzl",
+    "ASSEMBLE_ACTIONS",
+    "CPP_COMPILE_ACTIONS",
+    "C_COMPILE_ACTIONS",
+    "LINK_ACTIONS",
+)
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
@@ -11,49 +19,37 @@ CLANG_LINUX_X64 = "linux-x86/clang-r487747"
 
 target_linux_x64 = ":" + CLANG_LINUX_X64
 
-cc_tools(
-    name = "linux_x64",
-    ar = target_linux_x64 + "/bin/llvm-ar",
-    ar_features = [
-        "archiver_flags",
-    ],
-    cxx = target_linux_x64 + "/bin/clang++",
-    cxx_features = [
-        "no_implicit_libs",
-        "supports_pic",
-        "supports_start_end_lib",
-        "supports_dynamic_linker",
-    ],
-    gcc = target_linux_x64 + "/bin/clang",
-    gcc_features = [
-        "no_implicit_libs",
-        "supports_pic",
-        "supports_start_end_lib",
-        "supports_dynamic_linker",
-    ],
-    ld = target_linux_x64 + "/bin/clang++",
-    ld_features = [
-        "force_pic_flags",
-        "libraries_to_link",
-        "library_search_directories",
-        "linker_param_file",
-        "linkstamps",
-        "no_implicit_libs",
-        "output_execpath_flags",
-        "runtime_library_search_directories",
-        "shared_flag",
-        "static_link_cpp_runtimes",
-        "strip_debug_symbols",
-        "supports_dynamic_linker",
-        "supports_pic",
-        "supports_start_end_lib",
-        "user_link_flags",
-    ],
-    strip = target_linux_x64 + "/bin/llvm-strip",
-    tool_files = glob(
+cc_tool(
+    name = "linux_x64_clang",
+    applied_actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
+    runfiles = glob(
         [CLANG_LINUX_X64 + "/bin/*"],
         allow_empty = False,
+        exclude = [
+            CLANG_LINUX_X64 + "/bin/clang-check",
+            CLANG_LINUX_X64 + "/bin/clangd",
+            CLANG_LINUX_X64 + "/bin/*clang-format",
+            CLANG_LINUX_X64 + "/bin/clang-tidy*",
+            CLANG_LINUX_X64 + "/bin/lldb*",
+            CLANG_LINUX_X64 + "/bin/llvm-bolt",
+            CLANG_LINUX_X64 + "/bin/llvm-config",
+            CLANG_LINUX_X64 + "/bin/llvm-cfi-verify",
+        ],
     ),
+    tool = target_linux_x64 + "/bin/clang",
+)
+
+cc_tool(
+    name = "linux_x64_archiver",
+    applied_actions = [ACTION_NAMES.cpp_link_static_library],
+    tool = target_linux_x64 + "/bin/llvm-ar",
+)
+
+cc_tool(
+    name = "linux_x64_strip",
+    applied_actions = [ACTION_NAMES.strip],
+    runfiles = [target_linux_x64 + "/bin/llvm-objcopy"],
+    tool = target_linux_x64 + "/bin/llvm-strip",
 )
 
 cc_toolchain_import(
