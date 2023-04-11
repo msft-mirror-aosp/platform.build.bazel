@@ -1,0 +1,81 @@
+load(":features.bzl", "cc_features")
+load(
+    "@//build/bazel/toolchains/cc:rules.bzl",
+    "cc_toolchain_config",
+    "cc_toolchain_dynamic_runtime",
+    "cc_toolchain_static_runtime",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_x64_imports = [
+    "@clang//:linux_x64_libcxx",
+    "@gcc_lib//:start_libs",
+]
+
+cc_features(
+    name = "x64_features",
+    compile_flags = [
+        "-m64",
+        "-no-canonical-prefixes",
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+    ],
+    link_flags = [
+        "-fuse-ld=lld",
+        "-Wno-unused-command-line-argument",
+    ],
+    toolchain_imports = _x64_imports,
+)
+
+cc_toolchain_config(
+    name = "x64_config",
+    cc_features = ":x64_features",
+    cc_tools = "@clang//:linux_x64",
+    identifier = "linux_clang_x64",
+    target_cpu = "k8",
+    toolchain_imports = _x64_imports,
+)
+
+cc_toolchain_dynamic_runtime(
+    name = "x64_dynamic_runtime",
+    libs = _x64_imports,
+)
+
+cc_toolchain_static_runtime(
+    name = "x64_static_runtime",
+    libs = _x64_imports,
+)
+
+cc_toolchain(
+    name = "x64",
+    all_files = ":x64_config",
+    ar_files = "@clang//:linux_x64",
+    as_files = "@clang//:linux_x64",
+    compiler_files = ":x64_config",
+    dwp_files = "@//build/bazel/toolchains/cc:empty",
+    dynamic_runtime_lib = ":x64_dynamic_runtime",
+    linker_files = ":x64_config",
+    objcopy_files = "@//build/bazel/toolchains/cc:empty",
+    static_runtime_lib = ":x64_static_runtime",
+    strip_files = "@clang//:linux_x64",
+    supports_param_files = 1,
+    toolchain_config = ":x64_config",
+)
+
+toolchain(
+    name = "x64_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "@bazel_tools//tools/cpp:clang",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    toolchain = ":x64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)

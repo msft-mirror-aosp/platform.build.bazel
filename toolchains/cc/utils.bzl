@@ -41,3 +41,28 @@ def tee_filter(items, condition):
         else:
             falsy.append(i)
     return truthy, falsy
+
+def filter_none(items):
+    return [item for item in items if item != None]
+
+def check_args(condition, func, *args, **kwargs):
+    """Check that all the args meet a condition before calling a function.
+
+    Args:
+        condition: A callable used to check each arg. Called as
+            "condition(arg)". The condition is met if it returns a truthy
+            value.
+        func: A callable to be called if check passes.
+        *args: Positional args passed to the function.
+        **kwargs: Keyword args passed to the function.
+
+    Returns:
+        Whatever the function returns, if check passes; None otherwise.
+    """
+    for arg in args:
+        if not condition(arg):
+            return None
+    for arg in kwargs.values():
+        if not condition(arg):
+            return None
+    return func(*args, **kwargs)

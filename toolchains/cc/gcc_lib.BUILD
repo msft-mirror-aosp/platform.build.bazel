@@ -1,4 +1,4 @@
-load("@//build/bazel/toolchains/cc:cc_toolchain_import.bzl", "cc_toolchain_import")
+load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import")
 
 package(default_visibility = [
     "@//build/bazel/toolchains/cc:__subpackages__",
