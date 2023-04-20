@@ -32,11 +32,11 @@ from typing import Mapping
 
 import cuj_catalog
 import perf_metrics
+import pretty
 import ui
 import util
-import pretty
 
-MAX_RUN_COUNT: Final[int] = 5
+MAX_RUN_COUNT: int = 5
 
 
 @functools.cache
@@ -47,6 +47,8 @@ def _prepare_env() -> (Mapping[str, str], str):
       ninja_args += ' '
     ninja_args += '-d explain --quiet'
     if util.is_ninja_dry_run(ninja_args):
+      global MAX_RUN_COUNT
+      MAX_RUN_COUNT = 1
       logging.warning(f'Running dry ninja runs NINJA_ARGS={ninja_args}')
     return ninja_args
 
@@ -61,8 +63,8 @@ def _prepare_env() -> (Mapping[str, str], str):
     return soong_ui_ninja_args
 
   overrides: Mapping[str, str] = {
-      'NINJA_ARGS': get_soong_build_ninja_args(),
-      'SOONG_UI_NINJA_ARGS': get_soong_ui_ninja_args()
+    'NINJA_ARGS': get_soong_build_ninja_args(),
+    'SOONG_UI_NINJA_ARGS': get_soong_ui_ninja_args()
   }
   env = {**os.environ, **overrides}
   # TODO: Switch to oriole when it works
@@ -124,14 +126,14 @@ def _build(build_type: ui.BuildType, run_dir: Path) -> (int, BuildInfo):
 
   def recompact_ninja_log():
     subprocess.run([
-        util.get_top_dir().joinpath(
-            'prebuilts/build-tools/linux-x86/bin/ninja'),
-        '-f',
-        util.get_out_dir().joinpath(
-            f'combined-{env.get("TARGET_PRODUCT", "aosp_arm")}.ninja'),
-        '-t', 'recompact'],
-        check=False, cwd=util.get_top_dir(), shell=False,
-        stdout=f, stderr=f)
+      util.get_top_dir().joinpath(
+        'prebuilts/build-tools/linux-x86/bin/ninja'),
+      '-f',
+      util.get_out_dir().joinpath(
+        f'combined-{env.get("TARGET_PRODUCT", "aosp_arm")}.ninja'),
+      '-t', 'recompact'],
+      check=False, cwd=util.get_top_dir(), shell=False,
+      stdout=f, stderr=f)
 
   with open(logfile, mode='w') as f:
     action_count_before = get_action_count()
@@ -148,14 +150,14 @@ def _build(build_type: ui.BuildType, run_dir: Path) -> (int, BuildInfo):
     action_count_after = get_action_count()
 
   return (p.returncode, {
-      'build_type': build_type.to_flag(),
-      'build.ninja': _build_file_sha(),
-      'build.ninja.size': _build_file_size(),
-      'targets': ' '.join(ui.get_user_input().targets),
-      'log': str(run_dir.relative_to(ui.get_user_input().log_dir)),
-      'ninja_explains': util.count_explanations(logfile),
-      'actions': action_count_after - action_count_before,
-      'time': util.hhmmss(datetime.timedelta(microseconds=elapsed_ns / 1000))
+    'build_type': build_type.to_flag(),
+    'build.ninja': _build_file_sha(),
+    'build.ninja.size': _build_file_size(),
+    'targets': ' '.join(ui.get_user_input().targets),
+    'log': str(run_dir.relative_to(ui.get_user_input().log_dir)),
+    'ninja_explains': util.count_explanations(logfile),
+    'actions': action_count_after - action_count_before,
+    'time': util.hhmmss(datetime.timedelta(microseconds=elapsed_ns / 1000))
   })
 
 
@@ -177,8 +179,8 @@ def _run_cuj(run_dir: Path, build_type: ui.BuildType,
   # summarize
   log_desc = desc if run == 0 else f'rebuild-{run} after {desc}'
   build_info = {
-                   'description': log_desc,
-                   'build_result': build_result
+                 'description': log_desc,
+                 'build_result': build_result
                } | build_info
   logging.info('%s after %s: %s',
                build_info["build_result"], build_info["time"], log_desc)
@@ -210,38 +212,34 @@ def main():
   '''))
 
   run_dir_gen = util.next_path(user_input.log_dir.joinpath(util.RUN_DIR_PREFIX))
-  warmed_up = False  # empirically this reduced the variation on the first build
-  # probably attributable to OS caches. While we may want a warm-up run for each
-  # build type, i.e. inside the following loop, this seems to be sufficient.
+
+  def run_cuj_group(cuj_group: cuj_catalog.CujGroup):
+    for cujstep in cuj_group.steps:
+      desc = cujstep.verb
+      desc = f'{desc} {cuj_group.description}'.strip()
+      desc = f'{desc} {user_input.description}'.strip()
+      logging.info('START %s %s [%s]', build_type.name,
+                   ' '.join(user_input.targets), desc)
+      cujstep.apply_change()
+      for run in range(0, MAX_RUN_COUNT):
+        run_dir = next(run_dir_gen)
+        build_info = _run_cuj(run_dir, build_type, cujstep, desc, run)
+        perf_metrics.archive_run(run_dir, build_info)
+        if build_info['ninja_explains'] == 0:
+          break
+      logging.info(' DONE %s %s [%s]', build_type.name,
+                   ' '.join(user_input.targets), desc)
+
   for build_type in user_input.build_types:
-    for cuj_index in [cuj_catalog.warmup_index(), *user_input.chosen_cujgroups]:
-      cujgroup = cuj_catalog.get_cujgroups()[cuj_index]
-      for cujstep in cujgroup.steps:
-        desc = cujstep.verb
-        desc = f'{desc} {cujgroup.description}'.strip()
-        desc = f'{desc} {user_input.description}'.strip()
-        logging.info('START %s %s [%s]', build_type.name,
-                     ' '.join(user_input.targets), desc)
-        cujstep.apply_change()
-        for run in range(0, MAX_RUN_COUNT):
-          run_dir = next(run_dir_gen)
-          adorned_desc = desc
-          if not warmed_up:
-            adorned_desc = f'WARMUP {adorned_desc}'
-            warmed_up = True
-          if not util.get_out_dir().joinpath('soong/bootstrap.ninja').exists():
-            adorned_desc = f'CLEAN {adorned_desc}'
-          build_info = _run_cuj(run_dir, build_type, cujstep, adorned_desc, run)
-          perf_metrics.archive_run(run_dir, build_info)
-          if build_info['ninja_explains'] == 0:
-            break
-        logging.info(' DONE %s %s [%s]', build_type.name,
-                     ' '.join(user_input.targets), desc)
+    # warm-up run reduces variations attributable to OS caches
+    run_cuj_group(cuj_catalog.Warmup)
+    for i in user_input.chosen_cujgroups:
+      run_cuj_group(cuj_catalog.get_cujgroups()[i])
 
   perf_metrics.tabulate_metrics_csv(user_input.log_dir)
   perf_metrics.display_tabulated_metrics(user_input.log_dir)
   pretty.summarize_metrics(user_input.log_dir)
-  pretty.display_summarized_metrics(user_input.log_dir, False)
+  pretty.display_summarized_metrics(user_input.log_dir)
 
 
 if __name__ == '__main__':

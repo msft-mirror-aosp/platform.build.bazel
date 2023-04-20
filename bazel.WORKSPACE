@@ -65,12 +65,8 @@ local_repository(
 register_toolchains(
     "//prebuilts/build-tools:py_toolchain",
 
-    # For Starlark Android rules
-    "//prebuilts/sdk:android_default_toolchain",
-    "//prebuilts/sdk:android_sdk_tools",
-
-    # For native android_binary
-    "//prebuilts/sdk:android_sdk_tools_for_native_android_binary",
+    # For Android rules
+    "//prebuilts/sdk:all",
 
     # For APEX rules
     "//build/bazel/rules/apex:all",
@@ -93,7 +89,7 @@ bind(
 # for Android app building, whereas the d8.jar in prebuilts/sdk/tools doesn't.
 bind(
     name = "android/d8_jar_import",
-    actual = "//prebuilts/r8:r8_jar_import",
+    actual = "//prebuilts/bazel/common/r8:r8_jar_import",
 )
 
 # TODO(b/201242197): Avoid downloading remote_coverage_tools (on CI) by creating
@@ -125,14 +121,23 @@ local_repository(
     path = "prebuilts/bazel/linux-x86_64/remote_java_tools_linux",
 )
 
+# The following repository contains android_tools prebuilts.
+local_repository(
+    name = "android_tools",
+    path = "prebuilts/bazel/common/android_tools",
+)
+
 # The rules_java repository is stubbed and points to the native Java rules until
 # it can be properly vendored.
 local_repository(
     name = "rules_java",
-    path = "build/bazel/rules/java/rules_java",
+    path = "build/bazel_common_rules/rules/java/rules_java",
 )
 
-register_toolchains("//prebuilts/jdk/jdk17:all")
+register_toolchains(
+    "//prebuilts/jdk/jdk17:runtime_toolchain_definition",
+    "//build/bazel/rules/java:jdk17_host_toolchain_java_definition",
+)
 
 local_repository(
     name = "kotlin_maven_interface",
