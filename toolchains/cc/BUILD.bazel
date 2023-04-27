@@ -1,4 +1,5 @@
 filegroup(
     name = "empty",
     srcs = [],
+    visibility = ["//build/bazel/toolchains/cc:__subpackages__"],
 )

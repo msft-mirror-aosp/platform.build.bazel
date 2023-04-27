@@ -4,6 +4,7 @@ load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "action_config",
     "tool",
+    "with_feature_set",
 )
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
@@ -45,60 +46,40 @@ ARCHIVER_ACTIONS = [
     ACTION_NAMES.cpp_link_static_library,
 ]
 
-def create_action_tool_configs(cc_tools):
+def create_action_configs(tool_configs):
     """Creates a list of action configs to specify cc tools to each action.
 
     Args:
-        cc_tools: A CcToolsInfo provider containing the tool configs.
+        tool_configs: A list of CcToolInfo providers containing the tool
+            configs. Order matters when multiple tool configs specify the same
+            applied action - details:
+            https://cs.opensource.google/bazel/bazel/+/master:tools/cpp/cc_toolchain_config_lib.bzl?q=symbol:action_config&ss=bazel%2Fbazel
 
     Returns:
         A list of action configs
     """
-    action_configs = []
+    tools_by_action = {}
+    for tool_config in tool_configs:
+        for action in tool_config.applied_actions:
+            tools_by_action.setdefault(action, default = []).append(tool_config)
 
-    for action_name in C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS:
+    action_configs = []
+    for action, tool_configs in tools_by_action.items():
+        tools = [tool(
+            tool = t.tool,
+            with_features = [
+                with_feature_set(
+                    features = t.with_features,
+                    not_features = t.with_no_features,
+                ),
+            ],
+        ) for t in tool_configs]
         action_configs.append(
             action_config(
-                action_name = action_name,
-                tools = [tool(tool = cc_tools.gcc)],
+                action_name = action,
                 enabled = True,
-                implies = cc_tools.gcc_features,
+                tools = tools,
             ),
         )
-    for action_name in CPP_COMPILE_ACTIONS:
-        action_configs.append(
-            action_config(
-                action_name = action_name,
-                tools = [tool(tool = cc_tools.cxx)],
-                enabled = True,
-                implies = cc_tools.cxx_features,
-            ),
-        )
-    for action_name in LINK_ACTIONS:
-        action_configs.append(
-            action_config(
-                action_name = action_name,
-                tools = [tool(tool = cc_tools.ld)],
-                enabled = True,
-                implies = cc_tools.ld_features,
-            ),
-        )
-    for action_name in ARCHIVER_ACTIONS:
-        action_configs.append(
-            action_config(
-                action_name = action_name,
-                tools = [tool(tool = cc_tools.ar)],
-                enabled = True,
-                implies = cc_tools.ar_features,
-            ),
-        )
-    action_configs.append(
-        action_config(
-            action_name = ACTION_NAMES.strip,
-            tools = [tool(tool = cc_tools.strip)],
-            enabled = True,
-            implies = cc_tools.strip_features,
-        ),
-    )
 
     return action_configs
