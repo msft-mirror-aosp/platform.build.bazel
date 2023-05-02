@@ -254,6 +254,42 @@ CcFeatureConfigInfo = provider(
     },
 )
 
+SysrootInfo = provider(
+    doc = "Contains a sysroot path.",
+    fields = ["path"],
+)
+
+def _sysroot_impl(ctx):
+    if ctx.attr.path:
+        sysroot_path = "{}/{}/{}".format(
+            ctx.label.workspace_root,
+            ctx.label.package,
+            ctx.attr.path,
+        )
+    else:
+        sysroot_path = "{}/{}".format(
+            ctx.label.workspace_root,
+            ctx.label.package,
+        )
+    return [
+        SysrootInfo(path = sysroot_path),
+        DefaultInfo(files = depset(direct = ctx.files.all_files)),
+    ]
+
+sysroot = rule(
+    implementation = _sysroot_impl,
+    attrs = {
+        "path": attr.string(
+            doc = "Package relative path to the sysroot directory.",
+        ),
+        "all_files": attr.label_list(
+            default = [],
+            doc = "All relevant files shipped to the sandbox.",
+            allow_files = True,
+        ),
+    },
+)
+
 def _toolchain_files(ctx):
     toolchain_import_files = [
         lib[DefaultInfo].files
@@ -264,11 +300,16 @@ def _toolchain_files(ctx):
         tool[DefaultInfo].default_runfiles.files
         for tool in ctx.attr.cc_tools
     ]
+    sysroot_files = [
+        ctx.attr.sysroot[DefaultInfo].files,
+    ] if ctx.attr.sysroot else []
     return depset(
-        transitive = toolchain_import_files + tool_files + tool_runfiles,
+        transitive = toolchain_import_files + tool_files + tool_runfiles +
+                     sysroot_files,
     )
 
 def _cc_toolchain_config_impl(ctx):
+    sysroot = ctx.attr.sysroot[SysrootInfo].path if ctx.attr.sysroot else None
     return [
         cc_common.create_cc_toolchain_config_info(
             ctx = ctx,
@@ -277,7 +318,7 @@ def _cc_toolchain_config_impl(ctx):
             action_configs = create_action_configs(
                 [tool[CcToolInfo] for tool in ctx.attr.cc_tools],
             ),
-            builtin_sysroot = ctx.file.sysroot.path if ctx.file.sysroot else None,
+            builtin_sysroot = sysroot,
             target_cpu = ctx.attr.target_cpu,
             # The attributes below are required by the constructor, but don't
             # affect actions at all.
@@ -320,8 +361,8 @@ cc_toolchain_config = rule(
             default = [],
         ),
         "sysroot": attr.label(
-            doc = "The sysroot directory.",
-            allow_single_file = True,
+            doc = "A target that provides SysrootInfo and related files.",
+            providers = [SysrootInfo, DefaultInfo],
         ),
     },
     provides = [CcToolchainConfigInfo, DefaultInfo],

@@ -40,6 +40,7 @@ cc_toolchain_config(
         "@clang//:macos_all_strip",
     ],
     identifier = "macos_clang_x64",
+    sysroot = "@macos_sdk//:sdk",
     target_cpu = "k8",
     toolchain_imports = _imports,
 )
