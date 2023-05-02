@@ -1,6 +1,11 @@
 """Platform and tool independent toolchain rules."""
 
 load(":actions.bzl", "create_action_configs")
+load(
+    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "ArtifactNamePatternInfo",
+    "artifact_name_pattern",
+)
 
 CcToolInfo = provider(
     "A provider that specifies metadata for a tool.",
@@ -290,6 +295,47 @@ sysroot = rule(
     },
 )
 
+def _cc_artifact_name_impl(ctx):
+    return artifact_name_pattern(
+        category_name = ctx.attr.category,
+        prefix = ctx.attr.prefix,
+        extension = ctx.attr.extension,
+    )
+
+cc_artifact_name = rule(
+    implementation = _cc_artifact_name_impl,
+    doc = "Creates an artifact filename pattern for generated artifacts.",
+    attrs = {
+        "category": attr.string(
+            doc = "Category name of the artifact.",
+            mandatory = True,
+            values = [
+                "static_library",
+                "alwayslink_static_library",
+                "dynamic_library",
+                "executable",
+                "interface_library",
+                "pic_file",
+                "included_file_list",
+                "serialized_diagnostics_file",
+                "object_file",
+                "pic_object_file",
+                "cpp_module",
+                "generated_assembly",
+                "processed_header",
+                "generated_header",
+                "preprocessed_c_source",
+                "preprocessed_cpp_source",
+                "coverage_data_file",
+                "clif_output_proto",
+            ],
+        ),
+        "prefix": attr.string(doc = "Filename prefix.", default = ""),
+        "extension": attr.string(doc = "File extension.", default = ""),
+    },
+    provides = [ArtifactNamePatternInfo],
+)
+
 def _toolchain_files(ctx):
     toolchain_import_files = [
         lib[DefaultInfo].files
@@ -318,6 +364,10 @@ def _cc_toolchain_config_impl(ctx):
             action_configs = create_action_configs(
                 [tool[CcToolInfo] for tool in ctx.attr.cc_tools],
             ),
+            artifact_name_patterns = [
+                p[ArtifactNamePatternInfo]
+                for p in ctx.attr.artifact_name_patterns
+            ],
             builtin_sysroot = sysroot,
             target_cpu = ctx.attr.target_cpu,
             # The attributes below are required by the constructor, but don't
@@ -350,6 +400,11 @@ cc_toolchain_config = rule(
             doc = "A target that provides CcFeatureConfigInfo.",
             mandatory = True,
             providers = [CcFeatureConfigInfo],
+        ),
+        "artifact_name_patterns": attr.label_list(
+            doc = "A list of name patterns for generated artifacts.",
+            providers = [ArtifactNamePatternInfo],
+            default = [],
         ),
         "target_cpu": attr.string(
             doc = "Target CPU architecture. This only affects the directory name of execution and output trees.",

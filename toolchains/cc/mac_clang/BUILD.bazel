@@ -1,6 +1,7 @@
 load(":features.bzl", "cc_features")
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
+    "cc_artifact_name",
     "cc_toolchain_config",
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
@@ -30,8 +31,16 @@ cc_features(
     toolchain_imports = _imports,
 )
 
+cc_artifact_name(
+    name = "dylib",
+    category = "dynamic_library",
+    extension = ".dylib",
+    prefix = "lib",
+)
+
 cc_toolchain_config(
     name = "x64_config",
+    artifact_name_patterns = [":dylib"],
     cc_features = ":x64_features",
     cc_tools = [
         "@clang//:macos_all_clang",
