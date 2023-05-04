@@ -1,0 +1,20 @@
+load(":features.bzl", "cc_features")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_features(
+    name = "x64_features",
+    compile_flags = [
+        "--target=x86_64-apple-darwin-macho",
+        "-no-canonical-prefixes",
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+    ],
+    link_flags = [
+        "--target=x86_64-apple-darwin-macho",
+        "-undefined dynamic_lookup",
+        "-fuse-ld=lld",
+    ],
+)
