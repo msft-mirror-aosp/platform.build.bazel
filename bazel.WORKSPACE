@@ -62,6 +62,12 @@ local_repository(
     path = "external/bazelbuild-rules_license",
 )
 
+local_repository(
+    name = "rules_python",
+    # TODO(b/200202912): Re-route this when rules_python is pulled into AOSP.
+    path = "build/bazel_common_rules/rules/python/stubs",
+)
+
 register_toolchains(
     "//prebuilts/build-tools:py_toolchain",
 
@@ -131,7 +137,7 @@ local_repository(
 # it can be properly vendored.
 local_repository(
     name = "rules_java",
-    path = "build/bazel/rules/java/rules_java",
+    path = "build/bazel_common_rules/rules/java/rules_java",
 )
 
 register_toolchains(

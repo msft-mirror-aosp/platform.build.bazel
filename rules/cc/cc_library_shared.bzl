@@ -19,7 +19,6 @@ load(
     "CcAndroidMkInfo",
     "add_lists_defaulting_to_none",
     "parse_sdk_version",
-    "sanitizer_deps",
     "system_dynamic_deps_defaults",
 )
 load(":cc_library_static.bzl", "cc_library_static")
@@ -137,7 +136,6 @@ def cc_library_shared(
     linkopts = linkopts + stl_info.linkopts
     copts = copts + stl_info.cppflags
 
-    extra_archive_deps = []
     if not native_coverage:
         features = features + ["-coverage"]
     else:
@@ -147,7 +145,7 @@ def cc_library_shared(
         })
 
         # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
-        extra_archive_deps = select({
+        whole_archive_deps = whole_archive_deps + select({
             "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
             "//conditions:default": [],
         })
@@ -157,6 +155,7 @@ def cc_library_shared(
     # the static-variant srcs are different than the shared-variant srcs.
     cc_library_static(
         name = shared_root_name,
+        shared_linking = True,
         hdrs = hdrs,
         srcs = srcs,
         srcs_c = srcs_c,
@@ -180,7 +179,7 @@ def cc_library_shared(
         implementation_whole_archive_deps = implementation_whole_archive_deps,
         system_dynamic_deps = system_dynamic_deps,
         deps = deps,
-        whole_archive_deps = whole_archive_deps + extra_archive_deps,
+        whole_archive_deps = whole_archive_deps,
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -194,37 +193,18 @@ def cc_library_shared(
         tidy_gen_header_filter = tidy_gen_header_filter,
     )
 
-    sanitizer_deps_name = name + "_sanitizer_deps"
-    sanitizer_deps(
-        name = sanitizer_deps_name,
-        dep = shared_root_name,
-        tags = ["manual"],
-    )
-
-    # implementation_deps and deps are to be linked into the shared library via
-    # --no-whole-archive. In order to do so, they need to be dependencies of
-    # a "root" of the cc_shared_library, but may not be roots themselves.
-    # Below we define stub roots (which themselves have no srcs) in order to facilitate
-    # this.
+    # dynamic deps are to be linked into the shared library via
+    # --no-whole-archive. In order to do so, they need to be dependencies of a
+    # "root" of the cc_shared_library, but may not be roots themselves.  Below
+    # we define stub roots (which themselves have no srcs) in order to
+    # facilitate this.
     imp_deps_stub = name + "_implementation_deps"
-    deps_stub = name + "_deps"
     native.cc_library(
         name = imp_deps_stub,
-        deps = (
-            implementation_deps +
-            implementation_whole_archive_deps +
-            stl_info.static_deps +
-            implementation_dynamic_deps +
-            system_dynamic_deps +
-            stl_info.shared_deps +
-            [sanitizer_deps_name]
-        ),
-        target_compatible_with = target_compatible_with,
-        tags = ["manual"],
-    )
-    native.cc_library(
-        name = deps_stub,
-        deps = deps + dynamic_deps,
+        deps = implementation_dynamic_deps +
+               system_dynamic_deps +
+               stl_info.shared_deps +
+               dynamic_deps,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
     )
@@ -244,7 +224,7 @@ def cc_library_shared(
         user_link_flags = linkopts + [soname_flag],
         dynamic_deps = shared_dynamic_deps,
         additional_linker_inputs = additional_linker_inputs,
-        deps = [shared_root_name, imp_deps_stub, deps_stub],
+        deps = [shared_root_name] + whole_archive_deps + [imp_deps_stub],
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -364,7 +344,6 @@ def _correct_cc_shared_library_linking(ctx, shared_info, new_output, static_root
         exports = exports,
         link_once_static_libs = shared_info.link_once_static_libs,
         linker_input = new_linker_input,
-        preloaded_deps = shared_info.preloaded_deps,
     )
 
 CcStubLibrariesInfo = provider(
@@ -508,7 +487,7 @@ _cc_library_shared_proxy = rule(
             default = "//prebuilts/clang/host/linux-x86:llvm-readelf",
         ),
     },
-    provides = [CcAndroidMkInfo, CcInfo],
+    provides = [CcAndroidMkInfo, CcInfo, CcTocInfo],
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
