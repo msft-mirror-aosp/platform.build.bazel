@@ -64,6 +64,7 @@ CcToolchainImportInfo = provider(
         "include_paths": "Include directories for this library.",
         "dynamic_mode_libraries": "Libraries to be linked in dynamic linking mode.",
         "dynamic_runtimes": "Libraries used as the dynamic runtime library of cc_toolchain.",
+        "framework_paths": "Framework search directories to add.",
         "static_mode_libraries": "Libraries to be linked in static linking mode.",
         "static_runtimes": "Libraries used as the static runtime library of cc_toolchain.",
         "so_linked_objects": "Directly linked objects to shared libraries.",
@@ -74,9 +75,14 @@ def _cc_toolchain_import_impl(ctx):
     if ctx.files.hdrs and not ctx.files.include_paths:
         fail(ctx.label, ": 'include_paths' is mandatory when 'hdrs' is not empty.")
     include_paths = [p.path for p in ctx.files.include_paths]
+    framework_paths = [p.path for p in ctx.files.framework_paths]
 
     dep_include_paths = [
         dep[CcToolchainImportInfo].include_paths
+        for dep in ctx.attr.deps
+    ]
+    dep_framework_paths = [
+        dep[CcToolchainImportInfo].framework_paths
         for dep in ctx.attr.deps
     ]
     dep_shared_libs = [
@@ -114,6 +120,11 @@ def _cc_toolchain_import_impl(ctx):
             include_paths = depset(
                 direct = include_paths,
                 transitive = dep_include_paths,
+                order = "topological",
+            ),
+            framework_paths = depset(
+                direct = framework_paths,
+                transitive = dep_framework_paths,
                 order = "topological",
             ),
             dynamic_mode_libraries = depset(
@@ -165,6 +176,11 @@ cc_toolchain_import = rule(
         "include_paths": attr.label_list(
             default = [],
             doc = "Include paths to search for headers. Mandatory if hdrs is set.",
+            allow_files = True,
+        ),
+        "framework_paths": attr.label_list(
+            default = [],
+            doc = "Framework search paths to add.",
             allow_files = True,
         ),
         "dynamic_mode_libs": attr.label_list(

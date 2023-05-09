@@ -67,6 +67,14 @@ def get_toolchain_include_paths_feature(import_config):
                             for path in import_config.include_paths
                         ]),
                     ),
+                    check_args(
+                        len,
+                        flag_group,
+                        flags = flatten([
+                            ("-F", path)
+                            for path in import_config.framework_paths
+                        ]),
+                    ),
                 ]),
             ),
         ],

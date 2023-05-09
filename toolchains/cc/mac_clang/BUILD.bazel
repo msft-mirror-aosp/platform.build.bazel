@@ -11,6 +11,7 @@ package(default_visibility = ["//visibility:public"])
 
 _imports = [
     "@clang//:macos_all_libcxx",
+    "@macos_sdk//:frameworks",
 ]
 
 cc_features(
