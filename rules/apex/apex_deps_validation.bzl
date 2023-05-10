@@ -13,12 +13,12 @@
 # limitations under the License.
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
-load(":apex_info.bzl", "ApexInfo")
-load(":apex_available.bzl", "ApexAvailableInfo")
-load(":apex_key.bzl", "ApexKeyInfo")
-load(":cc.bzl", "get_min_sdk_version")
 load("//build/bazel/rules:common.bzl", "get_dep_targets", "strip_bp2build_label_suffix")
 load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo")
+load(":apex_available.bzl", "ApexAvailableInfo")
+load(":apex_info.bzl", "ApexInfo")
+load(":apex_key.bzl", "ApexKeyInfo")
+load(":cc.bzl", "get_min_sdk_version")
 
 ApexDepsInfo = provider(
     "ApexDepsInfo collects transitive deps for dependency validation.",
@@ -30,8 +30,8 @@ ApexDepsInfo = provider(
 ApexDepInfo = provider(
     "ApexDepInfo collects metadata about dependencies of APEXs.",
     fields = {
-        "label": "Label of target",
         "is_external": "True if this target is an external dep to the APEX.",
+        "label": "Label of target",
         "min_sdk_version": "min_sdk_version of target",
     },
 )
@@ -43,12 +43,22 @@ _IGNORED_REPOSITORIES = [
     "bazel_tools",
 ]
 _IGNORED_RULE_KINDS = [
-    # No validation for language-agnostic aidl_library targets.
-    # aidl_library targets are included via cc_aidl_code_gen rule and
-    # apex_deps_validation aspect already validates against cc_aidl_code_gen targets
+    # No validation for language-agnostic targets.  In general language
+    # agnostic rules to support AIDL, HIDL, Sysprop do not have an analogous
+    # module type in Soong and do not have an apex_available property, often
+    # relying on language-specific apex_available properties.  Because a
+    # language-specific rule is required for a language-agnostic rule to be
+    # within the transitive deps of an apex and impact the apex contents, this
+    # is safe.
     "aidl_library",
+    "hidl_library",
+    "sysprop_library",
+
+    # Build settings, these have no built artifact and thus will not be
+    # included in an apex.
     "string_list_setting",
     "string_setting",
+
     # These rule kinds cannot be skipped by checking providers because most
     # targets have a License provider
     "_license",

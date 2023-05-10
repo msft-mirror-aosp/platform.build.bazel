@@ -15,20 +15,20 @@
 ApexInfo = provider(
     "ApexInfo exports metadata about this apex.",
     fields = {
-        "provides_native_libs": "Labels of native shared libs that this apex provides.",
-        "requires_native_libs": "Labels of native shared libs that this apex requires.",
-        "unsigned_output": "Unsigned .apex file.",
-        "signed_output": "Signed .apex file.",
-        "signed_compressed_output": "Signed .capex file.",
-        "bundle_key_info": "APEX bundle signing public/private key pair (the value of the key: attribute).",
-        "container_key_info": "Info of the container key provided as AndroidAppCertificateInfo.",
-        "package_name": "APEX package name.",
         "backing_libs": "File containing libraries used by the APEX.",
-        "symbols_used_by_apex": "Symbol list used by this APEX.",
-        "java_symbols_used_by_apex": "Java symbol list used by this APEX.",
-        "installed_files": "File containing all files installed by the APEX",
         "base_file": "A zip file used to create aab files.",
         "base_with_config_zip": "A zip file used to create aab files within mixed builds.",
+        "bundle_key_info": "APEX bundle signing public/private key pair (the value of the key: attribute).",
+        "container_key_info": "Info of the container key provided as AndroidAppCertificateInfo.",
+        "installed_files": "File containing all files installed by the APEX",
+        "java_symbols_used_by_apex": "Java symbol list used by this APEX.",
+        "package_name": "APEX package name.",
+        "provides_native_libs": "Labels of native shared libs that this apex provides.",
+        "requires_native_libs": "Labels of native shared libs that this apex requires.",
+        "signed_compressed_output": "Signed .capex file.",
+        "signed_output": "Signed .apex file.",
+        "symbols_used_by_apex": "Symbol list used by this APEX.",
+        "unsigned_output": "Unsigned .apex file.",
     },
 )
 
@@ -36,5 +36,6 @@ ApexMkInfo = provider(
     "ApexMkInfo exports metadata about this apex for Android.mk integration / bundled builds.",
     fields = {
         "make_modules_to_install": "Make module names that should be installed to the system along with this APEX.",
+        "files_info": "Metadata about the files included in the APEX payload. Used for generating Make code for final packaging step (e.g. coverage zip files).",
     },
 )

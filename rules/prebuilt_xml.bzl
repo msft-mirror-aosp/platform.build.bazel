@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@bazel_skylib//lib:paths.bzl", "paths")
 load(":prebuilt_file.bzl", "PrebuiltFileInfo")
-
-_handled_dir = ["etc"]
 
 def _prebuilt_xml_impl(ctx):
     schema = ctx.file.schema

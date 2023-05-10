@@ -14,10 +14,10 @@
 
 """cc_test macro for building native tests with Bazel."""
 
-load(":cc_binary.bzl", "cc_binary")
 load("//build/bazel/rules/cc:cc_library_common.bzl", "CcAndroidMkInfo")
 load("//build/bazel/rules/cc:stripped_cc_common.bzl", "CcUnstrippedInfo", "StrippedCcBinaryInfo")
 load("//build/bazel/rules/tradefed:tradefed.bzl", "tradefed_host_driven_test")
+load(":cc_binary.bzl", "cc_binary")
 
 # TODO(b/244559183): Keep this in sync with cc/test.go#linkerFlags
 _gtest_copts = select({
@@ -54,7 +54,7 @@ def cc_test(
         deps = [],
         dynamic_deps = [],
         gtest = True,
-        isolated = True,  # TODO(b/244432609): currently no-op.
+        isolated = True,  # TODO(b/244432609): currently no-op. @unused
         tags = [],
         tidy = None,
         tidy_checks = None,
@@ -110,6 +110,7 @@ def cc_test(
         template_test_config = select({
             "//build/bazel/rules/tradefed:android_host_driven_tradefed_test": "//build/make/core:native_test_config_template.xml",
             "//build/bazel/rules/tradefed:linux_host_driven_tradefed_test": "//build/make/core:native_host_test_config_template.xml",
+            "//conditions:default": "//build/make/core:native_test_config_template.xml",
         })
     tradefed_host_driven_test(
         name = tradefed_host_driven_test_name,

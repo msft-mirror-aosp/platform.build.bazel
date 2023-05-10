@@ -1,13 +1,15 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "bool_setting", "string_list_setting", "string_setting")
+load("@env//:env.bzl", "env")
+load("@soong_injection//api_levels:platform_versions.bzl", "platform_versions")
+load("@soong_injection//product_config:product_variables.bzl", "product_vars")
 load("//build/bazel/flags:common.bzl", "is_env_true")
 load("//build/bazel/product_variables:constants.bzl", "constants")
 load("//build/bazel/rules/apex:toolchain.bzl", "apex_toolchain")
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "bool_setting", "string_list_setting", "string_setting")
-load("@soong_injection//product_config:product_variables.bzl", "product_vars")
-load("//build/bazel/rules/common:api.bzl", api_levels = "api_levels_with_previews")
-load(":apex_test.bzl", "apex_test_suite")
+load("//build/bazel/rules/common:api.bzl", "api")
 load(":apex_aab_test.bzl", "apex_aab_test_suite")
 load(":apex_key_test.bzl", "apex_key_test_suite")
-load("@env//:env.bzl", "env")
+load(":apex_mk_test.bzl", "apex_mk_test_suite")
+load(":apex_test.bzl", "apex_test_suite")
 
 string_setting(
     name = "apex_name",
@@ -31,13 +33,6 @@ string_setting(
     name = "apex_global_min_sdk_version_override",
     # TODO(b/269577299): Make this read from //build/bazel/product_config:product_vars instead.
     build_setting_default = product_vars.get("ApexGlobalMinSdkVersionOverride", ""),
-    visibility = ["//visibility:public"],
-)
-
-string_setting(
-    name = "device_secondary_arch",
-    # TODO(b/269577299): Make this read from //build/bazel/product_config:product_vars instead.
-    build_setting_default = product_vars.get("DeviceSecondaryArch", ""),
     visibility = ["//visibility:public"],
 )
 
@@ -121,12 +116,12 @@ string_setting(
 
 [
     config_setting(
-        name = "min_sdk_version_" + str(api),
+        name = "min_sdk_version_" + str(level),
         flag_values = {
-            ":min_sdk_version": str(api),
+            ":min_sdk_version": str(level),
         },
     )
-    for api in api_levels.values()
+    for level in api.api_levels.values()
 ]
 
 bool_flag(
@@ -135,10 +130,15 @@ bool_flag(
     visibility = ["//visibility:public"],
 )
 
-bool_setting(
-    name = "unbundled_build",
-    # TODO(b/269577299): Make this read from //build/bazel/product_config:product_vars instead.
-    build_setting_default = product_vars.get("Unbundled_build", False),
+bool_flag(
+    name = "unbundled_build_target_sdk_with_api_fingerprint",
+    build_setting_default = is_env_true(env.get("UNBUNDLED_BUILD_TARGET_SDK_WITH_API_FINGERPRINT")),
+    visibility = ["//visibility:public"],
+)
+
+string_setting(
+    name = "platform_sdk_codename",
+    build_setting_default = platform_versions.platform_sdk_codename,
     visibility = ["//visibility:public"],
 )
 
@@ -189,6 +189,10 @@ apex_aab_test_suite(
 
 apex_key_test_suite(
     name = "apex_key_tests",
+)
+
+apex_mk_test_suite(
+    name = "apex_mk_tests",
 )
 
 filegroup(
