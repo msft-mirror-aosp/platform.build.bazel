@@ -3,26 +3,46 @@
 Requires bazel 6.0.0+ due to usage of repository_ctx.workspace_root
 """
 
-def _default_workspace_file_content(name):
-    return """# DO NOT EDIT: automatically generated WORKSPACE file
+def _default_workspace_file_content(name, rule_name):
+    return """# DO NOT EDIT: automatically generated WORKSPACE file by {rule}
 workspace(name = \"{name}\")
-""".format(name = name)
+""".format(name = name, rule = rule_name)
 
 def _is_windows(repo_ctx):
     os = repo_ctx.os.name.lower()
     return os.startswith("windows")
 
-def _list_files_command_unix(path, repo_ctx):
-    find_binary = repo_ctx.which("find")
-    if not find_binary:
-        fail("Cannot list directory", path, ": \"find\" is not in PATH.")
-    return [find_binary, path, "-type", "f,l"]
+def _run_command(command, repo_ctx, check = True, **kwargs):
+    """Runs a command and returns the execution result.
 
-def _list_files_command_windows(path, repo_ctx):
-    cmd_binary = repo_ctx.which("cmd.exe")
-    if not cmd_binary:
-        fail("Cannot list directory", path, ": \"cmd.exe\" is not in PATH.")
-    return [cmd_binary, "/c", "\"dir {} /a-d /s /b\"".format(path)]
+    Args:
+        command: The command to run as a sequence of strings. If the first
+          element is a bare executable name, it is then searched for in PATH.
+        repo_ctx: The repository context.
+        check: When true, raise an error if the command return code is not 0.
+        **kwargs: Extra arguments passed to repository_ctx.execute().
+
+    Returns:
+        The exec_result as returned by repository_ctx.execute()
+    """
+    executable = command[0]
+    if _path_separator(repo_ctx) not in executable:
+        executable = repo_ctx.which(executable)
+        if not executable:
+            fail("Cannot run", command, ":", command[0], "is not in PATH.")
+    command = [executable] + command[1:]
+
+    result = repo_ctx.execute(command, **kwargs)
+    if check and result.return_code != 0:
+        fail(
+            "Command failed:",
+            " ".join(command),
+            ",",
+            "returns",
+            result.return_code,
+            result.stderr,
+        )
+    return result
 
 def _list_files_recursive(path, repo_ctx):
     """Lists all the files / symlinks under path, recursively.
@@ -40,12 +60,10 @@ def _list_files_recursive(path, repo_ctx):
           relative to the list path.
     """
     if _is_windows(repo_ctx):
-        command = _list_files_command_windows(path, repo_ctx)
+        command = ["cmd.exe", "/c", "\"dir {} /a-d /s /b\"".format(path)]
     else:
-        command = _list_files_command_unix(path, repo_ctx)
-    result = repo_ctx.execute(command, working_directory = path)
-    if result.return_code != 0:
-        fail("Command failed:", " ".join(command), ",", "returns", result.return_code, result.stderr)
+        command = ["find", path, "-type", "f,l"]
+    result = _run_command(command, repo_ctx, working_directory = path)
     return [_relative_path(f, path) for f in result.stdout.splitlines()]
 
 def _is_abs_path(path_str):
@@ -99,6 +117,37 @@ def _filter_and_collapse(files, ignored_basenames, path_separator):
     link_paths = {_find_collapsable_ancestor(p, non_collapsable_directories): None for p in keep_files}
     return [path_separator.join(p) for p in link_paths]
 
+def _create_build_file(build_file, repo_ctx):
+    repo_ctx.delete("BUILD.bazel")
+    build_file = _resolve_path(build_file, repo_ctx)
+    if not build_file.exists:
+        fail(
+            "Cannot create repository",
+            repo_ctx.name,
+            ": BUILD file",
+            build_file,
+            "is not found.",
+        )
+    repo_ctx.symlink(build_file, "BUILD.bazel")
+
+def _create_workspace_file(workspace_file, repo_ctx, default_content = None):
+    repo_ctx.delete("WORKSPACE.bazel")
+    if workspace_file:
+        workspace_file = _resolve_path(workspace_file, repo_ctx)
+        if not workspace_file.exists:
+            fail(
+                "Cannot create repository",
+                repo_ctx.name,
+                ": WORKSPACE file",
+                workspace_file,
+                "is not found.",
+            )
+        repo_ctx.symlink(workspace_file, "WORKSPACE.bazel")
+    elif default_content:
+        repo_ctx.file("WORKSPACE.bazel", default_content, executable = False)
+    else:
+        fail("Cannot create repository", repo_ctx.name, ": no WORKSPACE file defined.")
+
 def _selective_local_repository_impl(repo_ctx):
     # Create shadow directory in the repository path.
     src_root = _resolve_path(repo_ctx.attr.path, repo_ctx)
@@ -114,31 +163,81 @@ def _selective_local_repository_impl(repo_ctx):
         src = path_sep.join([src_root, dest])
         repo_ctx.symlink(src, dest)
 
-    # Link BUILD file
-    repo_ctx.delete("BUILD.bazel")
-    build_file = _resolve_path(repo_ctx.attr.build_file, repo_ctx)
-    if not build_file.exists:
-        fail("Cannot create repository", repo_ctx.name, ": BUILD file", build_file, "is not found.")
-    repo_ctx.symlink(build_file, "BUILD.bazel")
-
-    # Link / Create WORKSAPCE file
-    repo_ctx.delete("WORKSPACE.bazel")
-    if repo_ctx.attr.workspace_file:
-        workspace_file = _resolve_path(repo_ctx.attr.workspace_file, repo_ctx)
-        if not workspace_file.exists:
-            fail("Cannot create repository", repo_ctx.name, ": WORKSPACE file", workspace_file, "is not found.")
-        repo_ctx.symlink(workspace_file, "WORKSPACE.bazel")
-    else:
-        repo_ctx.file("WORKSPACE.bazel", _default_workspace_file_content(repo_ctx.name), executable = False)
+    _create_build_file(repo_ctx.attr.build_file, repo_ctx)
+    _create_workspace_file(
+        repo_ctx.attr.workspace_file,
+        repo_ctx,
+        _default_workspace_file_content(
+            repo_ctx.name,
+            "selective_local_repository",
+        ),
+    )
 
 selective_local_repository = repository_rule(
     implementation = _selective_local_repository_impl,
     local = True,
     doc = "A repository rule similar to new_local_repository, but allows to ignore certain files.",
     attrs = {
-        "build_file": attr.string(doc = "A file to use as a BUILD file for this directory, relative to the main workspace.", mandatory = True),
-        "ignore_filenames": attr.string_list(doc = "Base filenames to ignore.", default = []),
-        "path": attr.string(doc = "A path on the local filesystem. This can be either absolute or relative to the main workspace.", mandatory = True),
-        "workspace_file": attr.string(doc = "The file to use as the WORKSPACE file for this repository, relative to the main workspace."),
+        "build_file": attr.string(
+            doc = "A file to use as a BUILD file for this directory, " +
+                  "relative to the main workspace.",
+            mandatory = True,
+        ),
+        "ignore_filenames": attr.string_list(
+            doc = "Base filenames to ignore.",
+            default = [],
+        ),
+        "path": attr.string(
+            doc = "A path on the local filesystem. This can be either " +
+                  "absolute or relative to the main workspace.",
+            mandatory = True,
+        ),
+        "workspace_file": attr.string(
+            doc = "The file to use as the WORKSPACE file for this " +
+                  "repository, relative to the main workspace.",
+        ),
+    },
+)
+
+def _macos_sdk_repository_impl(repo_ctx):
+    """Creates a local repository for macOS SDK from the currently selected Xcode toolchain."""
+    versions = repo_ctx.attr.sdk_versions if repo_ctx.attr.sdk_versions else [""]
+    for version in versions:
+        result = _run_command([
+            "xcrun",
+            "--sdk",
+            "macosx{}".format(version),
+            "--show-sdk-path",
+        ], repo_ctx, check = False)
+        if result.return_code == 0:
+            break
+    if result.return_code != 0:
+        fail("None of the following macOS SDK versions are found:", versions)
+    sdk_path = result.stdout.strip()
+    for entry in _resolve_path(sdk_path, repo_ctx).readdir():
+        repo_ctx.symlink(entry, _relative_path(str(entry), sdk_path))
+    _create_build_file(repo_ctx.attr.build_file, repo_ctx)
+    _create_workspace_file(None, repo_ctx, _default_workspace_file_content(
+        repo_ctx.name,
+        "macos_sdk_repository",
+    ))
+
+macos_sdk_repository = repository_rule(
+    implementation = _macos_sdk_repository_impl,
+    local = True,
+    doc = "Creates a local repository for macOS SDK from the currently " +
+          "selected Xcode toolchain.",
+    attrs = {
+        "build_file": attr.string(
+            doc = "A file to use as a BUILD file for this directory, " +
+                  "relative to the main workspace.",
+            mandatory = True,
+        ),
+        "sdk_versions": attr.string_list(
+            doc = "The SDK versions to look for in the toolchain (e.g. 12.4, " +
+                  "13.3). The first version found will be used. An empty " +
+                  "string can be added at the end for the default SDK.",
+            default = [""],
+        ),
     },
 )

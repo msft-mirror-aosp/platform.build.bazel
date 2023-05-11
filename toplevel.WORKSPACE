@@ -1,5 +1,9 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//build/bazel/rules:repository.bzl", "selective_local_repository")
+load(
+    "//build/bazel/rules:repository.bzl",
+    "macos_sdk_repository",
+    "selective_local_repository",
+)
 
 # Skylib provides common utilities for writing bazel rules and functions.
 # For docs see https://github.com/bazelbuild/bazel-skylib/blob/main/README.md
@@ -140,10 +144,9 @@ load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 grpc_extra_deps()
 
 # CC toolchains
-new_local_repository(
+macos_sdk_repository(
     name = "macos_sdk",
     build_file = "build/bazel/toolchains/cc/mac_clang/sdk.BUILD",
-    path = "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
 )
 
 register_toolchains(
