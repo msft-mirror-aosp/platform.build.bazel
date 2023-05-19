@@ -35,6 +35,10 @@ def toolchain_import_configs(import_libs):
         lib[CcToolchainImportInfo].include_paths
         for lib in import_libs
     ], order = "topological").to_list()
+    framework_paths = depset(transitive = [
+        lib[CcToolchainImportInfo].framework_paths
+        for lib in import_libs
+    ], order = "topological").to_list()
     dynamic_mode_libs = depset(transitive = [
         lib[CcToolchainImportInfo].dynamic_mode_libraries
         for lib in import_libs
@@ -70,6 +74,7 @@ def toolchain_import_configs(import_libs):
 
     return struct(
         include_paths = include_paths,
+        framework_paths = framework_paths,
         dynamic_linked_objects = dynamic_linked_objects,
         static_linked_objects = static_linked_objects,
         lib_search_paths = lib_search_paths,

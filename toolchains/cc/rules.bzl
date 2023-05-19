@@ -1,6 +1,11 @@
 """Platform and tool independent toolchain rules."""
 
 load(":actions.bzl", "create_action_configs")
+load(
+    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "ArtifactNamePatternInfo",
+    "artifact_name_pattern",
+)
 
 CcToolInfo = provider(
     "A provider that specifies metadata for a tool.",
@@ -59,6 +64,7 @@ CcToolchainImportInfo = provider(
         "include_paths": "Include directories for this library.",
         "dynamic_mode_libraries": "Libraries to be linked in dynamic linking mode.",
         "dynamic_runtimes": "Libraries used as the dynamic runtime library of cc_toolchain.",
+        "framework_paths": "Framework search directories to add.",
         "static_mode_libraries": "Libraries to be linked in static linking mode.",
         "static_runtimes": "Libraries used as the static runtime library of cc_toolchain.",
         "so_linked_objects": "Directly linked objects to shared libraries.",
@@ -69,9 +75,14 @@ def _cc_toolchain_import_impl(ctx):
     if ctx.files.hdrs and not ctx.files.include_paths:
         fail(ctx.label, ": 'include_paths' is mandatory when 'hdrs' is not empty.")
     include_paths = [p.path for p in ctx.files.include_paths]
+    framework_paths = [p.path for p in ctx.files.framework_paths]
 
     dep_include_paths = [
         dep[CcToolchainImportInfo].include_paths
+        for dep in ctx.attr.deps
+    ]
+    dep_framework_paths = [
+        dep[CcToolchainImportInfo].framework_paths
         for dep in ctx.attr.deps
     ]
     dep_shared_libs = [
@@ -109,6 +120,11 @@ def _cc_toolchain_import_impl(ctx):
             include_paths = depset(
                 direct = include_paths,
                 transitive = dep_include_paths,
+                order = "topological",
+            ),
+            framework_paths = depset(
+                direct = framework_paths,
+                transitive = dep_framework_paths,
                 order = "topological",
             ),
             dynamic_mode_libraries = depset(
@@ -160,6 +176,11 @@ cc_toolchain_import = rule(
         "include_paths": attr.label_list(
             default = [],
             doc = "Include paths to search for headers. Mandatory if hdrs is set.",
+            allow_files = True,
+        ),
+        "framework_paths": attr.label_list(
+            default = [],
+            doc = "Framework search paths to add.",
             allow_files = True,
         ),
         "dynamic_mode_libs": attr.label_list(
@@ -254,6 +275,83 @@ CcFeatureConfigInfo = provider(
     },
 )
 
+SysrootInfo = provider(
+    doc = "Contains a sysroot path.",
+    fields = ["path"],
+)
+
+def _sysroot_impl(ctx):
+    if ctx.attr.path:
+        sysroot_path = "{}/{}/{}".format(
+            ctx.label.workspace_root,
+            ctx.label.package,
+            ctx.attr.path,
+        )
+    else:
+        sysroot_path = "{}/{}".format(
+            ctx.label.workspace_root,
+            ctx.label.package,
+        )
+    return [
+        SysrootInfo(path = sysroot_path),
+        DefaultInfo(files = depset(direct = ctx.files.all_files)),
+    ]
+
+sysroot = rule(
+    implementation = _sysroot_impl,
+    attrs = {
+        "path": attr.string(
+            doc = "Package relative path to the sysroot directory.",
+        ),
+        "all_files": attr.label_list(
+            default = [],
+            doc = "All relevant files shipped to the sandbox.",
+            allow_files = True,
+        ),
+    },
+)
+
+def _cc_artifact_name_impl(ctx):
+    return artifact_name_pattern(
+        category_name = ctx.attr.category,
+        prefix = ctx.attr.prefix,
+        extension = ctx.attr.extension,
+    )
+
+cc_artifact_name = rule(
+    implementation = _cc_artifact_name_impl,
+    doc = "Creates an artifact filename pattern for generated artifacts.",
+    attrs = {
+        "category": attr.string(
+            doc = "Category name of the artifact.",
+            mandatory = True,
+            values = [
+                "static_library",
+                "alwayslink_static_library",
+                "dynamic_library",
+                "executable",
+                "interface_library",
+                "pic_file",
+                "included_file_list",
+                "serialized_diagnostics_file",
+                "object_file",
+                "pic_object_file",
+                "cpp_module",
+                "generated_assembly",
+                "processed_header",
+                "generated_header",
+                "preprocessed_c_source",
+                "preprocessed_cpp_source",
+                "coverage_data_file",
+                "clif_output_proto",
+            ],
+        ),
+        "prefix": attr.string(doc = "Filename prefix.", default = ""),
+        "extension": attr.string(doc = "File extension.", default = ""),
+    },
+    provides = [ArtifactNamePatternInfo],
+)
+
 def _toolchain_files(ctx):
     toolchain_import_files = [
         lib[DefaultInfo].files
@@ -264,11 +362,16 @@ def _toolchain_files(ctx):
         tool[DefaultInfo].default_runfiles.files
         for tool in ctx.attr.cc_tools
     ]
+    sysroot_files = [
+        ctx.attr.sysroot[DefaultInfo].files,
+    ] if ctx.attr.sysroot else []
     return depset(
-        transitive = toolchain_import_files + tool_files + tool_runfiles,
+        transitive = toolchain_import_files + tool_files + tool_runfiles +
+                     sysroot_files,
     )
 
 def _cc_toolchain_config_impl(ctx):
+    sysroot = ctx.attr.sysroot[SysrootInfo].path if ctx.attr.sysroot else None
     return [
         cc_common.create_cc_toolchain_config_info(
             ctx = ctx,
@@ -277,7 +380,11 @@ def _cc_toolchain_config_impl(ctx):
             action_configs = create_action_configs(
                 [tool[CcToolInfo] for tool in ctx.attr.cc_tools],
             ),
-            builtin_sysroot = ctx.file.sysroot.path if ctx.file.sysroot else None,
+            artifact_name_patterns = [
+                p[ArtifactNamePatternInfo]
+                for p in ctx.attr.artifact_name_patterns
+            ],
+            builtin_sysroot = sysroot,
             target_cpu = ctx.attr.target_cpu,
             # The attributes below are required by the constructor, but don't
             # affect actions at all.
@@ -310,6 +417,11 @@ cc_toolchain_config = rule(
             mandatory = True,
             providers = [CcFeatureConfigInfo],
         ),
+        "artifact_name_patterns": attr.label_list(
+            doc = "A list of name patterns for generated artifacts.",
+            providers = [ArtifactNamePatternInfo],
+            default = [],
+        ),
         "target_cpu": attr.string(
             doc = "Target CPU architecture. This only affects the directory name of execution and output trees.",
             mandatory = True,
@@ -320,8 +432,8 @@ cc_toolchain_config = rule(
             default = [],
         ),
         "sysroot": attr.label(
-            doc = "The sysroot directory.",
-            allow_single_file = True,
+            doc = "A target that provides SysrootInfo and related files.",
+            providers = [SysrootInfo, DefaultInfo],
         ),
     },
     provides = [CcToolchainConfigInfo, DefaultInfo],
