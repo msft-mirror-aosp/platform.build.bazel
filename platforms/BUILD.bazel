@@ -30,3 +30,11 @@ platform(
         "@platforms//os:macos",
     ],
 )
+
+platform(
+    name = "macos_aarch64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:macos",
+    ],
+)
