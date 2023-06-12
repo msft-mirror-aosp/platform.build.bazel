@@ -26,6 +26,9 @@ from typing import Final
 from typing import Generator
 
 INDICATOR_FILE: Final[str] = 'build/soong/soong_ui.bash'
+# metrics.csv is written to but not read by this tool.
+# It's supposed to be viewed as a spreadsheet that compiles data from multiple
+# builds to be analyzed by other external tools.
 METRICS_TABLE: Final[str] = 'metrics.csv'
 SUMMARY_TABLE: Final[str] = 'summary.csv'
 RUN_DIR_PREFIX: Final[str] = 'run'
@@ -165,10 +168,9 @@ def has_uncommitted_changes() -> bool:
   for cmd in ['diff', 'diff --staged']:
     diff = subprocess.run(
         args=f'repo forall -c git {cmd} --quiet --exit-code'.split(),
-        cwd=get_top_dir(), text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL)
+        cwd=get_top_dir(), text=True, capture_output=True)
     if diff.returncode != 0:
+      logging.error(diff.stderr)
       return True
   return False
 

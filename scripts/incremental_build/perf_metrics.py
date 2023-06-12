@@ -110,8 +110,8 @@ def read_pbs(d: Path) -> dict[str, str]:
       metrics_base.ParseFromString(f.read())
     extract_perf_info(metrics_base)
 
+  soong_build_metrics = SoongBuildMetrics()
   if soong_build_pb.exists():
-    soong_build_metrics = SoongBuildMetrics()
     with open(soong_build_pb, "rb") as f:
       soong_build_metrics.ParseFromString(f.read())
     extract_perf_info(soong_build_metrics)
@@ -129,8 +129,21 @@ def read_pbs(d: Path) -> dict[str, str]:
   def normalize(desc: str) -> str:
     return re.sub(r'^(?:soong_build|mixed_build)', '*', desc)
 
-  return {f'{m.name}/{normalize(m.description)}':
-            util.hhmmss(m.real_time, decimal_precision=True) for m in events}
+  retval = {}
+  if soong_build_metrics.mixed_builds_info:
+    ms = soong_build_metrics.mixed_builds_info.mixed_build_enabled_modules
+    if ms:
+      retval['mixed.enabled'] = len(ms)
+      with open(d.joinpath('mixed.enabled.txt'), 'w') as f:
+        for m in ms:
+          print(m, file=f)
+    ms = soong_build_metrics.mixed_builds_info.mixed_build_disabled_modules
+    if ms:
+      retval['mixed.disabled'] = len(ms)
+  for m in events:
+    retval[f'{m.name}/{normalize(m.description)}'] = \
+      util.hhmmss(m.real_time, decimal_precision=True)
+  return retval
 
 
 Row = dict[str, any]
@@ -222,6 +235,7 @@ def tabulate_metrics_csv(log_dir: Path):
   for d in dirs:
     d = log_dir.joinpath(d)
     row = get_build_info_and_perf(d)
+    row['log'] = d.name
     rows.append(row)
 
   headers: list[str] = _get_column_headers(rows, allow_cycles=True)
