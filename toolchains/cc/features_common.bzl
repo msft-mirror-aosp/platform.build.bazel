@@ -19,6 +19,9 @@ load(":rules.bzl", "CcToolchainImportInfo")
 
 OBJECT_EXTENSIONS_UNIX = ["o"]
 
+# On Windows "lib" is directly linked like an object.
+OBJECT_EXTENSIONS_WINDOWS = ["obj", "lib"]
+
 def toolchain_import_configs(import_libs, object_extensions):
     """Convert cc_toolchain_import targets to configs for features.
 
@@ -135,6 +138,11 @@ def get_toolchain_link_flags_feature(flags):
 
 no_legacy_features = feature(
     name = "no_legacy_features",
+    enabled = True,
+)
+
+no_stripping_feature = feature(
+    name = "no_stripping",
     enabled = True,
 )
 
