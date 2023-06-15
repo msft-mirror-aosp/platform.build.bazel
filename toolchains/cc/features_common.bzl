@@ -17,9 +17,9 @@ load(
 )
 load(":rules.bzl", "CcToolchainImportInfo")
 
-_OBJECT_EXTENSIONS = ["o", "obj"]
+OBJECT_EXTENSIONS_UNIX = ["o"]
 
-def toolchain_import_configs(import_libs):
+def toolchain_import_configs(import_libs, object_extensions):
     """Convert cc_toolchain_import targets to configs for features.
 
     This feature purposefully ignores the (dynamic|static)_runtimes
@@ -27,6 +27,7 @@ def toolchain_import_configs(import_libs):
 
     Args:
         import_libs: A list of labels to cc_toolchain_import targets.
+        object_extensions: File extensions of objects files.
 
     Returns:
         A struct containing the paths to be consumed by feature definition.
@@ -49,11 +50,11 @@ def toolchain_import_configs(import_libs):
     ], order = "topological").to_list()
     dynamic_linked_objects, dynamic_mode_libs = tee_filter(
         dynamic_mode_libs,
-        lambda f: f.extension in _OBJECT_EXTENSIONS,
+        lambda f: f.extension in object_extensions,
     )
     static_linked_objects, static_mode_libs = tee_filter(
         static_mode_libs,
-        lambda f: f.extension in _OBJECT_EXTENSIONS,
+        lambda f: f.extension in object_extensions,
     )
     lib_search_paths = collections.uniq([
         f.dirname

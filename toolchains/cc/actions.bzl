@@ -61,7 +61,7 @@ def create_action_configs(tool_configs):
     tools_by_action = {}
     for tool_config in tool_configs:
         for action in tool_config.applied_actions:
-            tools_by_action.setdefault(action, default = []).append(tool_config)
+            tools_by_action.setdefault(action, []).append(tool_config)
 
     action_configs = []
     for action, tool_configs in tools_by_action.items():
