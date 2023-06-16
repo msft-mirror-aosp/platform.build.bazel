@@ -174,7 +174,6 @@ variables = json.decode('''{
     "ProductPublicSepolicyDirs": [],
     "ProductPrivateSepolicyDirs": [],
     "TargetFSConfigGen": [],
-    "MissingUsesLibraries": ["com.google.android.ble","com.google.android.media.effects","com.google.android.wearable"],
     "VendorVars": {
         "ANDROID": {
             "BOARD_USES_ODMIMAGE": "",
@@ -224,7 +223,7 @@ variables = json.decode('''{
     "BuildBrokenClangProperty": false,
     "BuildBrokenClangAsFlags": false,
     "BuildBrokenClangCFlags": false,
-    "BuildBrokenDepfile": false,
+    "GenruleSandboxing": false,
     "BuildBrokenEnforceSyspropOwner": false,
     "BuildBrokenTrebleSyspropNeverallow": false,
     "BuildBrokenUsesSoongPython2Modules": false,

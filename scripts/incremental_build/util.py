@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import csv
+import dataclasses
 import datetime
+import enum
 import functools
 import glob
+import json
 import logging
 import os
 import re
@@ -22,10 +25,14 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from typing import Callable
 from typing import Final
 from typing import Generator
 
 INDICATOR_FILE: Final[str] = 'build/soong/soong_ui.bash'
+# metrics.csv is written to but not read by this tool.
+# It's supposed to be viewed as a spreadsheet that compiles data from multiple
+# builds to be analyzed by other external tools.
 METRICS_TABLE: Final[str] = 'metrics.csv'
 SUMMARY_TABLE: Final[str] = 'summary.csv'
 RUN_DIR_PREFIX: Final[str] = 'run'
@@ -38,12 +45,78 @@ def _is_important(column) -> bool:
       'description', 'build_type', r'build\.ninja(\.size)?', 'targets',
       'log', 'actions', 'time',
       'soong/soong', 'bp2build/', 'symlink_forest/', r'soong_build/\*',
-      r'soong_build/\*\.bazel', 'bp2build/', 'kati/kati build', 'ninja/ninja'
+      r'soong_build/\*\.bazel', 'kati/kati build', 'ninja/ninja'
   }
   for pattern in patterns:
     if re.fullmatch(pattern, column):
       return True
   return False
+
+
+class BuildResult(enum.Enum):
+  SUCCESS = enum.auto()
+  FAILED = enum.auto()
+  TEST_FAILURE = enum.auto()
+
+
+class BuildType(enum.Enum):
+  # see https://docs.python.org/3/library/enum.html#enum.Enum._ignore_
+  _ignore_ = '_soong_cmd'
+  # _sooong_cmd_ will not be listed as an enum constant because of `_ignore_`
+  _soong_cmd = ['build/soong/soong_ui.bash',
+                '--make-mode',
+                '--skip-soong-tests']
+
+  SOONG_ONLY = [*_soong_cmd, 'BUILD_BROKEN_DISABLE_BAZEL=true']
+  MIXED_PROD = [*_soong_cmd, '--bazel-mode']
+  MIXED_STAGING = [*_soong_cmd, '--bazel-mode-staging']
+  B = ['build/bazel/bin/b', 'build']
+  B_ANDROID = [*B, '--config=android']
+
+  @staticmethod
+  def from_flag(s: str) -> list['BuildType']:
+    chosen: list[BuildType] = []
+    for e in BuildType:
+      if s.lower() in e.name.lower():
+        chosen.append(e)
+    if len(chosen) == 0:
+      raise RuntimeError(f'no such build type: {s}')
+    return chosen
+
+  def to_flag(self):
+    return self.name.lower()
+
+
+@dataclasses.dataclass(frozen=True)
+class BuildInfo:
+  build_root_deps_count: int
+  build_type: BuildType
+  build_result: BuildResult
+  build_ninja_hash: str  # hash
+  build_ninja_size: int
+  product: str
+  time: datetime.timedelta
+  actions: int
+  cquery_out_size: int = -1
+  description: str = '<unset>'
+  warmup: bool = False
+  rebuild: bool = False
+  targets: tuple[str, ...] = None
+
+
+class CustomEncoder(json.JSONEncoder):
+  def default(self, obj):
+    if isinstance(obj, BuildInfo):
+      return self.default(dataclasses.asdict(obj))
+    if isinstance(obj, dict):
+      return {k: v for k, v in obj.items() if v is not None}
+    if isinstance(obj, datetime.timedelta):
+      return hhmmss(obj, decimal_precision=True)
+    if isinstance(obj, BuildType):
+      return obj.to_flag()
+    if isinstance(obj, enum.Enum):
+      return obj.name
+    return json.JSONEncoder.default(self, obj)
 
 
 def get_csv_columns_cmd(d: Path) -> str:
@@ -55,9 +128,10 @@ def get_csv_columns_cmd(d: Path) -> str:
   return f'head -n 1 "{csv_file.absolute()}" | sed "s/,/\\n/g" | nl'
 
 
-def get_cmd_to_display_tabulated_metrics(d: Path) -> str:
+def get_cmd_to_display_tabulated_metrics(d: Path, ci_mode: bool) -> str:
   """
   :param d: the log directory
+  :param ci_mode: if true all top-level events are displayed
   :return: a quick shell command to view some collected metrics
   """
   csv_file = d.joinpath(METRICS_TABLE)
@@ -68,8 +142,33 @@ def get_cmd_to_display_tabulated_metrics(d: Path) -> str:
       headers = reader.fieldnames or []
 
   columns: list[int] = [i for i, h in enumerate(headers) if _is_important(h)]
+  if ci_mode:
+    # ci mode contains all information about the top level events
+    for i, h in enumerate(headers):
+      if re.match(r'^\w+/[^.]+$', h) and i not in columns:
+        columns.append(i)
+
+  if len(columns):
+    # just so that the command is "correct" even if the file doesn't exist
+    # or is empty
+    columns.append(1)
+
   f = ','.join(str(i + 1) for i in columns)
-  return f'grep -v rebuild- "{csv_file}" | grep -v WARMUP | grep -v FAILED | ' \
+  # the sed invocations are to account for
+  # https://man7.org/linux/man-pages/man1/column.1.html#BUGS
+  # example: if a row were `,,,hi,,,,`
+  # the successive sed conversions would be
+  #    `,,,hi,,,,` =>
+  #    `,--,,hi,--,,--,` =>
+  #    `,--,--,hi,--,--,--,` =>
+  #    `--,--,--,hi,--,--,--,` =>
+  #    `--,--,--,hi,--,--,--,--`
+  # Note sed doesn't support lookahead or lookbehinds
+  return f'grep -v "WARMUP\\|rebuild-\\|FAILED" "{csv_file}" | ' \
+         f'sed "s/,,/,--,/g" | ' \
+         f'sed "s/,,/,--,/g" | ' \
+         f'sed "s/^,/--,/" | ' \
+         f'sed "s/,$/,--/" | ' \
          f'cut -d, -f{f} | column -t -s,'
 
 
@@ -124,7 +223,6 @@ def next_path(path: Path) -> Generator[Path, None, None]:
   :returns a new Path with an increasing number suffix to the name
   e.g. _to_file('a.txt') = a-5.txt (if a-4.txt already exists)
   """
-  path.parent.mkdir(parents=True, exist_ok=True)
   while True:
     name = _next_path_helper(path.name)
     path = path.parent.joinpath(name)
@@ -140,20 +238,11 @@ def has_uncommitted_changes() -> bool:
   for cmd in ['diff', 'diff --staged']:
     diff = subprocess.run(
         args=f'repo forall -c git {cmd} --quiet --exit-code'.split(),
-        cwd=get_top_dir(), text=True,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL)
+        cwd=get_top_dir(), text=True, capture_output=True)
     if diff.returncode != 0:
+      logging.error(diff.stderr)
       return True
   return False
-
-
-@functools.cache
-def is_ninja_dry_run(ninja_args: str = None) -> bool:
-  if ninja_args is None:
-    ninja_args = os.environ.get('NINJA_ARGS') or ''
-  ninja_dry_run = re.compile(r'(?:^|\s)-n\b')
-  return ninja_dry_run.search(ninja_args) is not None
 
 
 def is_git_repo(p: Path) -> bool:
@@ -232,15 +321,19 @@ def any_match_under(root: Path, *patterns: str) -> (Path, list[str]):
   raise RuntimeError(f'No suitable directory for {patterns}')
 
 
-def hhmmss(t: datetime.timedelta) -> str:
+def hhmmss(t: datetime.timedelta, decimal_precision: bool) -> str:
   """pretty prints time periods, prefers mm:ss.sss and resorts to hh:mm:ss.sss
   only if t >= 1 hour.
-  Examples: 02:12.231, 00:00.512, 00:01:11.321, 1:12:13.121
+  Examples(non_decimal_precision): 02:12, 1:12:13
+  Examples(decimal_precision): 02:12.231, 00:00.512, 00:01:11.321, 1:12:13.121
   See unit test for more examples."""
   h, f = divmod(t.seconds, 60 * 60)
   m, f = divmod(f, 60)
   s = f + t.microseconds / 1000_000
-  return f'{h}:{m:02d}:{s:06.3f}' if h else f'{m:02d}:{s:06.3f}'
+  if decimal_precision:
+    return f'{h}:{m:02d}:{s:06.3f}' if h else f'{m:02d}:{s:06.3f}'
+  else:
+    return f'{h}:{m:02}:{s:02.0f}' if h else f'{m:02}:{s:02.0f}'
 
 
 def period_to_seconds(s: str) -> float:
@@ -258,3 +351,11 @@ def period_to_seconds(s: str) -> float:
       s = right[0]
     else:
       return acc
+
+
+def groupby(xs: list[dict], key: Callable[[dict], str]) -> dict[
+  str, list[dict]]:
+  grouped = {}
+  for x in xs:
+    grouped.setdefault(key(x), []).append(x)
+  return grouped

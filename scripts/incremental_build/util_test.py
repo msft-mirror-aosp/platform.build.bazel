@@ -14,16 +14,30 @@
 import datetime
 import os
 import unittest
+from pathlib import Path
 
-from util import _next_path_helper
 from util import any_match
 from util import get_top_dir
+from util import groupby
 from util import hhmmss
+from util import next_path
 from util import period_to_seconds
 
 
 class UtilTest(unittest.TestCase):
-  def test_next_path_helper(self):
+  def test_groupby(self):
+    x1 = {'g': 'b', 'id': 1}
+    x2 = {'g': 'a', 'id': 2}
+    x3 = {'g': 'b', 'id': 3}
+    grouped = groupby([x1, x2, x3], lambda x: x['g'])
+    self.assertEqual(grouped, {
+        'b': [x1, x3],
+        'a': [x2]
+    })
+    self.assertEqual(list(grouped.keys()), ['b', 'a'],
+                     'insertion order maintained')
+
+  def test_next_path(self):
     examples = [
         ('output', 'output-1'),
         ('output.x', 'output-1.x'),
@@ -34,58 +48,75 @@ class UtilTest(unittest.TestCase):
     ]
     for (pattern, expected) in examples:
       with self.subTest(msg=pattern, pattern=pattern, expected=expected):
-        self.assertEqual(_next_path_helper(pattern), expected)
+        generator = next_path(Path(pattern))
+        n = next(generator)
+        self.assertEqual(n, Path(expected))
 
   def test_any_match(self):
-    path, matches = any_match('root.bp')
-    self.assertEqual(matches, ['root.bp'])
-    self.assertEqual(path, get_top_dir().joinpath('build/soong'))
+    with self.subTest('root.bp'):
+      path, matches = any_match('root.bp')
+      self.assertEqual(matches, ['root.bp'])
+      self.assertEqual(path, get_top_dir().joinpath('build/soong'))
 
-    path, matches = any_match('!Android.bp', '!BUILD',
-                              'scripts/incremental_build/incremental_build.py')
-    self.assertEqual(matches,
-                     ['scripts/incremental_build/incremental_build.py'])
-    self.assertEqual(path, get_top_dir().joinpath('build/bazel'))
+    with self.subTest('non-package'):
+      path, matches = any_match('!Android.bp', '!BUILD',
+                                'scripts/incremental_build/incremental_build.py')
+      self.assertEqual(matches,
+                       ['scripts/incremental_build/incremental_build.py'])
+      self.assertEqual(path, get_top_dir().joinpath('build/bazel'))
 
-    path, matches = any_match('BUILD', 'README.md')
-    self.assertEqual(matches, ['BUILD', 'README.md'])
-    self.assertTrue(path.joinpath('BUILD').exists())
-    self.assertTrue(path.joinpath('README.md').exists())
+    with self.subTest('BUILD and README.md'):
+      path, matches = any_match('BUILD', 'README.md')
+      self.assertEqual(matches, ['BUILD', 'README.md'])
+      self.assertTrue(path.joinpath('BUILD').exists())
+      self.assertTrue(path.joinpath('README.md').exists())
 
-    path, matches = any_match('BUILD', '!README.md')
-    self.assertEqual(matches, ['BUILD'])
-    self.assertTrue(path.joinpath('BUILD').exists())
-    self.assertFalse(path.joinpath('README.md').exists())
+    with self.subTest('BUILD without README.md'):
+      path, matches = any_match('BUILD', '!README.md')
+      self.assertEqual(matches, ['BUILD'])
+      self.assertTrue(path.joinpath('BUILD').exists())
+      self.assertFalse(path.joinpath('README.md').exists())
 
-    path, matches = any_match('!*.bazel', '*')
-    self.assertGreater(len(matches), 0)
-    children = os.listdir(path)
-    self.assertGreater(len(children), 0)
-    for child in children:
-      self.assertFalse(child.endswith('.bazel'))
+    with self.subTest('dir without *.bazel'):
+      path, matches = any_match('!*.bazel', '*')
+      self.assertGreater(len(matches), 0)
+      children = os.listdir(path)
+      self.assertGreater(len(children), 0)
+      for child in children:
+        self.assertFalse(child.endswith('.bazel'))
 
-    path, matches = any_match('*/BUILD', '*/README.md')
-    self.assertGreater(len(matches), 0)
-    for m in matches:
-      self.assertTrue(path.joinpath(m).exists())
+    with self.subTest('no BUILD or README.md'):
+      path, matches = any_match('*/BUILD', '*/README.md')
+      self.assertGreater(len(matches), 0)
+      for m in matches:
+        self.assertTrue(path.joinpath(m).exists())
 
-    path, matches = any_match('!**/BUILD', '**/*.cpp')
-    self.assertEqual(len(matches), 1)
-    self.assertTrue(path.joinpath(matches[0]).exists())
-    self.assertTrue(matches[0].endswith('.cpp'))
-    for _, dirs, files in os.walk(path):
-      self.assertFalse('BUILD' in dirs)
-      self.assertFalse('BUILD' in files)
+    with self.subTest('no BUILD or cpp file in tree"'):
+      path, matches = any_match('!**/BUILD', '**/*.cpp')
+      self.assertEqual(len(matches), 1)
+      self.assertTrue(path.joinpath(matches[0]).exists())
+      self.assertTrue(matches[0].endswith('.cpp'))
+      for _, dirs, files in os.walk(path):
+        self.assertFalse('BUILD' in dirs)
+        self.assertFalse('BUILD' in files)
 
   def test_hhmmss(self):
-    examples = [
+    decimal_precision_examples = [
         (datetime.timedelta(seconds=(2 * 60 + 5)), '02:05.000'),
         (datetime.timedelta(seconds=(3600 + 23 * 60 + 45.897898)),
          '1:23:45.898'),
     ]
-    for (ts, expected) in examples:
-      self.subTest(ts=ts, expected=expected)
-      self.assertEqual(hhmmss(ts), expected)
+    non_decimal_precision_examples = [
+        (datetime.timedelta(seconds=(2 * 60 + 5)), '02:05'),
+        (datetime.timedelta(seconds=(3600 + 23 * 60 + 45.897898)),
+         '1:23:46'),
+    ]
+    for (ts, expected) in decimal_precision_examples:
+      with self.subTest(ts=ts, expected=expected):
+        self.assertEqual(hhmmss(ts, decimal_precision=True), expected)
+    for (ts, expected) in non_decimal_precision_examples:
+      with self.subTest(ts=ts, expected=expected):
+        self.assertEqual(hhmmss(ts, decimal_precision=False), expected)
 
   def test_period_to_seconds(self):
     examples = [
@@ -99,8 +130,8 @@ class UtilTest(unittest.TestCase):
         ('', 0)
     ]
     for (ts, expected) in examples:
-      self.subTest(ts=ts, expected=expected)
-      self.assertEqual(period_to_seconds(ts), expected)
+      with self.subTest(ts=ts, expected=expected):
+        self.assertEqual(period_to_seconds(ts), expected)
 
 
 if __name__ == '__main__':
