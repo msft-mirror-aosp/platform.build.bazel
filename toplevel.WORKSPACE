@@ -114,7 +114,11 @@ load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 grpc_extra_deps()
 
 # CC toolchains
-load("//build/bazel/toolchains/cc:repository_rules.bzl", "macos_sdk_repository")
+load(
+    "//build/bazel/toolchains/cc:repository_rules.bzl",
+    "macos_sdk_repository",
+    "msvc_tools_repository",
+)
 
 # Repository that provides the clang compilers
 selective_local_repository(
@@ -145,6 +149,11 @@ selective_local_repository(
 macos_sdk_repository(
     name = "macos_sdk",
     build_file = "build/bazel/toolchains/cc/mac_clang/sdk.BUILD",
+)
+
+msvc_tools_repository(
+    name = "vctools",
+    build_file = "build/bazel/toolchains/cc/windows_clang/vctools.BUILD",
 )
 
 register_toolchains(

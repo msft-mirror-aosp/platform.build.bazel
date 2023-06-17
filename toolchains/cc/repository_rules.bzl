@@ -53,3 +53,84 @@ macos_sdk_repository = repository_rule(
         ),
     },
 )
+
+def _all_vctools_paths(vs_paths, repo_ctx):
+    vctools_paths = []
+    for vs_path in vs_paths:
+        vctools_parent = repo_ctx.path(vs_path).get_child("VC", "Tools", "MSVC")
+        for vctools_path in vctools_parent.readdir():
+            if vctools_path.get_child("include", "bit").exists:
+                vctools_paths.append(vctools_path)
+    return vctools_paths
+
+def _version_tuple(numeric_version):
+    return [int(seg) for seg in numeric_version.split(".")]
+
+def _max(items, key = None):
+    if not key:
+        return max(items)
+    keys = [key(v) for v in items]
+    return items[keys.index(max(keys))]
+
+def _select_version(available_versions, want_versions):
+    for want_version in want_versions:
+        if want_version:
+            if want_version in available_versions:
+                return want_version
+        elif available_versions:
+            return _max(available_versions.keys(), key = _version_tuple)
+    return None
+
+def _msvc_tools_repository_impl(repo_ctx):
+    """Creates a local repository for host installed MSVC tools."""
+    vswhere_path = repo_ctx.os.environ["ProgramFiles(x86)"] + "\\Microsoft Visual Studio\\Installer\\vswhere.exe"
+    vswhere_result = run_command([
+        vswhere_path,
+        "-products",
+        "*",
+        "-requires",
+        "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "-property",
+        "installationPath",
+        "-format",
+        "value",
+    ], repo_ctx)
+    vs_paths = vswhere_result.stdout.strip().splitlines()
+    vctools_paths = _all_vctools_paths(vs_paths, repo_ctx)
+    vctools_by_version = {p.basename: p for p in vctools_paths}
+    want_versions = repo_ctx.attr.tool_versions if repo_ctx.attr.tool_versions else [""]
+    selected_version = _select_version(vctools_by_version, want_versions)
+    if not selected_version:
+        fail(
+            "None of the following VC Tools versions are found:",
+            want_versions,
+            "; available versions are:",
+            vctools_by_version.keys(),
+        )
+    selected_vctools = vctools_by_version[selected_version]
+    for entry in selected_vctools.readdir():
+        repo_ctx.symlink(entry, relative_path(str(entry), str(selected_vctools)))
+    create_build_file(repo_ctx.attr.build_file, repo_ctx)
+    create_workspace_file(None, repo_ctx, default_workspace_file_content(
+        repo_ctx.name,
+        "msvc_tools_repository",
+    ))
+
+msvc_tools_repository = repository_rule(
+    implementation = _msvc_tools_repository_impl,
+    local = True,
+    doc = "Creates a local repository for host installed MSVC tools.",
+    attrs = {
+        "build_file": attr.string(
+            doc = "A file to use as a BUILD file for this directory, " +
+                  "relative to the main workspace.",
+            mandatory = True,
+        ),
+        "tool_versions": attr.string_list(
+            doc = "The tool versions to look for (e.g. 14.29.30133). " +
+                  "The first version found will be used. An empty " +
+                  "string can be added at the end for the latest version.",
+            default = [""],
+        ),
+    },
+)
