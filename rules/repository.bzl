@@ -31,7 +31,8 @@ def _list_files_recursive(path, repo_ctx):
           relative to the list path.
     """
     if is_windows(repo_ctx):
-        command = ["cmd.exe", "/c", "\"dir {} /a-d /s /b\"".format(path)]
+        path = path.replace("/", "\\")
+        command = ["cmd.exe", "/c", "dir {} /a-d /s /b".format(path)]
     else:
         command = ["find", path, "-type", "f,l"]
     result = run_command(command, repo_ctx, working_directory = path)

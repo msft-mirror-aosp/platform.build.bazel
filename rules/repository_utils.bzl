@@ -27,7 +27,7 @@ def run_command(command, repo_ctx, check = True, **kwargs):
         executable = repo_ctx.which(executable)
         if not executable:
             fail("Cannot run", command, ":", command[0], "is not in PATH.")
-    command = [executable] + command[1:]
+    command = [str(executable)] + command[1:]
 
     result = repo_ctx.execute(command, **kwargs)
     if check and result.return_code != 0:
