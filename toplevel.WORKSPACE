@@ -118,6 +118,7 @@ load(
     "//build/bazel/toolchains/cc:repository_rules.bzl",
     "macos_sdk_repository",
     "msvc_tools_repository",
+    "windows_sdk_repository",
 )
 
 # Repository that provides the clang compilers
@@ -154,6 +155,12 @@ macos_sdk_repository(
 msvc_tools_repository(
     name = "vctools",
     build_file = "build/bazel/toolchains/cc/windows_clang/vctools.BUILD",
+)
+
+windows_sdk_repository(
+    name = "windows_sdk",
+    build_file_template = "build\\bazel\\toolchains\\cc\\windows_clang\\sdk.BUILD.tpl",
+    sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 
 register_toolchains(

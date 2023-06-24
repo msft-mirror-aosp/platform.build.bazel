@@ -134,3 +134,62 @@ msvc_tools_repository = repository_rule(
         ),
     },
 )
+
+def _get_all_win_sdk_versions(sdk_path):
+    sdk_versions = []
+    for versioned_sdk_include in sdk_path.get_child("Include").readdir():
+        if versioned_sdk_include.get_child("um", "winsdkver.h").exists:
+            sdk_versions.append(versioned_sdk_include.basename)
+    return sdk_versions
+
+def _windows_sdk_repository_impl(repo_ctx):
+    """Creates a local repository for a Windows SDK."""
+    sdk_path = repo_ctx.path(repo_ctx.attr.sdk_path)
+    all_versions = {v: None for v in _get_all_win_sdk_versions(sdk_path)}
+    want_versions = repo_ctx.attr.sdk_versions if repo_ctx.attr.sdk_versions else [""]
+    selected_version = _select_version(all_versions, want_versions)
+    if not selected_version:
+        fail(
+            "None of the following Windows SDK versions are found in",
+            str(sdk_path),
+            ":",
+            want_versions,
+            "; available versions are:",
+            all_versions.keys(),
+        )
+    for entry in sdk_path.readdir():
+        repo_ctx.symlink(entry, relative_path(str(entry), str(sdk_path)))
+    create_build_file(
+        repo_ctx.attr.build_file_template,
+        repo_ctx,
+        substitutions = {"%{sdk_version}": selected_version},
+    )
+    create_workspace_file(None, repo_ctx, default_workspace_file_content(
+        repo_ctx.name,
+        "windows_sdk_repository",
+    ))
+
+windows_sdk_repository = repository_rule(
+    implementation = _windows_sdk_repository_impl,
+    local = True,
+    doc = "Creates a local repository for host installed Windows SDK.",
+    attrs = {
+        "build_file_template": attr.string(
+            doc = "A file to be expanded as a BUILD file for this directory, " +
+                  "relative to the main workspace. The template can contain " +
+                  "'%{sdk_version}' tags that will be replaced with exact " +
+                  "SDK version.",
+            mandatory = True,
+        ),
+        "sdk_path": attr.string(
+            doc = "The installation path of Windows SDKs.",
+            mandatory = True,
+        ),
+        "sdk_versions": attr.string_list(
+            doc = "The SDK versions to look for (e.g. 10.0.19041.0). " +
+                  "The first version found will be used. An empty " +
+                  "string can be added at the end for the latest version.",
+            default = [""],
+        ),
+    },
+)

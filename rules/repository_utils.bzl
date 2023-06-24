@@ -60,13 +60,15 @@ def relative_path(path_str, root):
     """
     return path_str.removeprefix(root).lstrip("/\\")
 
-def create_build_file(build_file, repo_ctx):
+def create_build_file(build_file, repo_ctx, substitutions = None):
     """Create a BUILD.bazel file at root of the repository.
 
     Args:
         build_file: A path string to the BUILD file. Relative path is resolved
             relative to the workspace root.
         repo_ctx: The repository context.
+        substitutions: If specified, substitutions to make when expanding
+            build_file as a template.
     """
     repo_ctx.delete("BUILD.bazel")
     build_file = resolve_workspace_path(build_file, repo_ctx)
@@ -78,7 +80,15 @@ def create_build_file(build_file, repo_ctx):
             build_file,
             "is not found.",
         )
-    repo_ctx.symlink(build_file, "BUILD.bazel")
+    if not substitutions:
+        repo_ctx.symlink(build_file, "BUILD.bazel")
+    else:
+        repo_ctx.template(
+            "BUILD.bazel",
+            build_file,
+            substitutions,
+            executable = False,
+        )
 
 def create_workspace_file(workspace_file, repo_ctx, default_content = None):
     """Create a WORKSPACE file at root of the repository. At least one of workspace_file and default_content must be passed.
