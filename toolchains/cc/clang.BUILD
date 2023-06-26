@@ -19,9 +19,13 @@ CLANG_LINUX_X64 = "linux-x86/clang-r487747c"
 
 CLANG_MACOS_ALL = "darwin-x86/clang-r487747c"
 
+CLANG_WIN_X64 = "windows-x86/clang-r487747c"
+
 target_linux_x64 = ":" + CLANG_LINUX_X64
 
 target_macos_all = ":" + CLANG_MACOS_ALL
+
+target_win_x64 = ":" + CLANG_WIN_X64
 
 ###################### Linux X64 ######################
 
@@ -162,4 +166,57 @@ cc_toolchain_import(
         target_macos_all + "/lib/libc++.a",
         target_macos_all + "/lib/libc++abi.a",
     ],
+)
+
+###################### Windows X64 ######################
+
+cc_tool(
+    name = "win_x64_clang-cl",
+    applied_actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+    runfiles = glob(
+        [CLANG_WIN_X64 + "/bin/*"],
+        exclude = [
+            CLANG_WIN_X64 + "/bin/clang-check.exe",
+            CLANG_WIN_X64 + "/bin/clang-format.exe",
+            CLANG_WIN_X64 + "/bin/git-clang-format",
+            CLANG_WIN_X64 + "/bin/clang-tidy.exe",
+            CLANG_WIN_X64 + "/bin/lldb*",
+            CLANG_WIN_X64 + "/bin/llvm-config.exe",
+            CLANG_WIN_X64 + "/bin/llvm-cfi-verify.exe",
+        ],
+    ),
+    tool = target_win_x64 + "/bin/clang-cl.exe",
+)
+
+cc_tool(
+    name = "win_x64_link",
+    applied_actions = LINK_ACTIONS,
+    runfiles = glob(
+        [CLANG_WIN_X64 + "/bin/*"],
+        exclude = [
+            CLANG_WIN_X64 + "/bin/clang-check.exe",
+            CLANG_WIN_X64 + "/bin/clang-format.exe",
+            CLANG_WIN_X64 + "/bin/git-clang-format",
+            CLANG_WIN_X64 + "/bin/clang-tidy.exe",
+            CLANG_WIN_X64 + "/bin/lldb*",
+            CLANG_WIN_X64 + "/bin/llvm-config.exe",
+            CLANG_WIN_X64 + "/bin/llvm-cfi-verify.exe",
+        ],
+    ),
+    tool = target_win_x64 + "/bin/lld-link.exe",
+)
+
+cc_tool(
+    name = "win_x64_archiver",
+    applied_actions = [ACTION_NAMES.cpp_link_static_library],
+    runfiles = [target_win_x64 + "/bin/llvm-ar.exe"],
+    tool = target_win_x64 + "/bin/llvm-lib.exe",
+)
+
+cc_toolchain_import(
+    name = "win_x64_compiler_runtime",
+    include_paths = [
+        target_win_x64 + "/lib/clang/17/include",
+    ],
+    support_files = glob([CLANG_WIN_X64 + "/lib/clang/17/include/**"]),
 )
