@@ -167,4 +167,5 @@ register_toolchains(
     "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",
+    "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
 )

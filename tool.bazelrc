@@ -5,5 +5,8 @@ build --incompatible_enable_cc_toolchain_resolution
 # (https://github.com/bazelbuild/bazel/issues/17673)
 build --strict_proto_deps=off
 
+build:windows --features='-supports_start_end_lib'
+
 build:linux --host_platform='//build/bazel/platforms:host_clang'
 build:macos --host_platform='//build/bazel/platforms:host_clang'
+build:windows --host_platform='//build/bazel/platforms:host_clang-cl'
