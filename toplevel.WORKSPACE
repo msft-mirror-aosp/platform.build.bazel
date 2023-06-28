@@ -137,7 +137,7 @@ selective_local_repository(
 # Repository that provides include / libs from GCC
 selective_local_repository(
     name = "gcc_lib",
-    build_file = "build/bazel/toolchains/cc/gcc_lib.BUILD",
+    build_file = "build/bazel/toolchains/cc/linux_clang/gcc_lib.BUILD",
     # Ignore pre-existing BUILD files so we can use our own BUILD file without
     # touching the ones added by go/roboleaf.
     ignore_filenames = [
