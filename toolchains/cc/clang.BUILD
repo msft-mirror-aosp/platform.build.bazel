@@ -11,15 +11,16 @@ load(
     "LINK_ACTIONS",
 )
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@toolchain_defs//:defs.bzl", "TOOL_VERSIONS")
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
 # The clang path definition for each platform
-CLANG_LINUX_X64 = "linux-x86/clang-r487747c"
+CLANG_LINUX_X64 = "linux-x86/{}".format(TOOL_VERSIONS["clang"])
 
-CLANG_MACOS_ALL = "darwin-x86/clang-r487747c"
+CLANG_MACOS_ALL = "darwin-x86/{}".format(TOOL_VERSIONS["clang"])
 
-CLANG_WIN_X64 = "windows-x86/clang-r487747c"
+CLANG_WIN_X64 = "windows-x86/{}".format(TOOL_VERSIONS["clang"])
 
 target_linux_x64 = ":" + CLANG_LINUX_X64
 

@@ -119,3 +119,41 @@ selective_local_repository = repository_rule(
         ),
     },
 )
+
+def _json2bzl_repository_impl(repo_ctx):
+    starlark_content = []
+    for json_label, target_variable in repo_ctx.attr.config_mapping.items():
+        json_data = json.decode(repo_ctx.read(json_label))
+        starlark_content.append(
+            "{} = {}\n".format(target_variable, repr(json_data)),
+        )
+    repo_ctx.file(
+        repo_ctx.attr.output_file,
+        "\n".join(starlark_content),
+        executable = False,
+    )
+    repo_ctx.file("BUILD.bazel", "", executable = False)
+    create_workspace_file(None, repo_ctx, default_workspace_file_content(
+        repo_ctx.name,
+        "json2bzl_repository",
+    ))
+
+json2bzl_repository = repository_rule(
+    implementation = _json2bzl_repository_impl,
+    local = True,
+    doc = "A repository transforming json config files to starlark for usage " +
+          "in BUILD files.",
+    attrs = {
+        "config_mapping": attr.label_keyed_string_dict(
+            doc = "A mapping of input files (as labels) to the variable name " +
+                  "that stores the output structure.",
+            allow_empty = False,
+            allow_files = [".json"],
+            mandatory = True,
+        ),
+        "output_file": attr.string(
+            doc = "The file in the repository to store outputs.",
+            mandatory = True,
+        ),
+    },
+)

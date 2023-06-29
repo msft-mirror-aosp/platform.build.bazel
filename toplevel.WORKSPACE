@@ -1,5 +1,9 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//build/bazel/rules:repository.bzl", "selective_local_repository")
+load(
+    "//build/bazel/rules:repository.bzl",
+    "json2bzl_repository",
+    "selective_local_repository",
+)
 
 # Skylib provides common utilities for writing bazel rules and functions.
 # For docs see https://github.com/bazelbuild/bazel-skylib/blob/main/README.md
@@ -119,6 +123,14 @@ load(
     "macos_sdk_repository",
     "msvc_tools_repository",
     "windows_sdk_repository",
+)
+
+json2bzl_repository(
+    name = "toolchain_defs",
+    config_mapping = {
+        "//external/qemu/android/build:toolchains.json": "TOOL_VERSIONS",
+    },
+    output_file = "defs.bzl",
 )
 
 # Repository that provides the clang compilers
