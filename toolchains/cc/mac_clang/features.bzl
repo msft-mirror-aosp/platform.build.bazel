@@ -86,6 +86,29 @@ rpath_feature = feature(
     ],
 )
 
+# https://github.com/bazelbuild/bazel/issues/7415
+set_install_name_feature = feature(
+    name = "set_install_name",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = [
+                ACTION_NAMES.cpp_link_dynamic_library,
+                ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+            ],
+            flag_groups = [
+                flag_group(
+                    flags = [
+                        "-install_name",
+                        "@rpath/%{runtime_solib_name}",
+                    ],
+                    expand_if_available = "runtime_solib_name",
+                ),
+            ],
+        ),
+    ],
+)
+
 # https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;l=653;drc=6d03a2ecf25ad596446c296ef1e881b60c379812
 libraries_to_link_feature = feature(
     name = "libraries_to_link",
@@ -249,6 +272,7 @@ def _cc_features_impl(ctx):
         shared_flag_feature,
         linkstamps_feature,
         output_execpath_feature,
+        set_install_name_feature,
         rpath_feature,
         lib_search_paths_feature,
         get_toolchain_lib_search_paths_feature(import_config),
