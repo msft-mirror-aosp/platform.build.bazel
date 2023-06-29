@@ -1,0 +1,127 @@
+load(":features.bzl", "cc_features")
+load(
+    "@//build/bazel/toolchains/cc:rules.bzl",
+    "cc_artifact_name",
+    "cc_toolchain_config",
+)
+
+package(default_visibility = ["//visibility:public"])
+
+_x64_imports = [
+    "@vctools//:msvc_runtimes_x64",
+    "@windows_sdk//:sdk_libs_x64",
+    "@clang//:win_x64_compiler_runtime",
+]
+
+cc_features(
+    name = "x64_features",
+    archive_flags = [
+        "/ignore:4221",
+    ],
+    compile_flags = [
+        "/wd4117",
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+        "/DCOMPILER_MSVC",
+        "/DNOMINMAX",
+        "/D_WIN32_WINNT=0x0601",
+        "/D_CRT_SECURE_NO_DEPRECATE",
+        "/D_CRT_SECURE_NO_WARNINGS",
+        "/wd4351",
+        "/wd4291",
+        "/wd4250",
+        "/wd4996",
+    ],
+    link_flags = [
+        "/ignore:4070",
+    ],
+    toolchain_imports = _x64_imports,
+)
+
+cc_artifact_name(
+    name = "obj",
+    category = "object_file",
+    extension = ".obj",
+)
+
+cc_artifact_name(
+    name = "lib",
+    category = "static_library",
+    extension = ".lib",
+)
+
+cc_artifact_name(
+    name = "always_link_lib",
+    category = "alwayslink_static_library",
+    extension = ".lo.lib",
+)
+
+cc_artifact_name(
+    name = "exe",
+    category = "executable",
+    extension = ".exe",
+)
+
+cc_artifact_name(
+    name = "dll",
+    category = "dynamic_library",
+    extension = ".dll",
+)
+
+cc_artifact_name(
+    name = "interface_lib",
+    category = "interface_library",
+    extension = ".if.lib",
+)
+
+cc_toolchain_config(
+    name = "x64_config",
+    artifact_name_patterns = [
+        ":obj",
+        ":lib",
+        ":always_link_lib",
+        ":exe",
+        ":dll",
+        ":interface_lib",
+    ],
+    cc_features = ":x64_features",
+    cc_tools = [
+        "@clang//:win_x64_clang-cl",
+        "@clang//:win_x64_link",
+        "@clang//:win_x64_archiver",
+    ],
+    identifier = "win_clangcl_x64",
+    target_cpu = "k8",
+    toolchain_imports = _x64_imports,
+)
+
+cc_toolchain(
+    name = "x64",
+    all_files = ":x64_config",
+    ar_files = "@clang//:win_x64_archiver",
+    as_files = "@clang//:win_x64_clang-cl",
+    compiler_files = ":x64_config",
+    dwp_files = "@//build/bazel/toolchains/cc:empty",
+    linker_files = ":x64_config",
+    objcopy_files = "@//build/bazel/toolchains/cc:empty",
+    strip_files = "@//build/bazel/toolchains/cc:empty",
+    supports_param_files = 1,
+    toolchain_config = ":x64_config",
+)
+
+toolchain(
+    name = "x64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+        "@bazel_tools//tools/cpp:clang-cl",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+    ],
+    toolchain = ":x64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)

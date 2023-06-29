@@ -65,6 +65,7 @@ CcToolchainImportInfo = provider(
         "dynamic_mode_libraries": "Libraries to be linked in dynamic linking mode.",
         "dynamic_runtimes": "Libraries used as the dynamic runtime library of cc_toolchain.",
         "framework_paths": "Framework search directories to add.",
+        "lib_search_paths": "Additional library search paths.",
         "static_mode_libraries": "Libraries to be linked in static linking mode.",
         "static_runtimes": "Libraries used as the static runtime library of cc_toolchain.",
         "so_linked_objects": "Directly linked objects to shared libraries.",
@@ -76,6 +77,7 @@ def _cc_toolchain_import_impl(ctx):
         fail(ctx.label, ": 'include_paths' is mandatory when 'hdrs' is not empty.")
     include_paths = [p.path for p in ctx.files.include_paths]
     framework_paths = [p.path for p in ctx.files.framework_paths]
+    lib_search_paths = [p.path for p in ctx.files.lib_search_paths]
 
     dep_include_paths = [
         dep[CcToolchainImportInfo].include_paths
@@ -83,6 +85,10 @@ def _cc_toolchain_import_impl(ctx):
     ]
     dep_framework_paths = [
         dep[CcToolchainImportInfo].framework_paths
+        for dep in ctx.attr.deps
+    ]
+    dep_lib_search_paths = [
+        dep[CcToolchainImportInfo].lib_search_paths
         for dep in ctx.attr.deps
     ]
     dep_shared_libs = [
@@ -125,6 +131,11 @@ def _cc_toolchain_import_impl(ctx):
             framework_paths = depset(
                 direct = framework_paths,
                 transitive = dep_framework_paths,
+                order = "topological",
+            ),
+            lib_search_paths = depset(
+                direct = lib_search_paths,
+                transitive = dep_lib_search_paths,
                 order = "topological",
             ),
             dynamic_mode_libraries = depset(
@@ -180,7 +191,7 @@ cc_toolchain_import = rule(
         ),
         "framework_paths": attr.label_list(
             default = [],
-            doc = "Framework search paths to add.",
+            doc = "Framework search paths to add. This has no effect on Windows.",
             allow_files = True,
         ),
         "dynamic_mode_libs": attr.label_list(
@@ -197,6 +208,13 @@ cc_toolchain_import = rule(
                   "\n" +
                   "When is_runtime_lib is True, libraries will be passed to cc_toolchain " +
                   "as 'static_runtime_lib' (requires all libs to be static).",
+            allow_files = True,
+        ),
+        "lib_search_paths": attr.label_list(
+            default = [],
+            doc = "Additional library search paths." +
+                  "\n" +
+                  "Useful to add search paths without always linking a lib.",
             allow_files = True,
         ),
         "support_files": attr.label_list(

@@ -62,7 +62,10 @@ def toolchain_import_configs(import_libs, object_extensions):
     lib_search_paths = collections.uniq([
         f.dirname
         for f in dynamic_mode_libs + static_mode_libs
-    ])
+    ] + depset(transitive = [
+        lib[CcToolchainImportInfo].lib_search_paths
+        for lib in import_libs
+    ], order = "topological").to_list())
     dynamic_lib_filenames = collections.uniq([
         f.basename
         for f in dynamic_mode_libs
