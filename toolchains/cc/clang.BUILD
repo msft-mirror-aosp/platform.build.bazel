@@ -64,12 +64,6 @@ cc_tool(
 
 cc_toolchain_import(
     name = "linux_x64_libcxx",
-    hdrs = glob(
-        [
-            CLANG_LINUX_X64 + "/include/c++/v1/**",
-            CLANG_LINUX_X64 + "/lib/clang/17/include/**",
-        ],
-    ),
     dynamic_mode_libs = [
         target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.so",
         target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.so.1",
@@ -78,10 +72,16 @@ cc_toolchain_import(
         target_linux_x64 + "/include/c++/v1",
         target_linux_x64 + "/lib/clang/17/include",
     ],
-    is_runtime_lib = True,
     static_mode_libs = [
         target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.a",
     ],
+    support_files = glob(
+        [
+            CLANG_LINUX_X64 + "/include/c++/v1/**",
+            CLANG_LINUX_X64 + "/lib/clang/17/include/**",
+        ],
+    ),
+    system_provided = False,
     deps = [
         "@gcc_lib//:libc",
         "@gcc_lib//:libgcc",
@@ -147,12 +147,6 @@ cc_tool(
 
 cc_toolchain_import(
     name = "macos_all_libcxx",
-    hdrs = glob(
-        [
-            CLANG_MACOS_ALL + "/include/c++/v1/**",
-            CLANG_MACOS_ALL + "/lib/clang/17/include/**",
-        ],
-    ),
     dynamic_mode_libs = [
         target_macos_all + "/lib/libc++.dylib",
         target_macos_all + "/lib/libc++.1.dylib",
@@ -162,11 +156,17 @@ cc_toolchain_import(
         target_macos_all + "/include/c++/v1",
         target_macos_all + "/lib/clang/17/include",
     ],
-    is_runtime_lib = True,
     static_mode_libs = [
         target_macos_all + "/lib/libc++.a",
         target_macos_all + "/lib/libc++abi.a",
     ],
+    support_files = glob(
+        [
+            CLANG_MACOS_ALL + "/include/c++/v1/**",
+            CLANG_MACOS_ALL + "/lib/clang/17/include/**",
+        ],
+    ),
+    system_provided = False,
 )
 
 ###################### Windows X64 ######################

@@ -5,68 +5,61 @@ package(default_visibility = [
     "@clang//:__subpackages__",
 ])
 
-GCC = "x86_64-linux-glibc2.17-4.8"
-
-gcc_target = ":" + GCC
-
 cc_toolchain_import(
     name = "start_libs",
     dynamic_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/Scrt1.o",
-        gcc_target + "/sysroot/usr/lib/crti.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtendS.o",
-        gcc_target + "/sysroot/usr/lib/crtn.o",
+        ":sysroot/usr/lib/Scrt1.o",
+        ":sysroot/usr/lib/crti.o",
+        ":lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
+        ":lib/gcc/x86_64-linux/4.8.3/crtendS.o",
+        ":sysroot/usr/lib/crtn.o",
     ],
     so_linked_objects = [
-        gcc_target + "/sysroot/usr/lib/crti.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtendS.o",
-        gcc_target + "/sysroot/usr/lib/crtn.o",
+        ":sysroot/usr/lib/crti.o",
+        ":lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
+        ":lib/gcc/x86_64-linux/4.8.3/crtendS.o",
+        ":sysroot/usr/lib/crtn.o",
     ],
     static_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/Scrt1.o",
-        gcc_target + "/sysroot/usr/lib/crti.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/crtendS.o",
-        gcc_target + "/sysroot/usr/lib/crtn.o",
+        ":sysroot/usr/lib/Scrt1.o",
+        ":sysroot/usr/lib/crti.o",
+        ":lib/gcc/x86_64-linux/4.8.3/crtbeginS.o",
+        ":lib/gcc/x86_64-linux/4.8.3/crtendS.o",
+        ":sysroot/usr/lib/crtn.o",
     ],
 )
 
 cc_toolchain_import(
     name = "linker",
     support_files = [
-        gcc_target + "/sysroot/usr/lib/ld-linux-x86-64.so.2",
+        ":sysroot/usr/lib/ld-linux-x86-64.so.2",
     ],
 )
 
 cc_toolchain_import(
     name = "libc",
-    hdrs = glob(
-        [
-            GCC + "/sysroot/usr/include/*.h",
-            GCC + "/sysroot/usr/include/**/*.h",
-            GCC + "/sysroot/usr/include/x86_64-linux-gnu/**",
-            GCC + "/lib/gcc/x86_64-linux/4.8.3/include/**",
-            GCC + "/lib/gcc/x86_64-linux/4.8.3/include-fixed/**",
-        ],
-    ),
     dynamic_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/libc.so",
+        ":sysroot/usr/lib/libc.so",
     ],
     include_paths = [
-        gcc_target + "/sysroot/usr/include",
-        gcc_target + "/sysroot/usr/include/x86_64-linux-gnu",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/include",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/include-fixed",
+        ":sysroot/usr/include",
+        ":sysroot/usr/include/x86_64-linux-gnu",
+        ":lib/gcc/x86_64-linux/4.8.3/include",
+        ":lib/gcc/x86_64-linux/4.8.3/include-fixed",
     ],
     static_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/libc.so",
+        ":sysroot/usr/lib/libc.so",
     ],
-    support_files = [
-        gcc_target + "/sysroot/usr/lib/libc.so.6",
-        gcc_target + "/sysroot/usr/lib/libc-2.17.so",
-        gcc_target + "/sysroot/usr/lib/libc_nonshared.a",
+    support_files = glob([
+        "sysroot/usr/include/*.h",
+        "sysroot/usr/include/**/*.h",
+        "sysroot/usr/include/x86_64-linux-gnu/**",
+        "lib/gcc/x86_64-linux/4.8.3/include/**",
+        "lib/gcc/x86_64-linux/4.8.3/include-fixed/**",
+    ]) + [
+        ":sysroot/usr/lib/libc.so.6",
+        ":sysroot/usr/lib/libc-2.17.so",
+        ":sysroot/usr/lib/libc_nonshared.a",
     ],
     deps = [":linker"],
 )
@@ -74,14 +67,14 @@ cc_toolchain_import(
 cc_toolchain_import(
     name = "libm",
     dynamic_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/libm.so",
+        ":sysroot/usr/lib/libm.so",
     ],
     static_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/libm.so",
+        ":sysroot/usr/lib/libm.so",
     ],
     support_files = [
-        gcc_target + "/sysroot/usr/lib/libm.so.6",
-        gcc_target + "/sysroot/usr/lib/libm-2.17.so",
+        ":sysroot/usr/lib/libm.so.6",
+        ":sysroot/usr/lib/libm-2.17.so",
     ],
     deps = [":libc"],
 )
@@ -89,15 +82,15 @@ cc_toolchain_import(
 cc_toolchain_import(
     name = "libpthread",
     dynamic_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/libpthread.so",
+        ":sysroot/usr/lib/libpthread.so",
     ],
     static_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/libpthread.so",
+        ":sysroot/usr/lib/libpthread.so",
     ],
     support_files = [
-        gcc_target + "/sysroot/usr/lib/libpthread.so.0",
-        gcc_target + "/sysroot/usr/lib/libpthread-2.17.so",
-        gcc_target + "/sysroot/usr/lib/libpthread_nonshared.a",
+        ":sysroot/usr/lib/libpthread.so.0",
+        ":sysroot/usr/lib/libpthread-2.17.so",
+        ":sysroot/usr/lib/libpthread_nonshared.a",
     ],
     deps = [":libc"],
 )
@@ -105,14 +98,14 @@ cc_toolchain_import(
 cc_toolchain_import(
     name = "librt",
     dynamic_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/librt.so",
+        ":sysroot/usr/lib/librt.so",
     ],
     static_mode_libs = [
-        gcc_target + "/sysroot/usr/lib/librt.so",
+        ":sysroot/usr/lib/librt.so",
     ],
     support_files = [
-        gcc_target + "/sysroot/usr/lib/librt.so.1",
-        gcc_target + "/sysroot/usr/lib/librt-2.17.so",
+        ":sysroot/usr/lib/librt.so.1",
+        ":sysroot/usr/lib/librt-2.17.so",
     ],
     deps = [
         ":libc",
@@ -123,13 +116,13 @@ cc_toolchain_import(
 cc_toolchain_import(
     name = "libgcc_s",
     dynamic_mode_libs = [
-        gcc_target + "/x86_64-linux/lib64/libgcc_s.so",
+        ":x86_64-linux/lib64/libgcc_s.so",
     ],
     static_mode_libs = [
-        gcc_target + "/x86_64-linux/lib64/libgcc_s.so",
+        ":x86_64-linux/lib64/libgcc_s.so",
     ],
     support_files = [
-        gcc_target + "/x86_64-linux/lib64/libgcc_s.so.1",
+        ":x86_64-linux/lib64/libgcc_s.so.1",
     ],
     deps = [":libc"],
 )
@@ -137,11 +130,11 @@ cc_toolchain_import(
 cc_toolchain_import(
     name = "libgcc",
     dynamic_mode_libs = [
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/libgcc.a",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/libgcc_eh.a",
+        ":lib/gcc/x86_64-linux/4.8.3/libgcc.a",
+        ":lib/gcc/x86_64-linux/4.8.3/libgcc_eh.a",
     ],
     static_mode_libs = [
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/libgcc.a",
-        gcc_target + "/lib/gcc/x86_64-linux/4.8.3/libgcc_eh.a",
+        ":lib/gcc/x86_64-linux/4.8.3/libgcc.a",
+        ":lib/gcc/x86_64-linux/4.8.3/libgcc_eh.a",
     ],
 )

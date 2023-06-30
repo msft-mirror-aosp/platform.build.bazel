@@ -156,7 +156,7 @@ selective_local_repository(
         "BUILD",
         "BUILD.bazel",
     ],
-    path = "prebuilts/gcc/linux-x86/host",
+    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
 )
 
 macos_sdk_repository(
