@@ -99,9 +99,9 @@ selective_local_repository = repository_rule(
     local = True,
     doc = "A repository rule similar to new_local_repository, but allows to ignore certain files.",
     attrs = {
-        "build_file": attr.string(
-            doc = "A file to use as a BUILD file for this directory, " +
-                  "relative to the main workspace.",
+        "build_file": attr.label(
+            doc = "A file to use as a BUILD file for this directory.",
+            allow_single_file = True,
             mandatory = True,
         ),
         "ignore_filenames": attr.string_list(
@@ -113,9 +113,9 @@ selective_local_repository = repository_rule(
                   "absolute or relative to the main workspace.",
             mandatory = True,
         ),
-        "workspace_file": attr.string(
-            doc = "The file to use as the WORKSPACE file for this " +
-                  "repository, relative to the main workspace.",
+        "workspace_file": attr.label(
+            doc = "The file to use as the WORKSPACE file for this repository.",
+            allow_single_file = True,
         ),
     },
 )

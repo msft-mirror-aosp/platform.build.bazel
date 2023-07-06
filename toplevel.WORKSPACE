@@ -136,7 +136,7 @@ json2bzl_repository(
 # Repository that provides the clang compilers
 selective_local_repository(
     name = "clang",
-    build_file = "build/bazel/toolchains/cc/clang.BUILD",
+    build_file = "//build/bazel/toolchains/cc:clang.BUILD",
     # Ignore pre-existing BUILD files so we can use our own BUILD file without
     # touching the ones added by go/roboleaf.
     ignore_filenames = [
@@ -149,7 +149,7 @@ selective_local_repository(
 # Repository that provides include / libs from GCC
 selective_local_repository(
     name = "gcc_lib",
-    build_file = "build/bazel/toolchains/cc/linux_clang/gcc_lib.BUILD",
+    build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
     # Ignore pre-existing BUILD files so we can use our own BUILD file without
     # touching the ones added by go/roboleaf.
     ignore_filenames = [
@@ -161,17 +161,17 @@ selective_local_repository(
 
 macos_sdk_repository(
     name = "macos_sdk",
-    build_file = "build/bazel/toolchains/cc/mac_clang/sdk.BUILD",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
 )
 
 msvc_tools_repository(
     name = "vctools",
-    build_file = "build/bazel/toolchains/cc/windows_clang/vctools.BUILD",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
 )
 
 windows_sdk_repository(
     name = "windows_sdk",
-    build_file_template = "build\\bazel\\toolchains\\cc\\windows_clang\\sdk.BUILD.tpl",
+    build_file_template = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD.tpl",
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 

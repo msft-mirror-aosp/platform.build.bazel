@@ -64,22 +64,12 @@ def create_build_file(build_file, repo_ctx, substitutions = None):
     """Create a BUILD.bazel file at root of the repository.
 
     Args:
-        build_file: A path string to the BUILD file. Relative path is resolved
-            relative to the workspace root.
+        build_file: The BUILD file.
         repo_ctx: The repository context.
         substitutions: If specified, substitutions to make when expanding
             build_file as a template.
     """
     repo_ctx.delete("BUILD.bazel")
-    build_file = resolve_workspace_path(build_file, repo_ctx)
-    if not build_file.exists:
-        fail(
-            "Cannot create repository",
-            repo_ctx.name,
-            ": BUILD file",
-            build_file,
-            "is not found.",
-        )
     if not substitutions:
         repo_ctx.symlink(build_file, "BUILD.bazel")
     else:
@@ -94,22 +84,12 @@ def create_workspace_file(workspace_file, repo_ctx, default_content = None):
     """Create a WORKSPACE file at root of the repository. At least one of workspace_file and default_content must be passed.
 
     Args:
-        workspace_file: A path string to the BUILD file. Relative path is
-            resolved relative to the workspace root.
+        workspace_file: The WORKSPACE file.
         repo_ctx: The repository context.
         default_content: WORKSPACE content if workspace_file is None.
     """
     repo_ctx.delete("WORKSPACE.bazel")
     if workspace_file:
-        workspace_file = resolve_workspace_path(workspace_file, repo_ctx)
-        if not workspace_file.exists:
-            fail(
-                "Cannot create repository",
-                repo_ctx.name,
-                ": WORKSPACE file",
-                workspace_file,
-                "is not found.",
-            )
         repo_ctx.symlink(workspace_file, "WORKSPACE.bazel")
     elif default_content:
         repo_ctx.file("WORKSPACE.bazel", default_content, executable = False)

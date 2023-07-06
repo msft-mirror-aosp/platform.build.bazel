@@ -40,9 +40,9 @@ macos_sdk_repository = repository_rule(
     doc = "Creates a local repository for macOS SDK from the currently " +
           "selected Xcode toolchain.",
     attrs = {
-        "build_file": attr.string(
-            doc = "A file to use as a BUILD file for this directory, " +
-                  "relative to the main workspace.",
+        "build_file": attr.label(
+            doc = "A file to use as a BUILD file for this directory.",
+            allow_single_file = True,
             mandatory = True,
         ),
         "sdk_versions": attr.string_list(
@@ -121,9 +121,9 @@ msvc_tools_repository = repository_rule(
     local = True,
     doc = "Creates a local repository for host installed MSVC tools.",
     attrs = {
-        "build_file": attr.string(
-            doc = "A file to use as a BUILD file for this directory, " +
-                  "relative to the main workspace.",
+        "build_file": attr.label(
+            doc = "A file to use as a BUILD file for this directory.",
+            allow_single_file = True,
             mandatory = True,
         ),
         "tool_versions": attr.string_list(
@@ -174,11 +174,11 @@ windows_sdk_repository = repository_rule(
     local = True,
     doc = "Creates a local repository for host installed Windows SDK.",
     attrs = {
-        "build_file_template": attr.string(
-            doc = "A file to be expanded as a BUILD file for this directory, " +
-                  "relative to the main workspace. The template can contain " +
-                  "'%{sdk_version}' tags that will be replaced with exact " +
-                  "SDK version.",
+        "build_file_template": attr.label(
+            doc = "A file to be expanded as a BUILD file for this directory." +
+                  "The template can contain '%{sdk_version}' tags that will " +
+                  "be replaced with exact SDK version.",
+            allow_single_file = True,
             mandatory = True,
         ),
         "sdk_path": attr.string(
