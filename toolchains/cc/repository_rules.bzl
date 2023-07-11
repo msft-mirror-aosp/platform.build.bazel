@@ -83,7 +83,8 @@ def _select_version(available_versions, want_versions):
 
 def _msvc_tools_repository_impl(repo_ctx):
     """Creates a local repository for host installed MSVC tools."""
-    vswhere_path = repo_ctx.os.environ["ProgramFiles(x86)"] + "\\Microsoft Visual Studio\\Installer\\vswhere.exe"
+    environ = {k.upper(): v for k, v in repo_ctx.os.environ.items()}
+    vswhere_path = environ["PROGRAMFILES(X86)"] + "\\Microsoft Visual Studio\\Installer\\vswhere.exe"
     vswhere_result = run_command([
         vswhere_path,
         "-products",
