@@ -559,7 +559,6 @@ force_pic_feature = feature(
 # https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;drc=feea781b30788997c0b97ad9103a13fdc3f627c8;l=924
 strip_debug_symbols_feature = feature(
     name = "strip_debug_symbols",
-    enabled = True,
     flag_sets = [
         flag_set(
             actions = LINK_ACTIONS,
@@ -652,6 +651,66 @@ compiler_output_feature = feature(
     ],
 )
 
+generate_debug_symbols_feature = feature(
+    name = "generate_debug_symbols",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = ["-g"]),
+            ],
+        ),
+    ],
+)
+
+opt_feature = feature(
+    name = "opt",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-O2",
+                    # Buffer overrun detection.
+                    "-D_FORTIFY_SOURCE=1",
+                    # Disable assertions
+                    "-DNDEBUG",
+                    # Allow removal of unused sections and code folding at link
+                    # time.
+                    "-ffunction-sections",
+                    "-fdata-sections",
+                    # Needed by --icf=safe
+                    "-faddrsig",
+                ]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-Wl,--gc-sections",
+                    "-Wl,--icf=safe",
+                ]),
+            ],
+        ),
+    ],
+)
+
+dbg_feature = feature(
+    name = "dbg",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-O0",
+                ]),
+            ],
+        ),
+    ],
+    implies = ["generate_debug_symbols"],
+)
+
 def _cc_features_impl(ctx):
     import_config = toolchain_import_configs(
         ctx.attr.toolchain_imports,
@@ -682,15 +741,21 @@ def _cc_features_impl(ctx):
         lib_search_paths_feature,
         get_toolchain_lib_search_paths_feature(import_config),
         archiver_flags_feature,
+        generate_debug_symbols_feature,
+        # Start flag ordering: the order of following features impacts how
+        # flags override each other.
+        opt_feature,
+        dbg_feature,
         libraries_to_link_feature,
-        get_toolchain_libraries_to_link_feature(import_config),
-        force_pic_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
+        get_toolchain_libraries_to_link_feature(import_config),
+        force_pic_feature,
         strip_debug_symbols_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
+        ### End flag ordering ##
         sysroot_feature,
         linker_param_file_feature,
         compiler_input_feature,

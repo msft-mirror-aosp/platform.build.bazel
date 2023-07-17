@@ -119,6 +119,25 @@ copy_dynamic_libraries_to_binary_feature = feature(
     enabled = True,
 )
 
+dbg_feature = feature(
+    name = "dbg",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = ["/Od", "/Z7"]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [
+                flag_group(flags = ["/INCREMENTAL:NO"]),
+            ],
+        ),
+    ],
+    implies = ["generate_pdb_file"],
+)
+
 def_file_feature = feature(
     name = "def_file",
     enabled = True,
@@ -452,6 +471,35 @@ libraries_to_link_feature = feature(
 
 no_windows_export_all_symbols_feature = feature(name = "no_windows_export_all_symbols")
 
+opt_feature = feature(
+    name = "opt",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "/O2",
+                    # Allow removal of unused sections and code folding at link
+                    # time.
+                    "/Gy",
+                    "/Gw",
+                ]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    # Control flow guards
+                    "/GUARD:CF",
+                    "/OPT:REF",
+                    "/OPT:ICF",
+                ]),
+            ],
+        ),
+    ],
+)
+
 output_execpath_feature = feature(
     name = "output_execpath_flags",
     enabled = True,
@@ -589,13 +637,18 @@ def _cc_features_impl(ctx):
         generate_pdb_file_feature,
         get_toolchain_lib_search_paths_feature(import_config),
         get_archiver_flags_feature(ctx.attr.archive_flags),
+        # Start flag ordering: the order of following features impacts how
+        # flags override each other.
+        opt_feature,
+        dbg_feature,
         libraries_to_link_feature,
-        get_toolchain_libraries_to_link_feature(import_config),
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
+        get_toolchain_libraries_to_link_feature(import_config),
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
+        ### End flag ordering ##
         linker_param_file_feature,
         compiler_input_feature,
         compiler_output_feature,

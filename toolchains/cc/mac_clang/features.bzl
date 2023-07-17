@@ -14,6 +14,8 @@ load(
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@//build/bazel/toolchains/cc:actions.bzl",
+    "CPP_COMPILE_ACTIONS",
+    "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
 )
 load(
@@ -44,7 +46,9 @@ load(
     "archiver_flags_feature",
     "compiler_input_feature",
     "compiler_output_feature",
+    "dbg_feature",
     "dependency_file_feature",
+    "generate_debug_symbols_feature",
     "get_toolchain_include_paths_feature",
     "get_toolchain_lib_search_paths_feature",
     "get_toolchain_libraries_to_link_feature",
@@ -78,8 +82,30 @@ rpath_feature = feature(
                             ],
                         ),
                     ],
-                    expand_if_available =
-                        "runtime_library_search_directories",
+                    expand_if_available = "runtime_library_search_directories",
+                ),
+            ],
+        ),
+    ],
+)
+
+# https://github.com/bazelbuild/bazel/issues/7415
+set_install_name_feature = feature(
+    name = "set_install_name",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = [
+                ACTION_NAMES.cpp_link_dynamic_library,
+                ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+            ],
+            flag_groups = [
+                flag_group(
+                    flags = [
+                        "-install_name",
+                        "@rpath/%{runtime_solib_name}",
+                    ],
+                    expand_if_available = "runtime_solib_name",
                 ),
             ],
         ),
@@ -216,9 +242,40 @@ force_pic_feature = feature(
             flag_groups = [
                 flag_group(
                     expand_if_available = "force_pic",
-                    iterate_over = "user_link_flags",
                     flags = ["-Wl,-pie"],
                 ),
+            ],
+        ),
+    ],
+)
+
+opt_feature = feature(
+    name = "opt",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-O2",
+                    # Buffer overrun detection.
+                    "-D_FORTIFY_SOURCE=1",
+                    # Disable assertions
+                    "-DNDEBUG",
+                    # Allow removal of unused sections at link time.
+                    "-ffunction-sections",
+                    "-fdata-sections",
+                    # Needed by --icf=safe
+                    "-faddrsig",
+                ]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-Wl,-dead_strip",
+                    "-Wl,--icf=safe",
+                ]),
             ],
         ),
     ],
@@ -249,19 +306,26 @@ def _cc_features_impl(ctx):
         shared_flag_feature,
         linkstamps_feature,
         output_execpath_feature,
+        set_install_name_feature,
         rpath_feature,
         lib_search_paths_feature,
         get_toolchain_lib_search_paths_feature(import_config),
         archiver_flags_feature,
+        generate_debug_symbols_feature,
+        # Start flag ordering: the order of following features impacts how
+        # flags override each other.
+        opt_feature,
+        dbg_feature,
         libraries_to_link_feature,
-        get_toolchain_libraries_to_link_feature(import_config),
-        force_pic_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
+        get_toolchain_libraries_to_link_feature(import_config),
+        force_pic_feature,
         strip_debug_symbols_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
+        ### End flag ordering ##
         sysroot_feature,
         linker_param_file_feature,
         compiler_input_feature,

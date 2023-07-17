@@ -73,8 +73,6 @@ CcToolchainImportInfo = provider(
 )
 
 def _cc_toolchain_import_impl(ctx):
-    if ctx.files.hdrs and not ctx.files.include_paths:
-        fail(ctx.label, ": 'include_paths' is mandatory when 'hdrs' is not empty.")
     include_paths = [p.path for p in ctx.files.include_paths]
     framework_paths = [p.path for p in ctx.files.framework_paths]
     lib_search_paths = [p.path for p in ctx.files.lib_search_paths]
@@ -112,14 +110,14 @@ def _cc_toolchain_import_impl(ctx):
         for dep in ctx.attr.deps
     ]
 
-    if ctx.attr.is_runtime_lib:
-        static_libs, dynamic_libs = [], []
-        static_runtimes = ctx.files.static_mode_libs
-        dynamic_runtimes = ctx.files.dynamic_mode_libs
-    else:
+    if ctx.attr.system_provided:
         static_runtimes, dynamic_runtimes = [], []
         static_libs = ctx.files.static_mode_libs
         dynamic_libs = ctx.files.dynamic_mode_libs
+    else:
+        static_libs, dynamic_libs = [], []
+        static_runtimes = ctx.files.static_mode_libs
+        dynamic_runtimes = ctx.files.dynamic_mode_libs
 
     return [
         CcToolchainImportInfo(
@@ -165,8 +163,7 @@ def _cc_toolchain_import_impl(ctx):
         ),
         DefaultInfo(
             files = depset(
-                direct = ctx.files.hdrs +
-                         ctx.files.dynamic_mode_libs +
+                direct = ctx.files.dynamic_mode_libs +
                          ctx.files.static_mode_libs +
                          ctx.files.support_files +
                          ctx.files.so_linked_objects,
@@ -179,14 +176,9 @@ cc_toolchain_import = rule(
     implementation = _cc_toolchain_import_impl,
     doc = "A rule that works like cc_import but at the toolchain level.",
     attrs = {
-        "hdrs": attr.label_list(
-            default = [],
-            doc = "Header files for this library.",
-            allow_files = True,
-        ),
         "include_paths": attr.label_list(
             default = [],
-            doc = "Include paths to search for headers. Mandatory if hdrs is set.",
+            doc = "Include paths to search for headers.",
             allow_files = True,
         ),
         "framework_paths": attr.label_list(
@@ -219,18 +211,21 @@ cc_toolchain_import = rule(
         ),
         "support_files": attr.label_list(
             default = [],
-            doc = "Files needed but not linked.",
+            doc = "Files needed but not forcefully linked.",
             allow_files = True,
         ),
-        "is_runtime_lib": attr.bool(
-            doc = "If true, the libraries are consumed by the appropriate *_runtime_lib attribute for cc_toolchain.\n" +
+        "system_provided": attr.bool(
+            doc = "Defaults to true, meaning that the dynamic libraries must " +
+                  "be provided by the system at runtime.\n" +
+                  "\n" +
+                  "If set to false, the libraries are passed to the " +
+                  "appropriate *_runtime_lib attributes of cc_toolchain and " +
+                  "made available at runtime.\n" +
                   "\n" +
                   "Used in conjunction with dynamic_mode_libs and " +
                   "static_mode_libs to pass values to cc_toolchain via the " +
-                  "cc_toolchain_(dynamic|static)_runtime rules.\n" +
-                  "\n" +
-                  "Set this to False if the libs will come from the host " +
-                  "(e.g. glibc), and to True otherwise.",
+                  "cc_toolchain_(dynamic|static)_runtime rules.",
+            default = True,
         ),
         "so_linked_objects": attr.label_list(
             default = [],

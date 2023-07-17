@@ -98,7 +98,7 @@ toolchain(
 cc_features(
     name = "arm64_features",
     compile_flags = [
-        "--target=arm64e-apple-darwin-macho",
+        "--target=arm64-apple-darwin-macho",
         "-no-canonical-prefixes",
         "-Wno-builtin-macro-redefined",
         "-D__DATE__=\"redacted\"",

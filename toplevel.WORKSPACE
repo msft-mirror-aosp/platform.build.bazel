@@ -1,5 +1,9 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("//build/bazel/rules:repository.bzl", "selective_local_repository")
+load(
+    "//build/bazel/rules:repository.bzl",
+    "json2bzl_repository",
+    "selective_local_repository",
+)
 
 # Skylib provides common utilities for writing bazel rules and functions.
 # For docs see https://github.com/bazelbuild/bazel-skylib/blob/main/README.md
@@ -121,10 +125,18 @@ load(
     "windows_sdk_repository",
 )
 
+json2bzl_repository(
+    name = "toolchain_defs",
+    config_mapping = {
+        "//external/qemu/android/build:toolchains.json": "TOOL_VERSIONS",
+    },
+    output_file = "defs.bzl",
+)
+
 # Repository that provides the clang compilers
 selective_local_repository(
     name = "clang",
-    build_file = "build/bazel/toolchains/cc/clang.BUILD",
+    build_file = "//build/bazel/toolchains/cc:clang.BUILD",
     # Ignore pre-existing BUILD files so we can use our own BUILD file without
     # touching the ones added by go/roboleaf.
     ignore_filenames = [
@@ -137,29 +149,29 @@ selective_local_repository(
 # Repository that provides include / libs from GCC
 selective_local_repository(
     name = "gcc_lib",
-    build_file = "build/bazel/toolchains/cc/gcc_lib.BUILD",
+    build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
     # Ignore pre-existing BUILD files so we can use our own BUILD file without
     # touching the ones added by go/roboleaf.
     ignore_filenames = [
         "BUILD",
         "BUILD.bazel",
     ],
-    path = "prebuilts/gcc/linux-x86/host",
+    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
 )
 
 macos_sdk_repository(
     name = "macos_sdk",
-    build_file = "build/bazel/toolchains/cc/mac_clang/sdk.BUILD",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
 )
 
 msvc_tools_repository(
     name = "vctools",
-    build_file = "build/bazel/toolchains/cc/windows_clang/vctools.BUILD",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
 )
 
 windows_sdk_repository(
     name = "windows_sdk",
-    build_file_template = "build\\bazel\\toolchains\\cc\\windows_clang\\sdk.BUILD.tpl",
+    build_file_template = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD.tpl",
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 
