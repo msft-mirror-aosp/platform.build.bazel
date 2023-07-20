@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (C) 2022 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,19 +30,25 @@ import time
 from pathlib import Path
 from typing import Final
 from typing import Mapping
+from typing import TextIO
 
 import cuj_catalog
 import perf_metrics
 import pretty
 import ui
 import util
-from cuj import BuildResult
+from cuj import skip_for
+from util import BuildInfo
+from util import BuildResult
+from util import BuildType
 
 MAX_RUN_COUNT: Final[int] = 5
+BAZEL_PROFILES: Final[str] = 'bazel_metrics'
+CQUERY_OUT = 'soong/soong_injection/cquery.out'
 
 
 @functools.cache
-def _prepare_env() -> (Mapping[str, str], str):
+def _prepare_env() -> Mapping[str, str]:
   env = os.environ.copy()
   # TODO: Switch to oriole when it works
   default_product: Final[str] = 'cf_x86_64_phone' \
@@ -58,9 +62,40 @@ def _prepare_env() -> (Mapping[str, str], str):
         f'USING {target_product}-{variant} INSTEAD OF {default_product}-eng')
   env['TARGET_PRODUCT'] = target_product
   env['TARGET_BUILD_VARIANT'] = variant
-  pretty_env_str = [f'{k}={v}' for (k, v) in env.items()]
-  pretty_env_str.sort()
-  return env, '\n'.join(pretty_env_str)
+  return env
+
+
+def _new_action_count(actions_output: TextIO = None, previous_count=0) -> int:
+  """the new actions are written to `actions_output`"""
+  ninja_log_file = util.get_out_dir().joinpath('.ninja_log')
+  if not ninja_log_file.exists():
+    return 0
+  action_count: int = 0
+  with open(ninja_log_file, 'r') as ninja_log:
+    for line in ninja_log:
+      # note "# ninja log v5" is the first line in `.nina_log`
+      if line.startswith('#'):
+        continue
+      action_count += 1
+      if actions_output and previous_count < action_count:
+        # second from last column is the file
+        print(line.split()[-2], file=actions_output)
+  delta = action_count - previous_count
+  return delta
+
+
+def _recompact_ninja_log(f: TextIO):
+  env = _prepare_env()
+  target_product = env["TARGET_PRODUCT"]
+  subprocess.run([
+      util.get_top_dir().joinpath(
+          'prebuilts/build-tools/linux-x86/bin/ninja'),
+      '-f',
+      util.get_out_dir().joinpath(
+          f'combined-{target_product}.ninja'),
+      '-t', 'recompact'],
+      check=False, cwd=util.get_top_dir(), env=env, shell=False,
+      stdout=f, stderr=f)
 
 
 def _build_file_sha(target_product: str) -> str:
@@ -81,54 +116,28 @@ def _build_file_size(target_product: str) -> int:
   return os.path.getsize(build_file) if build_file.exists() else 0
 
 
-BuildInfo = dict[str, any]
+def _pretty_env(env: Mapping[str, str]) -> str:
+  env_copy = [f'{k}={v}' for (k, v) in env.items()]
+  env_copy.sort()
+  return '\n'.join(env_copy)
 
 
-def _build(build_type: ui.BuildType, run_dir: Path) -> (int, BuildInfo):
+def _build(build_type: BuildType, run_dir: Path) -> BuildInfo:
   logfile = run_dir.joinpath('output.txt')
   run_dir.mkdir(parents=True, exist_ok=False)
   cmd = [*build_type.value, *ui.get_user_input().targets]
-  env, env_str = _prepare_env()
-  ninja_log_file = util.get_out_dir().joinpath('.ninja_log')
+  env = _prepare_env()
   target_product = env["TARGET_PRODUCT"]
 
-  def get_new_action_count(log=False, previous_count=0) -> int:
-    if not ninja_log_file.exists():
-      return 0
-    action_count: int = 0
-    actions_file = run_dir.joinpath('new_ninja_actions.txt')
-    with open(ninja_log_file, 'r') as ninja_log, open(actions_file, 'w') as af:
-      for line in ninja_log:
-        # note "# ninja log v5" is the first line in `.nina_log`
-        if line.startswith('#'):
-          continue
-        action_count += 1
-        if log and previous_count < action_count:
-          # second from last column is the file
-          print(line.split()[-2], file=af)
-    delta = action_count - previous_count
-    if delta == 0:
-      os.remove(actions_file)
-    return delta
-
-  def recompact_ninja_log():
-    subprocess.run([
-        util.get_top_dir().joinpath(
-            'prebuilts/build-tools/linux-x86/bin/ninja'),
-        '-f',
-        util.get_out_dir().joinpath(
-            f'combined-{target_product}.ninja'),
-        '-t', 'recompact'],
-        check=False, cwd=util.get_top_dir(), shell=False,
-        stdout=f, stderr=f)
-
   with open(logfile, mode='w') as f:
-    action_count_before = get_new_action_count()
+    action_count_before = _new_action_count()
     if action_count_before > 0:
-      recompact_ninja_log()
-      action_count_before = get_new_action_count()
-    f.write(f'Command: {cmd}\n')
-    f.write(f'Environment Variables:\n{textwrap.indent(env_str, "  ")}\n\n\n')
+      _recompact_ninja_log(f)
+      f.flush()
+      action_count_before = _new_action_count()
+    f.write(f'Command: {cmd}\n'
+            f'Environment Variables:\n'
+            f'{textwrap.indent(_pretty_env(env), "  ")}\n\n\n')
     f.flush()  # because we pass f to a subprocess, we want to flush now
     logging.info('Command: %s', cmd)
     logging.info('TIP: To view the log:\n  tail -f "%s"', logfile)
@@ -136,17 +145,18 @@ def _build(build_type: ui.BuildType, run_dir: Path) -> (int, BuildInfo):
     p = subprocess.run(cmd, check=False, cwd=util.get_top_dir(), env=env,
                        shell=False, stdout=f, stderr=f)
     elapsed_ns = time.perf_counter_ns() - start_ns
-    action_count_delta = get_new_action_count(
-        log=True, previous_count=action_count_before)
+    with open(run_dir.joinpath('new_ninja_actions.txt'), 'w') as af:
+      action_count_delta = _new_action_count(af, action_count_before)
 
-  return (p.returncode, {
-      'build.ninja': _build_file_sha(target_product),
-      'build.ninja.size': _build_file_size(target_product),
-      'actions': action_count_delta,
-      'product': f'{target_product}-{env["TARGET_BUILD_VARIANT"]}',
-      'time': util.hhmmss(datetime.timedelta(microseconds=elapsed_ns / 1000),
-                          decimal_precision=True)
-  })
+  return BuildInfo(
+      actions=action_count_delta,
+      build_type=build_type,
+      build_result=BuildResult.FAILED if p.returncode else BuildResult.SUCCESS,
+      build_ninja_hash=_build_file_sha(target_product),
+      build_ninja_size=_build_file_size(target_product),
+      product=f'{target_product}-{env["TARGET_BUILD_VARIANT"]}',
+      time=datetime.timedelta(microseconds=elapsed_ns / 1000)
+  )
 
 
 def _run_cuj(run_dir: Path, build_type: ui.BuildType,
@@ -157,35 +167,29 @@ def _run_cuj(run_dir: Path, build_type: ui.BuildType,
     try:
       return os.stat(cquery_out).st_mtime
     except FileNotFoundError:
-      return 0.0
+      return -1
+
+  @skip_for(BuildType.SOONG_ONLY)
+  def get_cquery_size() -> int:
+    return os.path.getsize(cquery_out)
 
   cquery_ts = get_cquery_ts()
-  (exit_code, build_info) = _build(build_type, run_dir)
+  build_info: Final[BuildInfo] = _build(build_type, run_dir)
   # if build was successful, run test
-  if exit_code != 0:
-    build_result = BuildResult.FAILED.name
-  else:
+  build_info.targets = ui.get_user_input().targets
+  if build_info.build_result == BuildResult.SUCCESS:
     try:
       cujstep.verify()
-      build_result = BuildResult.SUCCESS.name
     except Exception as e:
       logging.error(e)
-      build_result = (BuildResult.TEST_FAILURE.name +
-                      ':' + str(e))
+      build_info.build_result = BuildResult.TEST_FAILURE
+  build_info.cquery_out_size = get_cquery_size()
   if get_cquery_ts() > cquery_ts:
-    build_info['cquery.out.size'] = os.path.getsize(cquery_out)
     shutil.copy(cquery_out, run_dir.joinpath('cquery.out'))
-    cquery_profile = util.get_out_dir().joinpath(
-        'bazel_metrics/cquery-buildroot_bazel_profile.gz')
-    if cquery_profile.exists():
-      shutil.copy(cquery_profile,
-                  run_dir.joinpath('cquery-buildroot_bazel_profile.gz'))
+    bazel_profiles = util.get_out_dir().joinpath(BAZEL_PROFILES)
+    if bazel_profiles.exists():
+      shutil.copytree(bazel_profiles, run_dir.joinpath(BAZEL_PROFILES))
 
-  build_info = {
-                   'build_result': build_result,
-                   'build_type': build_type.to_flag(),
-                   'targets': ' '.join(ui.get_user_input().targets)
-               } | build_info
   return build_info
 
 
@@ -205,12 +209,12 @@ def main():
   """
   user_input = ui.get_user_input()
 
-  logging.warning(textwrap.dedent('''
+  logging.warning(textwrap.dedent(f'''
   If you kill this process, make sure to revert unwanted changes.
   TIP: If you have no local changes of interest you may
        `repo forall -p -c git reset --hard`  and
        `repo forall -p -c git clean --force` and even
-       `m clean && rm -rf out`
+       `m clean && rm -rf {util.get_out_dir()}`
   '''))
 
   run_dir_gen = util.next_path(user_input.log_dir.joinpath(util.RUN_DIR_PREFIX))
@@ -218,6 +222,8 @@ def main():
 
   def run_cuj_group(cuj_group: cuj_catalog.CujGroup):
     nonlocal stop_building
+    metrics = user_input.log_dir.joinpath(util.METRICS_TABLE)
+    summary = user_input.log_dir.joinpath(util.SUMMARY_TABLE)
     for cujstep in cuj_group.steps:
       desc = cujstep.verb
       desc = f'{desc} {cuj_group.description}'.strip()
@@ -227,43 +233,48 @@ def main():
       cujstep.apply_change()
 
       for run in itertools.count():
-        if run > 0:
-          logging.info('rebuilding')
         if stop_building:
           logging.warning('SKIPPING BUILD')
           break
         run_dir = next(run_dir_gen)
+
         build_info = _run_cuj(run_dir, build_type, cujstep)
-        build_info = build_info | {
-            'description': desc if run == 0 else f'rebuild-{run} after {desc}',
-            'warmup': cuj_group == cuj_catalog.Warmup,
-            'rebuild': run != 0
-        }
-        logging.info(json.dumps(build_info, indent=2))
+        build_info.description = desc if run == 0 else \
+          f'rebuild-{run} after {desc}'
+        build_info.warmup = cuj_group == cuj_catalog.Warmup
+        build_info.rebuild = run != 0
+
+        logging.info(json.dumps(build_info, indent=2, cls=util.CustomEncoder))
+
         if user_input.ci_mode:
-          if build_info['build_result'] == 'FAILED':
-            sys.exit(
+          if build_info.build_result == BuildResult.FAILED:
+            logging.critical(
                 f'Failed CI build runs detected! Please see logs in: {run_dir}')
+            sys.exit(1)
           if cuj_group != cuj_catalog.Warmup:
             stop_building = True
             logs_dir_for_ci = user_input.log_dir.parent.joinpath('logs')
             if logs_dir_for_ci.exists():
               perf_metrics.archive_run(logs_dir_for_ci, build_info)
+
         perf_metrics.archive_run(run_dir, build_info)
         # we are doing tabulation and summary after each run
         # so that we can look at intermediate results
         perf_metrics.tabulate_metrics_csv(user_input.log_dir)
-        pretty.summarize_metrics(user_input.log_dir)
+        with open(metrics, mode='rt') as mf, open(summary, mode='wt') as sf:
+          pretty.summarize_metrics(mf, sf)
         if run == 0:
-          perf_metrics.display_tabulated_metrics(user_input.log_dir, user_input.ci_mode)
+          perf_metrics.display_tabulated_metrics(user_input.log_dir,
+                                                 user_input.ci_mode)
           pretty.display_summarized_metrics(user_input.log_dir)
-        if build_info['actions'] == 0:
+        if build_info.actions == 0:
           # build has stabilized
           break
         if run == MAX_RUN_COUNT - 1:
           sys.exit(f'Build did not stabilize in {run} attempts')
 
   for build_type in user_input.build_types:
+    util.CURRENT_BUILD_TYPE = build_type
     # warm-up run reduces variations attributable to OS caches
     run_cuj_group(cuj_catalog.Warmup)
     for i in user_input.chosen_cujgroups:
@@ -297,7 +308,7 @@ class ColoredLoggingFormatter(logging.Formatter):
     return formatter.format(record)
 
 
-if __name__ == '__main__':
+def configure_logger():
   eh = logging.StreamHandler(stream=sys.stderr)
   eh.setLevel(logging.WARNING)
   eh.setFormatter(ColoredLoggingFormatter())
@@ -308,4 +319,7 @@ if __name__ == '__main__':
   oh.setFormatter(ColoredLoggingFormatter())
   logging.getLogger().addHandler(oh)
 
+
+if __name__ == '__main__':
+  configure_logger()
   main()

@@ -1,5 +1,5 @@
 #!/bin/bash -eu
-
+#
 # Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,21 +14,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Verifies that the b invocations properly record metrics and their exit codes.
-build/bazel/bin/b build libcore:all
-
-build/bazel/scripts/analyze_build
-
-if [[ ! $(grep '"exitCode": 0' out/analyze_build_output/bazel_metrics.json) ]]; then
-   echo "Failed to locate bazel exit code in metrics output"
-   exit 1
+readonly TOP="$(realpath "$(dirname "$0")/../../../..")"
+if [[ -z ${OUT_DIR+x} ]]; then
+  OUT_DIR="$TOP/out"
 fi
 
-build/bazel/bin/b build libcore:nonexistent_module &> /dev/null || true
-
-build/bazel/scripts/analyze_build
-
-if [[ ! $(grep '"exitCode": 1' out/analyze_build_output/bazel_metrics.json) ]]; then
-   echo "Failed to locate bazel exit code in metrics output"
-   exit 1
+if [[ ! -f ${OUT_DIR}/soong/workspace/WORKSPACE ]]; then
+  "$TOP/build/soong/soong_ui.bash" \
+    --build-mode \
+    --all-modules \
+    --dir="$(pwd)" \
+    --skip-soong-tests \
+    bp2build
 fi
+
+ANDROID_BUILD_TOP=$TOP "$TOP/build/bazel/bin/bazel" \
+  run --config=bp2build --verbose_failures \
+  //build/bazel/scripts/incremental_build:clone -- "$@"

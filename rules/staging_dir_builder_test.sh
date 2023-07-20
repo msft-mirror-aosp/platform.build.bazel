@@ -29,7 +29,6 @@ debugfs_path="${RUNFILES_DIR}/__main__/external/e2fsprogs/debugfs/bin/debugfs"
 soong_zip_path="${RUNFILES_DIR}/__main__/prebuilts/build-tools/linux-x86/bin"
 aapt2_path="${RUNFILES_DIR}/__main__/frameworks/base/tools/aapt2/bin/aapt2"
 android_jar="${RUNFILES_DIR}/__main__/prebuilts/sdk/current/public/android.jar"
-blkid_path="$(readlink -f ${RUNFILES_DIR}/__main__/external/e2fsprogs/misc/bin/blkid)"
 fsckerofs_path="$(readlink -f ${RUNFILES_DIR}/__main__/external/erofs-utils/bin/fsck.erofs/fsck.erofs)"
 
 input_dir=$(mktemp -d)
@@ -78,15 +77,17 @@ echo '
 output_file="${output_dir}/test.apex"
 
 # Create the wrapper manifest file
-staging_dir_builder_manifest_file=$(mktemp)
+staging_dir_builder_options_file=$(mktemp)
 echo "{
-\"dir1/file1\": \"${input_dir}/file1\",
-\"dir2/dir3/file2\": \"${input_dir}/file2\",
-\"dir4/one_level_sym\": \"${input_dir}/one_level_sym\",
-\"dir5/two_level_sym_in_execroot\": \"${input_dir}/two_level_sym_in_execroot\",
-\"dir6/two_level_sym_not_in_execroot\": \"${input_dir}/two_level_sym_not_in_execroot\",
-\"dir7/three_level_sym_in_execroot\": \"${input_dir}/three_level_sym_in_execroot\"
-}" > ${staging_dir_builder_manifest_file}
+  \"file_mapping\": {
+    \"dir1/file1\": \"${input_dir}/file1\",
+    \"dir2/dir3/file2\": \"${input_dir}/file2\",
+    \"dir4/one_level_sym\": \"${input_dir}/one_level_sym\",
+    \"dir5/two_level_sym_in_execroot\": \"${input_dir}/two_level_sym_in_execroot\",
+    \"dir6/two_level_sym_not_in_execroot\": \"${input_dir}/two_level_sym_not_in_execroot\",
+    \"dir7/three_level_sym_in_execroot\": \"${input_dir}/three_level_sym_in_execroot\"
+  }
+}" > ${staging_dir_builder_options_file}
 
 canned_fs_config=$(mktemp)
 echo "/ 0 2000 0755
@@ -115,7 +116,7 @@ trap 'rm -rf -- "${staging_dir}"' EXIT
 # run staging_dir_builder
 #############################################
 "${RUNFILES_DIR}/__main__/build/bazel/rules/staging_dir_builder" \
-  ${staging_dir_builder_manifest_file} \
+  ${staging_dir_builder_options_file} \
   ${staging_dir} \
   ${apexer_tool_path} \
   --manifest ${manifest_file} \
@@ -130,7 +131,7 @@ trap 'rm -rf -- "${staging_dir}"' EXIT
 #############################################
 # check the result
 #############################################
-"${deapexer_tool_path}" --debugfs_path="${debugfs_path}/debugfs" --blkid_path="${blkid_path}" --fsckerofs_path="${fsckerofs_path}" extract ${output_file} ${output_dir}
+"${deapexer_tool_path}" --debugfs_path="${debugfs_path}/debugfs" --fsckerofs_path="${fsckerofs_path}" extract ${output_file} ${output_dir}
 
 # The expected mounted tree should be something like this:
 # /tmp/tmp.9u7ViPlMr7

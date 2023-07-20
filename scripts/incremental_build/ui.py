@@ -21,38 +21,12 @@ import re
 import sys
 import textwrap
 from datetime import date
-from enum import Enum
 from pathlib import Path
 from typing import Optional
 
 import cuj_catalog
 import util
-
-
-class BuildType(Enum):
-  _ignore_ = '_soong_cmd'
-  _soong_cmd = ['build/soong/soong_ui.bash',
-                '--make-mode',
-                '--skip-soong-tests']
-  SOONG_ONLY = [*_soong_cmd, 'BUILD_BROKEN_DISABLE_BAZEL=true']
-  MIXED_PROD = [*_soong_cmd, '--bazel-mode']
-  MIXED_STAGING = [*_soong_cmd, '--bazel-mode-staging']
-  MIXED_DEV = [*_soong_cmd, '--bazel-mode-dev']
-  B = ['build/bazel/bin/b', 'build']
-  B_ANDROID = [*B, '--config=android']
-
-  @staticmethod
-  def from_flag(s: str) -> list['BuildType']:
-    chosen: list[BuildType] = []
-    for e in BuildType:
-      if s.lower() in e.name.lower():
-        chosen.append(e)
-    if len(chosen) == 0:
-      raise RuntimeError(f'no such build type: {s}')
-    return chosen
-
-  def to_flag(self):
-    return self.name.lower()
+from util import BuildType
 
 
 @dataclasses.dataclass(frozen=True)
@@ -121,8 +95,7 @@ def get_user_input() -> UserInput:
   log_levels = dict(getattr(logging, '_levelToName')).values()
   p.add_argument('-v', '--verbosity', choices=log_levels, default='INFO',
                  help='Log level. Defaults to %(default)s')
-  default_log_dir = util.get_top_dir().parent.joinpath(
-      f'timing-{date.today().strftime("%b%d")}')
+  default_log_dir = util.get_default_log_dir()
   p.add_argument('-l', '--log-dir', type=Path, default=default_log_dir,
                  help=textwrap.dedent(f'''
                  Directory for timing logs. Defaults to %(default)s

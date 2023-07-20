@@ -19,13 +19,7 @@ from pathlib import Path
 from typing import Callable
 from typing import TypeAlias
 import util
-
-
-class BuildResult(enum.Enum):
-  SUCCESS = enum.auto()
-  FAILED = enum.auto()
-  TEST_FAILURE = enum.auto()
-
+from util import BuildType
 
 Action: TypeAlias = Callable[[], None]
 Verifier: TypeAlias = Callable[[], None]
@@ -54,7 +48,7 @@ class InWorkspace(enum.Enum):
         de_src(src_path))
 
   def verifier(self, src_path: Path) -> Verifier:
-    @skip_when_soong_only
+    @skip_for(BuildType.SOONG_ONLY)
     def f():
       ws_path = InWorkspace.ws_counterpart(src_path)
       actual: InWorkspace | None = None
@@ -81,17 +75,18 @@ class InWorkspace(enum.Enum):
     return f
 
 
-def skip_when_soong_only(func: Verifier) -> Verifier:
-  """A decorator for Verifiers that are not applicable to soong-only builds"""
+def skip_for(build_type: util.BuildType):
+  def decorator(func: Callable[[], any]) -> Callable[[], any]:
+    def wrapper():
+      if util.CURRENT_BUILD_TYPE != build_type:
+        return func()
 
-  def wrapper():
-    if InWorkspace.ws_counterpart(util.get_top_dir()).exists():
-      func()
+    return wrapper
 
-  return wrapper
+  return decorator
 
 
-@skip_when_soong_only
+@skip_for(BuildType.SOONG_ONLY)
 def verify_symlink_forest_has_only_symlink_leaves():
   """Verifies that symlink forest has only symlinks or directories but no
   files except for merged BUILD.bazel files"""
@@ -104,7 +99,7 @@ def verify_symlink_forest_has_only_symlink_leaves():
         continue
       f = Path(root).joinpath(file)
       if file != 'BUILD.bazel' and not f.is_symlink():
-        raise AssertionError(f'{f} unexpected')
+        raise AssertionError(f'{f} unexpected in symlink forest')
 
   logging.info('VERIFIED Symlink Forest has no real files except BUILD.bazel')
 
