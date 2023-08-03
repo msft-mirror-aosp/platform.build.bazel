@@ -62,10 +62,18 @@ def _partition_impl(ctx):
         if not v.startswith("/system"):
             fail("Files outside of /system are not currently supported: %s", v)
 
-    file_mapping_file = ctx.actions.declare_file(ctx.attr.name + "/partition_file_mapping.json")
+    staging_dir_builder_options = {
+        # It seems build_image will prepend /system to the paths when building_system_image=true
+        "file_mapping": {k.removeprefix("/system"): v.path for k, v in files.items()},
+    }
 
-    # It seems build_image will prepend /system to the paths when building_system_image=true
-    ctx.actions.write(file_mapping_file, json.encode({k.removeprefix("/system"): v.path for k, v in files.items()}))
+    extra_inputs = []
+    if ctx.attr.base_staging_dir:
+        staging_dir_builder_options["base_staging_dir"] = ctx.file.base_staging_dir.path
+        extra_inputs.append(ctx.file.base_staging_dir)
+
+    staging_dir_builder_options_file = ctx.actions.declare_file(ctx.attr.name + "/staging_dir_builder_options.json")
+    ctx.actions.write(staging_dir_builder_options_file, json.encode(staging_dir_builder_options))
 
     staging_dir = ctx.actions.declare_directory(ctx.attr.name + "_staging_dir")
 
@@ -83,8 +91,8 @@ def _partition_impl(ctx):
     ctx.actions.run(
         inputs = [
             image_info,
-            file_mapping_file,
-        ] + files.values(),
+            staging_dir_builder_options_file,
+        ] + files.values() + extra_inputs,
         tools = extra_tools + [
             build_image_files,
             python_interpreter,
@@ -92,7 +100,7 @@ def _partition_impl(ctx):
         outputs = [output_image, staging_dir],
         executable = ctx.executable._staging_dir_builder,
         arguments = [
-            file_mapping_file.path,
+            staging_dir_builder_options_file.path,
             staging_dir.path,
             build_image_files.executable.path,
             staging_dir.path,
@@ -104,6 +112,7 @@ def _partition_impl(ctx):
         env = {
             # The dict + .keys() is to dedup the path elements, as some tools are in the same folder
             "PATH": ":".join({t.executable.dirname: True for t in extra_tools}.keys() + [
+                python_interpreter.dirname,
                 # TODO: the /usr/bin addition is because build_image uses the du command
                 # in GetDiskUsage(). This can probably be rewritten to just use python code
                 # instead.
@@ -123,6 +132,10 @@ _partition = rule(
         ),
         "image_properties": attr.string(
             doc = "The image property dictionary in key=value format. TODO: consider replacing this with explicit bazel properties for each property in this file.",
+        ),
+        "base_staging_dir": attr.label(
+            allow_single_file = True,
+            doc = "A staging dir that the deps will be added to. This is intended to be used to import a make-built staging directory when building the partition with bazel.",
         ),
         "deps": attr.label_list(
             providers = [[InstallableInfo]],
