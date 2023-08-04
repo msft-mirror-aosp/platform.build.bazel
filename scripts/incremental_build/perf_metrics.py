@@ -143,6 +143,9 @@ def read_pbs(d: Path) -> tuple[dict[str, any], list[PerfInfoOrEvent]]:
         ms = soong_build_metrics.mixed_builds_info.mixed_build_disabled_modules
         if ms:
             retval["mixed.disabled"] = len(ms)
+    if bp2build_pb.exists():
+        retval["generatedModuleCount"] = bp2build_metrics.generatedModuleCount
+        retval["unconvertedModuleCount"] = bp2build_metrics.unconvertedModuleCount
     return retval, events
 
 
@@ -275,16 +278,14 @@ def display_tabulated_metrics(log_dir: Path, ci_mode: bool):
     output = subprocess.check_output(cmd_str, shell=True, text=True)
     logging.info(
         textwrap.dedent(
-            f"""
-  %s
-  TIPS:
-  1 To view key metrics in metrics.csv:
-    %s
-  2 To view column headers:
-    %s
-    """
+            f"""\
+            %s
+            %s
+            TIP to view column headers:
+              %s
+            """
         ),
-        output,
         cmd_str,
+        output,
         util.get_csv_columns_cmd(log_dir),
     )
