@@ -1,4 +1,5 @@
-# Copyright (C) 2022 The Android Open Source Project
+#!/bin/bash -eu
+# Copyright (C) 2023 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(default_visibility = ["//visibility:public"])
+# Build all _stable_ build targets with b to ensure that the workflow
+# hasn't stopped working. This is a shortened version of bp2build.sh
+source "$(dirname $0)/target_lists.sh"
 
-# TODO(b/194644518): Switch to the source version when Bazel can build go
-# binaries.
-alias(
-    name = "bazel_notice_gen",
-    actual = "//prebuilts/build-tools:linux-x86/bin/bazel_notice_gen",
-)
+build/bazel/bin/b build --config=android --  ${STABLE_BUILD_TARGETS[@]}
