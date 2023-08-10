@@ -21,7 +21,7 @@ load("//build/bazel/rules:metadata.bzl", "MetadataFileInfo")
 load("//build/bazel/rules:prebuilt_file.bzl", "PrebuiltFileInfo")
 load("//build/bazel/rules:sh_binary.bzl", "ShBinaryInfo")
 load("//build/bazel/rules:toolchain_utils.bzl", "verify_toolchain_exists")
-load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo", "android_app_certificate_with_default_cert")
+load("//build/bazel/rules/android:android_app_certificate.bzl", "AndroidAppCertificateInfo", "NoAndroidAppCertificateInfo", "android_app_certificate_with_default_cert")
 load("//build/bazel/rules/apex:cc.bzl", "ApexCcInfo", "ApexCcMkInfo", "apex_cc_aspect")
 load("//build/bazel/rules/apex:sdk_versions.bzl", "maybe_override_min_sdk_version")
 load("//build/bazel/rules/apex:transition.bzl", "apex_transition", "shared_lib_transition_32", "shared_lib_transition_64")
@@ -626,7 +626,6 @@ def _run_signapk(ctx, unsigned_file, signed_file, private_key, public_key, mnemo
 def _override_manifest_package_name(ctx):
     apex_name = ctx.attr.name
     overrides = ctx.attr._manifest_package_name_overrides[BuildSettingInfo].value
-    overrides = overrides.split(",") if overrides else []
     if not overrides:
         return None
 
@@ -648,7 +647,6 @@ def _override_manifest_package_name(ctx):
 def _compression_enabled(ctx):
     compressed_apex = ctx.attr._compressed_apex[BuildSettingInfo].value
     unbundled_apps = ctx.attr._unbundled_build_apps[BuildSettingInfo].value
-    unbundled_apps = unbundled_apps.split(",") if unbundled_apps else []
 
     return compressed_apex and len(unbundled_apps) == 0
 
@@ -829,7 +827,6 @@ def _generate_sbom(ctx, file_mapping, metadata_file_mapping, apex_file):
     inputs += metadata_files
 
     build_version_tags = ctx.attr._build_version_tags[BuildSettingInfo].value
-    build_version_tags = build_version_tags.split(",") if build_version_tags else []
     build_fingerprint = "%s/%s/%s:%s/%s/%s:%s/%s" % (
         ctx.attr._product_brand[BuildSettingInfo].value,
         ctx.attr._device_product[BuildSettingInfo].value,
@@ -871,7 +868,11 @@ def _apex_rule_impl(ctx):
     apexer_outputs = _run_apexer(ctx, apex_toolchain)
     unsigned_apex = apexer_outputs.unsigned_apex
 
-    apex_cert_info = ctx.attr.certificate[0][AndroidAppCertificateInfo]
+    if AndroidAppCertificateInfo in ctx.attr.certificate_override[0]:
+        apex_cert_info = ctx.attr.certificate_override[0][AndroidAppCertificateInfo]
+    else:
+        apex_cert_info = ctx.attr.certificate[0][AndroidAppCertificateInfo]
+
     private_key = apex_cert_info.pk8
     public_key = apex_cert_info.pem
 
@@ -976,6 +977,11 @@ file mode, and cap is hexadecimal value for the capability.""",
         "key": attr.label(providers = [ApexKeyInfo], mandatory = True),
         "certificate": attr.label(
             providers = [AndroidAppCertificateInfo],
+            mandatory = True,
+            cfg = apex_transition,
+        ),
+        "certificate_override": attr.label(
+            providers = [[AndroidAppCertificateInfo], [NoAndroidAppCertificateInfo]],
             mandatory = True,
             cfg = apex_transition,
         ),
@@ -1214,6 +1220,12 @@ def apex(
         "//conditions:default": ["@platforms//:incompatible"],
     }) + target_compatible_with
 
+    # This flag will be set based on the value of PRODUCT_CERTIFICATE_OVERRIDES
+    native.label_flag(
+        name = name + "_certificate_override",
+        build_setting_default = "//build/bazel/rules/android:no_android_app_certificate",
+    )
+
     _apex(
         name = name,
         manifest = manifest,
@@ -1221,6 +1233,7 @@ def apex(
         file_contexts = file_contexts,
         key = key,
         certificate = certificate_label,
+        certificate_override = ":" + name + "_certificate_override",
         min_sdk_version = min_sdk_version,
         updatable = updatable,
         installable = installable,
