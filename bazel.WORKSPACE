@@ -166,7 +166,7 @@ new_local_repository(
 
 register_toolchains("@rules_kotlin//toolchains/kotlin_jvm:kt_jvm_toolchain_linux")
 
-load("//prebuilts/clang/host/linux-x86:cc_toolchain_config.bzl", "cc_register_toolchains")
+load("//build/bazel/toolchains/clang/host/linux-x86:cc_toolchain_config.bzl", "cc_register_toolchains")
 
 cc_register_toolchains()
 
@@ -214,3 +214,8 @@ go_wrap_sdk(
 go_rules_dependencies()
 
 go_register_toolchains(experiments = [])
+
+local_repository(
+    name = "rules_rust",
+    path = "external/bazelbuild-rules_rust",
+)
