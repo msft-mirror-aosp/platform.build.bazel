@@ -92,7 +92,21 @@ _TOOLCHAIN_DEP_TYPES = frozenset([
     ),
 ])
 
-SRC_ROOT_DIR = os.path.abspath(__file__ + "/../../../../..")
+def get_src_root_dir() -> str:
+  # Search up the directory tree until we find soong_ui.bash as a regular file, not a symlink.
+  # This is so that we find the real source tree root, and not the bazel execroot which symlimks in
+  # soong_ui.bash.
+  def soong_ui(path):
+    return os.path.join(path, 'build/soong/soong_ui.bash')
+
+  path = '.'
+  while not os.path.isfile(soong_ui(path)) or os.path.islink(soong_ui(path)):
+    if os.path.abspath(path) == '/':
+      sys.exit('Could not find android source tree root.')
+    path = os.path.join(path, '..')
+  return os.path.abspath(path)
+
+SRC_ROOT_DIR = get_src_root_dir()
 
 LUNCH_ENV = {
     # Use aosp_arm as the canonical target product.
@@ -539,13 +553,21 @@ def _is_java_auto_dep(dep):
   tag = dep["Tag"]
   if not tag:
     return False
+
+  if tag.startswith("java.dependencyTag") and (
+      "name:system modules" in tag or "name:bootclasspath" in tag
+  ):
+    name = dep["Name"]
+    # only remove automatically added bootclasspath/system modules
+    return name in frozenset([
+        "legacy-core-platform-api-stubs-system-modules",
+        "stable-core-platform-api-stubs-system-modules",
+    ]) or (name.startswith("core-") and name.endswith("-stubs-system-modules"))
   return (
       (
           tag.startswith("java.dependencyTag")
           and (
               "name:proguard-raise" in tag
-              or "name:bootclasspath" in tag
-              or "name:system modules" in tag
               or "name:framework-res" in tag
               or "name:sdklib" in tag
               or "name:java9lib" in tag
