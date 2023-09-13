@@ -17,12 +17,10 @@
 import argparse
 import json
 import os
-import re
 import shutil
 import subprocess
 import sys
 import tempfile
-from functools import cache
 
 def build_staging_dir(staging_dir_path, file_mapping, command_argv, base_staging_dir=None, base_staging_dir_file_list=None):
     '''Create a staging dir with provided file mapping and apply the command in the dir.
@@ -92,23 +90,20 @@ def build_staging_dir(staging_dir_path, file_mapping, command_argv, base_staging
         # execroot/__main__/bazel-out/android_target-fastbuild/bin/system/timezone/apex/
         # apex_manifest.pb
         if os.path.islink(path_in_bazel):
-            path_in_bazel = os.readlink(path_in_bazel)
+            # Some of the symlinks are relative (start with ../). They're relative to the location
+            # of the symlink, not to the cwd. So we have to join the directory of the symlink with
+            # the symlink's target. If the symlink was absolute, os.path.join() will take it as-is
+            # and ignore the first argument.
+            path_in_bazel = os.path.abspath(os.path.join(os.path.dirname(path_in_bazel), os.readlink(path_in_bazel)))
 
             # For sandbox run these are the 2nd level symlinks and we need to resolve
             while os.path.islink(path_in_bazel) and 'execroot/__main__' in path_in_bazel:
-                path_in_bazel = os.readlink(path_in_bazel)
+                path_in_bazel = os.path.abspath(os.path.join(os.path.dirname(path_in_bazel), os.readlink(path_in_bazel)))
 
         if os.path.exists(path_in_staging_dir):
             sys.exit("error: " + path_in_staging_dir + " already exists because of the base_staging_dir")
 
         os.makedirs(os.path.dirname(path_in_staging_dir), exist_ok=True)
-
-        if _is_relative(path_in_bazel):
-            # Need to fix the prefix for relative paths.
-            # It would appear that os.readlink operates from a different execroot which causes the copy to
-            # fail as the file won't exist from this execroot.
-            path_in_bazel = _relativize(path_in_bazel)
-
         # shutil.copy copies the file data and the file's permission mode
         # file's permission mode is helpful for tools, such as build/soong/scripts/gen_ndk_usedby_apex.sh,
         # that rely on the permission mode of the artifacts
@@ -117,37 +112,6 @@ def build_staging_dir(staging_dir_path, file_mapping, command_argv, base_staging
     result = subprocess.run(command_argv)
 
     sys.exit(result.returncode)
-
-
-@cache
-def _get_relative_symlink_prefix():
-   '''
-   Retrieves the correct prefix for relative symlinks.
-   This is necessary as they seem to be 'stat'ed from different
-   points in the tree.
-   The methodology is similar to the gettop method in envsetup
-   '''
-   topfile = 'build/make/core/envsetup.mk'
-   cur_prefix = '';
-   while not os.path.exists(cur_prefix+topfile):
-      cur_prefix += '../'
-   return cur_prefix
-
-def _is_relative(path):
-   '''Returns whether a given path is a relative symlink'''
-   return path.startswith("../")
-
-def _relativize(path):
-   '''Relativizes the symlink to the correct number of "../" needed for this execroot.
-
-
-   When reading certain relative symlinks, a different execroot is used, which gives an
-   incorrect prefix, e.g. "../../../frameworks" will work if you are under "out/soong/workspace"
-   but not if you are in $TOP.
-   '''
-   path = re.sub(r'^(\.\./)*', '', path)
-   path = _get_relative_symlink_prefix() + path
-   return path
 
 def main():
     '''Build a staging directory, and then call a custom command.
