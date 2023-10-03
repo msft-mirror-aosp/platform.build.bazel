@@ -1,14 +1,15 @@
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
-    "cc_tool",
-    "cc_toolchain_import",
-)
-load(
     "@//build/bazel/toolchains/cc:actions.bzl",
+    "ARCHIVER_ACTIONS",
     "ASSEMBLE_ACTIONS",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+)
+load(
+    "@//build/bazel/toolchains/cc:rules.bzl",
+    "cc_tool",
+    "cc_toolchain_import",
 )
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@toolchain_defs//:defs.bzl", "TOOL_VERSIONS")
@@ -134,7 +135,7 @@ cc_tool(
 
 cc_tool(
     name = "macos_all_archiver",
-    applied_actions = [ACTION_NAMES.cpp_link_static_library],
+    applied_actions = ARCHIVER_ACTIONS,
     tool = target_macos_all + "/bin/llvm-ar",
 )
 

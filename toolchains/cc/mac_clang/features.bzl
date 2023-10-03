@@ -1,27 +1,10 @@
 """Cc toolchain features that works with clang."""
 
 load(
-    "@//build/bazel/toolchains/cc:utils.bzl",
-    "flatten",
-)
-load(
-    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
-    "feature",
-    "flag_group",
-    "flag_set",
-    "variable_with_value",
-)
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
-load(
     "@//build/bazel/toolchains/cc:actions.bzl",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
-)
-load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
-    "CcFeatureConfigInfo",
-    "CcToolchainImportInfo",
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
@@ -40,6 +23,15 @@ load(
     "toolchain_import_configs",
     "user_compile_flags_feature",
     "user_link_flags_feature",
+)
+load(
+    "@//build/bazel/toolchains/cc:rules.bzl",
+    "CcFeatureConfigInfo",
+    "CcToolchainImportInfo",
+)
+load(
+    "@//build/bazel/toolchains/cc:utils.bzl",
+    "flatten",
 )
 load(
     "@//build/bazel/toolchains/cc/linux_clang:features.bzl",
@@ -63,6 +55,14 @@ load(
     "shared_flag_feature",
     "strip_debug_symbols_feature",
     "sysroot_feature",
+)
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load(
+    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "feature",
+    "flag_group",
+    "flag_set",
+    "variable_with_value",
 )
 
 # https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;drc=feea781b30788997c0b97ad9103a13fdc3f627c8;l=537
@@ -98,6 +98,7 @@ set_install_name_feature = feature(
             actions = [
                 ACTION_NAMES.cpp_link_dynamic_library,
                 ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ACTION_NAMES.objc_executable,
             ],
             flag_groups = [
                 flag_group(
@@ -238,7 +239,10 @@ force_pic_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = [ACTION_NAMES.cpp_link_executable],
+            actions = [
+                ACTION_NAMES.cpp_link_executable,
+                ACTION_NAMES.objc_executable,
+            ],
             flag_groups = [
                 flag_group(
                     expand_if_available = "force_pic",

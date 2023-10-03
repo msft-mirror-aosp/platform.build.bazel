@@ -1,15 +1,16 @@
 """Cc toolchain actions and configs."""
 
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "action_config",
     "tool",
     "with_feature_set",
 )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
 C_COMPILE_ACTIONS = [
     ACTION_NAMES.c_compile,
+    ACTION_NAMES.objc_compile,
 ]
 
 # C++ actions that directly reads the source
@@ -17,12 +18,14 @@ CPP_SOURCE_ACTIONS = [
     ACTION_NAMES.cpp_compile,
     ACTION_NAMES.cpp_header_parsing,
     ACTION_NAMES.cpp_module_compile,
+    ACTION_NAMES.objcpp_compile,
 ]
 
 # C++ actions that generate machine code
 CPP_CODEGEN_ACTIONS = [
     ACTION_NAMES.cpp_compile,
     ACTION_NAMES.cpp_module_codegen,
+    ACTION_NAMES.objcpp_compile,
 ]
 
 CPP_COMPILE_ACTIONS = CPP_SOURCE_ACTIONS + [
@@ -40,10 +43,13 @@ LINK_ACTIONS = [
     ACTION_NAMES.cpp_link_executable,
     ACTION_NAMES.cpp_link_dynamic_library,
     ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+    ACTION_NAMES.objc_executable,
+    ACTION_NAMES.objc_fully_link,
 ]
 
 ARCHIVER_ACTIONS = [
     ACTION_NAMES.cpp_link_static_library,
+    ACTION_NAMES.objc_archive,
 ]
 
 def create_action_configs(tool_configs):

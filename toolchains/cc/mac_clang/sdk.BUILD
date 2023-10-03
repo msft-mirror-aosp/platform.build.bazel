@@ -18,10 +18,23 @@ sysroot(
     ),
 )
 
+# keep sorted
+ALL_FRAMEWORKS = [
+    "CFNetwork",
+    "CoreFoundation",
+    "CoreGraphics",
+    "CoreServices",
+    "DiskArbitration",
+    "Foundation",
+    "IOKit",
+    "Security",
+]
+
 cc_toolchain_import(
     name = "frameworks",
     framework_paths = [":System/Library/Frameworks"],
     support_files = glob([
-        "System/Library/Frameworks/CoreFoundation.framework/**",
+        "System/Library/Frameworks/{}.framework/**".format(f)
+        for f in ALL_FRAMEWORKS
     ]),
 )

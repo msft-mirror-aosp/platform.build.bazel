@@ -1,4 +1,3 @@
-load(":features.bzl", "cc_features")
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
     "cc_artifact_name",
@@ -6,6 +5,7 @@ load(
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -27,6 +27,7 @@ cc_features(
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
         "-undefined dynamic_lookup",
+        "-fobjc-link-runtime",
         "-fuse-ld=lld",
     ],
     toolchain_imports = _imports,
@@ -108,6 +109,7 @@ cc_features(
     link_flags = [
         "--target=arm64e-apple-darwin-macho",
         "-undefined dynamic_lookup",
+        "-fobjc-link-runtime",
         "-fuse-ld=lld",
     ],
     toolchain_imports = _imports,
