@@ -40,8 +40,12 @@ local_repository(
 
 local_repository(
     name = "rules_python",
-    # TODO(b/200202912): Re-route this when rules_python is pulled into AOSP.
-    path = "build/bazel_common_rules/rules/python/stubs",
+    path = "external/bazelbuild-rules_python",
+)
+
+local_repository(
+    name = "rules_cc",
+    path = "external/bazelbuild-rules_cc",
 )
 
 register_toolchains(
@@ -71,7 +75,7 @@ bind(
 # for Android app building, whereas the d8.jar in prebuilts/sdk/tools doesn't.
 bind(
     name = "android/d8_jar_import",
-    actual = "//prebuilts/bazel/common/r8:r8_jar_import",
+    actual = "//prebuilts/r8:r8lib-prebuilt",
 )
 
 # TODO(b/201242197): Avoid downloading remote_coverage_tools (on CI) by creating
@@ -128,11 +132,10 @@ local_repository(
     path = "prebuilts/bazel/common/android_tools",
 )
 
-# The rules_java repository is stubbed and points to the native Java rules until
-# it can be properly vendored.
+# The vendored rules_java repository.
 local_repository(
     name = "rules_java",
-    path = "build/bazel_common_rules/rules/java/rules_java",
+    path = "external/bazelbuild-rules_java",
 )
 
 register_toolchains(
@@ -160,9 +163,9 @@ new_local_repository(
     path = "external/kotlinc",
 )
 
-register_toolchains("@rules_kotlin//toolchains/kotlin_jvm:kt_jvm_toolchain")
+register_toolchains("@rules_kotlin//toolchains/kotlin_jvm:kt_jvm_toolchain_linux")
 
-load("//prebuilts/clang/host/linux-x86:cc_toolchain_config.bzl", "cc_register_toolchains")
+load("//build/bazel/toolchains/clang/host/linux-x86:cc_toolchain_config.bzl", "cc_register_toolchains")
 
 cc_register_toolchains()
 
@@ -210,3 +213,29 @@ go_wrap_sdk(
 go_rules_dependencies()
 
 go_register_toolchains(experiments = [])
+
+local_repository(
+    name = "rules_proto",
+    path = "build/bazel/rules/proto",
+)
+
+local_repository(
+    name = "rules_rust",
+    path = "external/bazelbuild-rules_rust",
+)
+
+new_local_repository(
+    name = "rules_rust_tinyjson",
+    build_file = "@rules_rust//util/process_wrapper:BUILD.tinyjson.bazel",
+    path = "external/rust/crates/tinyjson",
+)
+
+local_repository(
+    name = "rules_testing",
+    path = "external/bazelbuild-rules_testing",
+)
+
+register_toolchains(
+    "build/bazel/toolchains/rust:toolchain_x86_64_unknown-linux-gnu",
+    "build/bazel/toolchains/rust:proto-toolchain",
+)

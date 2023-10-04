@@ -40,7 +40,10 @@ host_targets+=( "${BUILD_TARGETS[@]}" )
 host_targets+=( "${TEST_TARGETS[@]}" )
 host_targets+=( "${HOST_ONLY_TEST_TARGETS[@]}" )
 
-build_for_host ${host_targets[@]}
+# atest uses `b test` for these targets.
+host_targets+=("$(cat tools/asuite/atest/test_runners/roboleaf_launched.txt | grep --invert-match "#" | tr '\n' ' ')")
+
+build_and_test_for_host ${host_targets[@]}
 
 #########################################################################
 # Check that rule wrappers have the same providers as the rules they wrap
@@ -115,3 +118,4 @@ build/bazel/bin/bazel run ${FLAGS} --config=linux_x86_64 "${bp2build_progress_sc
   report ${report_args} \
   --proto-file=$( realpath "${bp2build_progress_output_dir}" )"/bp2build-progress.pb" \
   --out-file=$( realpath "${bp2build_progress_output_dir}" )"/progress_report.txt" \
+  --bp2build-metrics-location=$( realpath "${DIST_DIR}" )"/logs" \

@@ -56,7 +56,7 @@ common_attrs = {
         cfg = "exec",
         doc = "The build number stamp tool.",
         executable = True,
-        default = "//prebuilts/build-tools:linux-x86/bin/symbol_inject",
+        default = "//build/soong/symbol_inject/cmd:symbol_inject",
         allow_single_file = True,
     ),
     "_android_constraint": attr.label(
@@ -78,6 +78,7 @@ def _versioned_binary_impl(ctx):
         DefaultInfo(
             files = depset([out_file]),
             executable = out_file,
+            runfiles = ctx.attr.src[DefaultInfo].default_runfiles,
         ),
     ] + common_providers
 
@@ -104,8 +105,6 @@ versioned_shared_library = rule(
         common_attrs,
         src = attr.label(
             mandatory = True,
-            # TODO(b/217908237): reenable allow_single_file
-            # allow_single_file = True,
             providers = [CcSharedLibraryInfo],
         ),
     ),

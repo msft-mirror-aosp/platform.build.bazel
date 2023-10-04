@@ -11,13 +11,6 @@ build --incompatible_enable_cc_toolchain_resolution
 build --tool_java_runtime_version=jdk17
 build --java_runtime_version=jdk17
 
-# Disable errorprone to continue making progress on java and android conversion
-# while we determine how errorprone will be handled in Bazel-only builds b/227504307.
-# TODO(b/227504307): Remove --javacopt="-XepDisableAllChecks" after implementing
-# the correct solution around errorprone.
-build --javacopt="-XepDisableAllChecks"
-build --host_javacopt="-XepDisableAllChecks"
-
 # Lock down the PATH variable in actions to /usr/bin and /usr/local/bin.
 build --experimental_strict_action_env
 
@@ -57,7 +50,7 @@ common --experimental_sibling_repository_layout
 common --experimental_disable_external_package
 
 # Disable all repository_ctx.download calls.
-common --experimental_repository_disable_download
+common --repository_disable_download
 
 # Increase refresh rate of command line UI for improved perceived responsiveness.
 common --show_progress_rate_limit=0.05
@@ -67,15 +60,13 @@ common --color=yes
 common --curses=yes
 
 # Configurations specific to CI builds, generally to improve signal-to-noise ratio in server logs.
-common:ci --color=no
+common:ci --color=yes
 common:ci --curses=no
 common:ci --show_progress_rate_limit=5
 common:ci --noshow_loading_progress
 # Show the full set of flags for observability and debuggability.
 common:ci --announce_rc
 build:ci --verbose_failures
-# Log apexer verbosely on CI (it has a noisy but useful output)
-build:ci --//build/bazel/rules/apex:apexer_verbose
 test:ci --keep_going
 
 # Support a local user-specific bazelrc file.
@@ -93,7 +84,6 @@ build --android_databinding_use_v3_4_args
 build --experimental_android_databinding_v2
 build --define=android_incremental_dexing_tool=d8_dexbuilder
 build --define=android_dexmerger_tool=d8_dexmerger
-build --nouse_workers_with_dexbuilder
 
 # TODO(b/199038020): Use a python_toolchain when we have Starlark rules_python.
 # This also means all python scripts are using py3 runtime.
@@ -106,6 +96,8 @@ build --noincompatible_use_python_toolchains
 build --compilation_mode=opt
 
 common --incompatible_remove_rule_name_parameter=false
+
+common --override_repository=rules_java_builtin=%workspace%/external/bazelbuild-rules_java
 
 # TODO(b/264304464): Remove when bugs with java_binary starlark impl are fixed.
 
@@ -148,3 +140,58 @@ build --incompatible_visibility_private_attributes_at_definition
 # Some targets in rules_go use config_setting(s) that are not visible to them
 # TODO -  b/289074954: Fix the visibility defs in rules_go and re-enable this enforcement.
 build --incompatible_enforce_config_setting_visibility=false
+
+# By default, b test will run all tests regardless of deviceless or device variants.
+# Use these configs to filter the tests to run, e.g. b test //system/... --config=deviceless_tests
+# The filter value is the name of the rule, but without the "_test" suffix.
+test:deviceless_tests --test_lang_filters=tradefed_deviceless
+test:device_tests --test_lang_filters=tradefed_device_driven,tradefed_host_driven_device
+
+# Supporting cgo for building go code is not required
+# Disable it explcitly to prevent issues with C toolchain setup
+build --@io_bazel_rules_go//go/config:pure
+
+# Breaking bazel feature for the 7/25 release. b/292565910
+common --noincompatible_use_host_features
+
+# Run GoToolchainBinaryBuild in a sandbox
+# Without sandboxing, the action will run in an execution root that contains a symlink to prebuilts/go
+# This causes issues due to two separate factors combining together
+# a. The GOROOT in our checked in go binary is relative to android build top
+# b. GoToolchainBinaryBuild uses GOCACHE=$(mktemp -d)
+build --strategy GoToolchainBinaryBuild=sandboxed
+
+startup --connect_timeout_secs=45
+
+# TODO(b/300376073): Reuse the RBE instance of BES for remote test.
+###### Remote Virtual Device Test Execution Configuration.
+######
+# --flag_alias does not work with --config, has to be defined for top level build command
+build --flag_alias=ab_build_id=//build/bazel_common_rules/rules/remote_device:build_id
+build --flag_alias=ab_target=//build/bazel_common_rules/rules/remote_device:target
+build --flag_alias=ab_branch=//build/bazel_common_rules/rules/remote_device:branch
+
+test:remote_avd  --config=remote
+test:remote_avd  --test_timeout=3600
+test:remote_avd  --//build/bazel_common_rules/rules/remote_device:target_device=//build/bazel_common_rules/rules/remote_device:cf_x86_64_phone
+test:remote_avd  --//build/bazel_common_rules/rules/remote_device:exec_mode=remote
+test:remote_avd --experimental_credential_helper_timeout=60s
+test:remote_avd --google_default_credentials=true
+
+build:remote_avd --spawn_strategy=sandboxed # force disable remote cache, some actions don't work with it
+build:remote_avd --strategy=AbiDump=local # force disable sandbox
+build:remote_avd --strategy=AbiLink=local # force disable sandbox
+build:remote_avd --strategy=AbiDiff=local # force disable sandbox
+test:remote_avd --strategy=DownloadCvd=remote
+test:remote_avd --strategy=TestRunner=remote
+test:remote_avd --test_env=PATH="/bin:/usr/bin/"
+
+# Depending on how many machines are in the remote execution instance, setting
+# this higher can make builds faster by allowing more jobs to run in parallel.
+# Setting it too high can result in jobs that timeout, however, while waiting
+# for a remote machine to execute them.
+test:remote --jobs=200
+test:remote --remote_cache=grpcs://remotebuildexecution.googleapis.com
+test:remote --remote_executor=grpcs://remotebuildexecution.googleapis.com
+test:remote --remote_timeout=3600
+
