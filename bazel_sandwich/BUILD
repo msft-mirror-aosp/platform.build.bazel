@@ -15,7 +15,7 @@
 load(":bazel_sandwich_imported_file.bzl", "bazel_sandwich_imported_file")
 
 package(default_visibility = [
-    "@//build/bazel:__subpackages__",
+    "//visibility:public",
 ])
 
 bazel_sandwich_imported_file(
@@ -30,10 +30,20 @@ bazel_sandwich_imported_file(
 )
 
 bazel_sandwich_imported_file(
+    name = "system_staging_dir_file_list",
+    target = "target/product/$(DeviceName)/obj/PACKAGING/systemimage_intermediates/file_list.txt",
+)
+
+bazel_sandwich_imported_file(
     name = "root_staging_dir",
     depend_on_target = False,
     implicit_deps = ["target/product/$(DeviceName)/obj/PACKAGING/systemimage_intermediates/staging_dir.stamp"],
     target = "target/product/$(DeviceName)/root",
+)
+
+bazel_sandwich_imported_file(
+    name = "selinux_file_contexts",
+    target = "target/product/$(DeviceName)/obj/ETC/file_contexts.bin_intermediates/file_contexts.bin",
 )
 
 bazel_sandwich_imported_file(
