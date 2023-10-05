@@ -92,31 +92,6 @@ local_repository(
     path = "external/grpc/third_party/upb",
 )
 
-http_archive(
-    name = "com_google_googleapis",
-    sha256 = "38701e513aff81c89f0f727e925bf04ac4883913d03a60cdebb2c2a5f10beb40",
-    strip_prefix = "googleapis-86fa44cc5ee2136e87c312f153113d4dd8e9c4de",
-    urls = [
-        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/86fa44cc5ee2136e87c312f153113d4dd8e9c4de.tar.gz",
-        "https://github.com/googleapis/googleapis/archive/86fa44cc5ee2136e87c312f153113d4dd8e9c4de.tar.gz",
-    ],
-)
-
-local_repository(
-    name = "com_github_grpc_grpc",
-    path = "external/grpc",
-)
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
-
-grpc_deps()
-
-grpc_test_only_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
-
 # CC toolchains
 load(
     "//build/bazel/toolchains/cc:repository_rules.bzl",
