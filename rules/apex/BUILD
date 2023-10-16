@@ -57,6 +57,30 @@ config_setting(
     },
 )
 
+# config setting to build sdk variants
+config_setting(
+    name = "unbundled_app",
+    constraint_values = [
+        arch_variant_to_constraints["android"],
+    ],
+    flag_values = {
+        ":api_domain": "unbundled_app",
+        ":within_apex": "False",
+    },
+)
+
+config_setting(
+    name = "unbundled_app.arm",
+    constraint_values = [
+        arch_variant_to_constraints["android"],
+        arch_variant_to_constraints["arm"],
+    ],
+    flag_values = {
+        ":api_domain": "unbundled_app",
+        ":within_apex": "False",
+    },
+)
+
 config_setting(
     name = "in_apex",
     flag_values = {
@@ -114,12 +138,6 @@ config_setting(
 string_list_setting(
     name = "apex_direct_deps",
     build_setting_default = [],
-    visibility = ["//visibility:public"],
-)
-
-bool_flag(
-    name = "apexer_verbose",
-    build_setting_default = False,
     visibility = ["//visibility:public"],
 )
 
@@ -184,11 +202,11 @@ apex_toolchain(
 toolchain(
     name = "apex_toolchain_def",
     exec_compatible_with = [
-        "//build/bazel/platforms/arch:x86_64",
-        "//build/bazel/platforms/os:linux",
+        "//build/bazel_common_rules/platforms/arch:x86_64",
+        "//build/bazel_common_rules/platforms/os:linux",
     ],
     target_compatible_with = [
-        "//build/bazel/platforms/os:android",
+        "//build/bazel_common_rules/platforms/os:android",
     ],
     toolchain = ":apex_toolchain",
     toolchain_type = "//build/bazel/rules/apex:apex_toolchain_type",

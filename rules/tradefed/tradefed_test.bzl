@@ -68,7 +68,8 @@ def tradefed_cc_outputs():
         tags = ["manual"],
         test = target,
         test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        dynamic_config = "//build/bazel/rules/tradefed/test:dynamic_config.xml",
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
 
     # check for expected output files (.config file  and .sh script)
@@ -79,8 +80,9 @@ def tradefed_cc_outputs():
             name + ".sh",
             "result-reporters.xml",
             paths.join(name, "testcases", target + ".config"),
+            paths.join(name, "testcases", target + ".dynamic"),
         ],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
     return name + "_test"
 
@@ -103,7 +105,8 @@ def tradefed_cc_host_outputs():
         tags = ["manual"],
         test = target,
         test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        dynamic_config = "//build/bazel/rules/tradefed/test:dynamic_config.xml",
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
 
     # check for expected output files (.config file  and .sh script)
@@ -114,8 +117,9 @@ def tradefed_cc_host_outputs():
             name + ".sh",
             "result-reporters.xml",
             paths.join(name, "testcases", target + ".config"),
+            paths.join(name, "testcases", target + ".dynamic"),
         ],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
     return name + "_test"
 
@@ -142,7 +146,8 @@ def tradefed_cc_host_outputs_generate_test_config():
             "<option name=\"config-descriptor:metadata\" key=\"parameter\" value=\"not_multi_abi\" />",
             "<option name=\"config-descriptor:metadata\" key=\"parameter\" value=\"secondary_user\" />",
         ],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        dynamic_config = "//build/bazel/rules/tradefed/test:dynamic_config.xml",
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
 
     # check for expected output files (.config file  and .sh script)
@@ -153,8 +158,9 @@ def tradefed_cc_host_outputs_generate_test_config():
             name + ".sh",
             "result-reporters.xml",
             paths.join(name, "testcases", target + ".config"),
+            paths.join(name, "testcases", target + ".dynamic"),
         ],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
     return name + "_test"
 
@@ -242,6 +248,7 @@ def tradefed_cc_copy_runfiles():
         tags = ["manual"],
         test = name + "__tf_internal",
         test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
+        dynamic_config = "//build/bazel/rules/tradefed/test:dynamic_config.xml",
     )
 
     tradefed_cc_copy_runfiles_test(
@@ -249,12 +256,119 @@ def tradefed_cc_copy_runfiles():
         target_under_test = name,
         expected_files = [
             "tradefed_cc_copy_runfiles.config",
+            "tradefed_cc_copy_runfiles.dynamic",
             "tradefed_cc_copy_runfiles",
             "data/a.text",
             "lib64/tradefed_cc_copy_runfiles_shared_lib_1.so",
             "lib64/tradefed_cc_copy_runfiles_shared_lib_2.so",
             "lib64/tradefed_cc_copy_runfiles_shared_lib_3.so",
             "lib64/tradefed_cc_copy_runfiles_shared_lib_4.so",
+        ],
+    )
+
+    return test_name
+
+def tradefed_cc_copy_runfiles_with_suffix():
+    name = "tradefed_cc_copy_runfiles_with_suffix"
+    test_name = name + "_test"
+    suffix = "64"
+
+    cc_library_shared(
+        name = name + "_shared_lib_1",
+        srcs = [name + "_shared_lib_1.cc"],
+        tags = ["manual"],
+    )
+
+    cc_binary(
+        name = name + "__tf_internal",
+        generate_cc_test = True,
+        dynamic_deps = [name + "_shared_lib_1"],
+        data = ["data/a.text"],
+        tags = ["manual"],
+        suffix = suffix,
+    )
+
+    tradefed_deviceless_test(
+        name = name,
+        tags = ["manual"],
+        test = name + "__tf_internal",
+        test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
+        dynamic_config = "//build/bazel/rules/tradefed/test:dynamic_config.xml",
+        suffix = suffix,
+    )
+
+    tradefed_cc_copy_runfiles_test(
+        name = test_name,
+        target_under_test = name,
+        expected_files = [
+            "tradefed_cc_copy_runfiles_with_suffix64.config",
+            "tradefed_cc_copy_runfiles_with_suffix64.dynamic",
+            "tradefed_cc_copy_runfiles_with_suffix64",
+            "data/a.text",
+            "lib64/tradefed_cc_copy_runfiles_with_suffix_shared_lib_1.so",
+        ],
+    )
+
+    return test_name
+
+def _tradefed_cc_compat_suffix_test_impl(ctx):
+    env = analysistest.begin(ctx)
+    target = analysistest.target_under_test(env)
+    actions = analysistest.target_actions(env)
+    symlink_actions = [a for a in actions if a.mnemonic == "Symlink"]
+    outputs = []
+    for action in symlink_actions:
+        for output in action.outputs.to_list():
+            outputs.append(output.path)
+
+    for expect in ctx.attr.expected_files:
+        expect = get_output_and_package_dir_based_path(env, paths.join(target.label.name, "testcases", expect))
+        asserts.true(
+            env,
+            expect in outputs,
+            "Expected: " + expect +
+            " in outputs: " + str(outputs),
+        )
+
+    return analysistest.end(env)
+
+tradefed_cc_compat_suffix_test = analysistest.make(
+    _tradefed_cc_compat_suffix_test_impl,
+    attrs = {
+        "expected_files": attr.string_list(
+            doc = "Files to be symlinked",
+        ),
+    },
+    config_settings = {
+        "//command_line_option:platforms": "@//build/bazel/tests/products:aosp_x86_64_for_testing",
+    },
+)
+
+def tradefed_cc_test_suffix_has_suffixless_compat_symlink():
+    name = "tradefed_cc_test_suffix_has_suffixless_compat_symlink"
+    test_name = name + "_test"
+    suffix = "64"
+
+    cc_binary(
+        name = name + "__tf_internal",
+        generate_cc_test = True,
+        tags = ["manual"],
+        suffix = suffix,
+    )
+
+    tradefed_deviceless_test(
+        name = name,
+        tags = ["manual"],
+        test = name + "__tf_internal",
+        test_config = "//build/bazel/rules/tradefed/test:example_config.xml",
+        suffix = suffix,
+    )
+
+    tradefed_cc_compat_suffix_test(
+        name = test_name,
+        target_under_test = name,
+        expected_files = [
+            "tradefed_cc_test_suffix_has_suffixless_compat_symlink",
         ],
     )
 
@@ -268,5 +382,7 @@ def tradefed_test_suite(name):
             tradefed_cc_host_outputs(),
             tradefed_cc_host_outputs_generate_test_config(),
             tradefed_cc_copy_runfiles(),
+            tradefed_cc_copy_runfiles_with_suffix(),
+            tradefed_cc_test_suffix_has_suffixless_compat_symlink(),
         ],
     )

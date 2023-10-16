@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@soong_injection//android:constants.bzl", android_constants = "constants")
 load("@soong_injection//api_levels:platform_versions.bzl", "platform_versions")
@@ -28,6 +29,13 @@ _bionic_stub_targets = [
     "//bionic/libm:libm_stub_libs_current",
 ]
 
+# When building an android_app/android_test that set an sdk_version, NDK variant of stub libraries of libc, libdl, libm should be used in linking.
+_bionic_ndk_stub_targets = [
+    "//bionic/libc:libc.ndk_stub_libs_current",
+    "//bionic/libdl:libdl.ndk_stub_libs_current",
+    "//bionic/libm:libm.ndk_stub_libs_current",
+]
+
 # The default system_dynamic_deps value for cc libraries. This value should be
 # used if no value for system_dynamic_deps is specified.
 system_dynamic_deps_defaults = select({
@@ -35,6 +43,7 @@ system_dynamic_deps_defaults = select({
     "//build/bazel/rules/apex:android-non_apex": _bionic_stub_targets,
     "//build/bazel/rules/apex:linux_bionic-in_apex": _bionic_stub_targets,
     "//build/bazel/rules/apex:linux_bionic-non_apex": _bionic_stub_targets,
+    "//build/bazel/rules/apex:unbundled_app": _bionic_ndk_stub_targets,
     "//conditions:default": [],
 })
 
@@ -43,6 +52,7 @@ system_static_deps_defaults = select({
     "//build/bazel/rules/apex:android-non_apex": _static_bionic_targets,
     "//build/bazel/rules/apex:linux_bionic-in_apex": _bionic_stub_targets,
     "//build/bazel/rules/apex:linux_bionic-non_apex": _static_bionic_targets,
+    "//build/bazel/rules/apex:unbundled_app": _bionic_ndk_stub_targets,
     "//conditions:default": [],
 })
 
@@ -452,3 +462,19 @@ def check_valid_ldlibs(ctx, linkopts):
     bad_libs = [lib for lib in libs_in_linkopts if lib not in libs_available]
     if bad_libs:
         fail("Host library(s) requested via -l is not available in the toolchain. Got: %s, Supported: %s" % (bad_libs, libs_available))
+
+def path_in_list(path, list):
+    path_parts = paths.normalize(path).split("/")
+    found = False
+    for value in list:
+        value_parts = paths.normalize(value).split("/")
+        if len(value_parts) > len(path_parts):
+            continue
+        match = True
+        for i in range(len(value_parts)):
+            if path_parts[i] != value_parts[i]:
+                match = False
+                break
+        if match == True:
+            found = True
+    return found

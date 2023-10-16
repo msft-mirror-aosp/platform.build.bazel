@@ -35,12 +35,12 @@ def java_library(
         **kwargs):
     """ java_library macro wrapper that handles custom attrs needed in AOSP
 
-        Attributes:
-            errorprone_force_enable: set this to true to always run Error Prone
+    Args:
+        errorprone_force_enable: set this to true to always run Error Prone
             on this target (overriding the value of environment variable
             RUN_ERROR_PRONE). Error Prone can be force disabled for an individual
             module by adding the "-XepDisableAllChecks" flag to javacopts
-        """
+    """
     lib_name = name + "_private"
 
     opts = javacopts
@@ -66,7 +66,7 @@ def java_library(
         exports = lib_name,
         tags = tags,
         target_compatible_with = target_compatible_with,
-        visibility = ["//visibility:public"],
+        visibility = visibility,
     )
 
 # The list of providers to forward was determined using cquery on one

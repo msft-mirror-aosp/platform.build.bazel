@@ -60,7 +60,7 @@ common_attrs = {
         allow_single_file = True,
     ),
     "_android_constraint": attr.label(
-        default = Label("//build/bazel/platforms/os:android"),
+        default = Label("//build/bazel_common_rules/platforms/os:android"),
     ),
 }
 
@@ -105,8 +105,6 @@ versioned_shared_library = rule(
         common_attrs,
         src = attr.label(
             mandatory = True,
-            # TODO(b/217908237): reenable allow_single_file
-            # allow_single_file = True,
             providers = [CcSharedLibraryInfo],
         ),
     ),

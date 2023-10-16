@@ -35,6 +35,13 @@ CAPTURED_ENV_VARS = [
     "UNBUNDLED_BUILD_TARGET_SDK_WITH_API_FINGERPRINT",
     "CLANG_DEFAULT_DEBUG_LEVEL",
     "RUN_ERROR_PRONE",
+    "RUST_PREBUILTS_VERSION",
+    "DEVICE_TEST_RBE_DOCKER_IMAGE_LINK",
+
+    # REMOTE_AVD is an env var knob to apply conditionals in parts of the build
+    # that can't read build settings, like macros, which defines
+    # execution-related tags.
+    "REMOTE_AVD",
 
     # Overrides the version in the apex_manifest.json. The version is unique for
     # each branch (internal, aosp, mainline releases, dessert releases).  This
