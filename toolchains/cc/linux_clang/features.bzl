@@ -1,21 +1,6 @@
 """Cc toolchain features that works with clang."""
 
 load(
-    "@//build/bazel/toolchains/cc:utils.bzl",
-    "check_args",
-    "filter_none",
-    "flatten",
-)
-load(
-    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
-    "feature",
-    "flag_group",
-    "flag_set",
-    "variable_with_value",
-    "with_feature_set",
-)
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
-load(
     "@//build/bazel/toolchains/cc:actions.bzl",
     "ARCHIVER_ACTIONS",
     "ASSEMBLE_ACTIONS",
@@ -24,11 +9,6 @@ load(
     "CPP_SOURCE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
-)
-load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
-    "CcFeatureConfigInfo",
-    "CcToolchainImportInfo",
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
@@ -47,6 +27,26 @@ load(
     "toolchain_import_configs",
     "user_compile_flags_feature",
     "user_link_flags_feature",
+)
+load(
+    "@//build/bazel/toolchains/cc:rules.bzl",
+    "CcFeatureConfigInfo",
+    "CcToolchainImportInfo",
+)
+load(
+    "@//build/bazel/toolchains/cc:utils.bzl",
+    "check_args",
+    "filter_none",
+    "flatten",
+)
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load(
+    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "feature",
+    "flag_group",
+    "flag_set",
+    "variable_with_value",
+    "with_feature_set",
 )
 
 def get_toolchain_include_paths_feature(import_config):
@@ -105,7 +105,10 @@ def get_toolchain_libraries_to_link_feature(import_config):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = [ACTION_NAMES.cpp_link_executable],
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.objc_executable,
+                ],
                 flag_groups = filter_none([
                     check_args(
                         len,
@@ -123,7 +126,10 @@ def get_toolchain_libraries_to_link_feature(import_config):
                 ],
             ),
             flag_set(
-                actions = [ACTION_NAMES.cpp_link_executable],
+                actions = [
+                    ACTION_NAMES.cpp_link_executable,
+                    ACTION_NAMES.objc_executable,
+                ],
                 flag_groups = filter_none([
                     check_args(
                         len,
@@ -144,6 +150,7 @@ def get_toolchain_libraries_to_link_feature(import_config):
                 actions = [
                     ACTION_NAMES.cpp_link_dynamic_library,
                     ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                    ACTION_NAMES.objc_fully_link,
                 ],
                 flag_groups = filter_none([
                     check_args(
@@ -320,6 +327,7 @@ shared_flag_feature = feature(
             actions = [
                 ACTION_NAMES.cpp_link_dynamic_library,
                 ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ACTION_NAMES.objc_fully_link,
             ],
             flag_groups = [
                 flag_group(
@@ -544,7 +552,10 @@ force_pic_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = [ACTION_NAMES.cpp_link_executable],
+            actions = [
+                ACTION_NAMES.cpp_link_executable,
+                ACTION_NAMES.objc_executable,
+            ],
             flag_groups = [
                 flag_group(
                     expand_if_available = "force_pic",
