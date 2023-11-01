@@ -163,7 +163,7 @@ new_local_repository(
     path = "external/kotlinc",
 )
 
-register_toolchains("@rules_kotlin//toolchains/kotlin_jvm:kt_jvm_toolchain_linux")
+register_toolchains("//build/bazel/rules/kotlin:kt_jvm_toolchain_linux")
 
 load("//build/bazel/toolchains/clang/host/linux-x86:cc_toolchain_config.bzl", "cc_register_toolchains")
 
@@ -236,6 +236,17 @@ local_repository(
 )
 
 register_toolchains(
-    "build/bazel/toolchains/rust:toolchain_x86_64_unknown-linux-gnu",
+    # The base toolchains need to be registered before <os_arch>
+    # to ensure it is preferably resolved when it's enabled by
+    # base_toolchain_enabled config_setting
+    "//build/bazel/toolchains/rust/bootstrap:rust_toolchain_android_arm64_base",
+    "//build/bazel/toolchains/rust/bootstrap:rust_toolchain_android_arm_base",
+    "//build/bazel/toolchains/rust/bootstrap:rust_toolchain_android_x86_64_base",
+    "//build/bazel/toolchains/rust/bootstrap:rust_toolchain_android_x86_base",
+    "//build/bazel/toolchains/rust:rust_toolchain_android_arm64",
+    "//build/bazel/toolchains/rust:rust_toolchain_android_arm",
+    "//build/bazel/toolchains/rust:rust_toolchain_android_x86_64",
+    "//build/bazel/toolchains/rust:rust_toolchain_android_x86",
+    "build/bazel/toolchains/rust:rust_toolchain_x86_64_unknown-linux-gnu",
     "build/bazel/toolchains/rust:proto-toolchain",
 )

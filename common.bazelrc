@@ -103,6 +103,8 @@ common --override_repository=rules_java_builtin=%workspace%/external/bazelbuild-
 
 common --experimental_builtins_injection_override=-java_binary
 
+common --experimental_java_library_export
+
 # Set writable bit for all bazel outputs. This makes it easy to remove
 # the output directory and its contents after a build (using `rm`).
 build --experimental_writable_outputs
@@ -183,7 +185,8 @@ build:remote_avd --strategy=AbiDump=local # force disable sandbox
 build:remote_avd --strategy=AbiLink=local # force disable sandbox
 build:remote_avd --strategy=AbiDiff=local # force disable sandbox
 test:remote_avd --strategy=DownloadCvd=remote
-test:remote_avd --strategy=TestRunner=remote
+# Certain tests are tagged "no-remote", so allow sandboxed fallback to avoid forcing all tests to run remotely.
+test:remote_avd --strategy=TestRunner=remote,sandboxed
 test:remote_avd --test_env=PATH="/bin:/usr/bin/"
 
 # Depending on how many machines are in the remote execution instance, setting

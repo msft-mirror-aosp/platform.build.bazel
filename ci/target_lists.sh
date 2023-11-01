@@ -10,29 +10,41 @@ BUILD_TARGETS=(
   //build/...
   //cts/...
   //development/...
-  //external/...
-  //frameworks/...
+  //external/rust/crates/rustc-demangle-capi:librustc_demangle_static
+  //frameworks/av/media/liberror:libexpectedutils_test
+  //frameworks/av/media/module/foundation:libstagefright_foundation
+  //frameworks/base:framework-javastream-protos
+  //frameworks/base/api:merge_annotation_zips_test
+  //frameworks/base/services/core:statslog-art-java-gen
+  //frameworks/base/tools/aapt2:aapt2_tests
+  //frameworks/base/tools/processors/immutability:ImmutabilityAnnotation
+  //frameworks/native/cmds/installd:run_dex2oat_test
+  //frameworks/native/libs/binder/tests:binderUtilsHostTest
+  //frameworks/native/libs/fakeservicemanager:fakeservicemanager_test
   //hardware/...
   //libnativehelper/...
-  //packages/...
+  //packages/modules/adb/...
+  //packages/modules/common/...
+  //packages/modules/CaptivePortalLogin/...
+  //packages/modules/NeuralNetworks/...
+  //packages/modules/Wifi/...
   //prebuilts/clang/host/linux-x86:all
   //prebuilts/build-tools/tests/...
   //prebuilts/runtime/...
+  //prebuilts/rust/linux-x86/...
   //prebuilts/tools/...
   //platform_testing/...
-  //system/...
+  //system/libbase:libbase
+  //system/core/libcutils:libcutils
+  //system/core/libutils:libutils
+  //system/unwinding/libunwindstack:libunwindstack
   //tools/apksig/...
   //tools/asuite/...
   //tools/platform-compat/...
 
-  # These tools only build for host currently
-  -//external/e2fsprogs/misc:all
-  -//external/e2fsprogs/resize:all
-  -//external/e2fsprogs/debugfs:all
-  -//external/e2fsprogs/e2fsck:all
-  # TODO(b/277616982): These modules depend on private java APIs, but maybe they don't need to.
-  -//external/ow2-asm:all
-
+  # TODO: b/305044271 - Fix linking error caused by fdo transition
+  -//art/libartbase:all
+  -//art/libdexfile:all
   # TODO(b/266459895): remove these after re-enabling libunwindstack
   -//bionic/libc/malloc_debug:libc_malloc_debug
   -//bionic/libfdtrack:libfdtrack
@@ -46,11 +58,14 @@ BUILD_TARGETS=(
   -//frameworks/native/libs/gui:libgui_bufferqueue_static
   -//frameworks/native/opengl/libs:libEGL
   -//frameworks/native/opengl/libs:libGLESv2
-  -//system/core/libutils:all
-  -//system/unwinding/libunwindstack:all
-  # TODO(b/297550356): Remove denylisted external/rust/crates/protobuf package
-  # after https://github.com/bazelbuild/rules_rust/pull/2133 is merged
-  -//external/rust/crates/protobuf:all
+)
+
+DEVICE_ONLY_TARGETS=(
+  //frameworks/native/services/surfaceflinger:libSurfaceFlingerProp
+  //frameworks/base/cmds/idmap2:libidmap2_policies
+  //frameworks/base/core/res:framework-res
+  //frameworks/ex/common:android-common
+  //frameworks/native/opengl/tests/testViewport:TestViewport
 )
 
 TEST_TARGETS=(
@@ -60,6 +75,10 @@ TEST_TARGETS=(
 )
 
 HOST_ONLY_TEST_TARGETS=(
+  //build/make/tools/aconfig:aconfig
+  //frameworks/base/tools/lint/common:AndroidCommonLint
+  //frameworks/base/tools/processors/immutability:ImmutabilityAnnotationProcessorHostLibrary
+  //frameworks/base/tools/processors/view_inspector:libview-inspector-annotation-processor
   //tools/trebuchet:AnalyzerKt
   //tools/metalava/metalava:metalava
   # This is explicitly listed to prevent b/294514745

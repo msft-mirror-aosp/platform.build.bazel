@@ -17,20 +17,22 @@ export ATEST_HELPER="${ATEST_HELPER}"
 export TF_PATH="${TRADEFED_CLASSPATH}"
 
 if [[ ! -z "${TEST_FILTER_OUTPUT}" ]]; then
-  TEST_FILTER=$(<${TEST_FILTER_OUTPUT})
+    TEST_FILTERS=$(<${TEST_FILTER_OUTPUT})
 fi
 
-if [[ ! -z "${TEST_FILTER}" ]]; then
-  ADDITIONAL_TRADEFED_OPTIONS+=("--atest-include-filter" "${MODULE_NAME}:${TEST_FILTER}")
+if [[ ! -z "${TEST_FILTERS}" ]]; then
+    for TEST_FILTER in ${TEST_FILTERS}; do
+        ADDITIONAL_TRADEFED_OPTIONS+=("--atest-include-filter" "${MODULE_NAME}:${TEST_FILTER}")
+    done
 fi
 
-# Execute device launch script if set. This is for remote device test.
+# Set java home path
+JAVA_HOME="{java_home}"
+export PATH=$JAVA_HOME/bin:$PATH
 if [ ! -z LAUNCH_AVD_EXECUTABLE ];
 then
-    # Set java path for remote environment.
-    JAVA_HOME=/jdk/jdk17/linux-x86
-    export PATH=$JAVA_HOME/bin:$PATH
-    java -version
+    # Execute device launch script if set. This is for remote device test.
+    java -version # smoke test for jre
     $LAUNCH_AVD_EXECUTABLE
 fi
 
@@ -64,12 +66,12 @@ fi
 exit_code=$(<${exit_code_file})
 if [ $? -ne 0 ]
 then
-  echo "Could not read exit code file: ${exit_code_file}"
-  exit 36
+    echo "Could not read exit code file: ${exit_code_file}"
+    exit 36
 fi
 
 if [ ${exit_code} -ne 0 ]
 then
-  echo "Test failed with exit code ${exit_code}"
-  exit ${exit_code}
+    echo "Test failed with exit code ${exit_code}"
+    exit ${exit_code}
 fi

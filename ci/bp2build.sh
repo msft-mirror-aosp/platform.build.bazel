@@ -33,15 +33,12 @@ source "$(dirname $0)/target_lists.sh"
 # Build and test targets for device target platform.
 ###############
 
-build_for_device BUILD_TARGETS TEST_TARGETS
+build_for_device BUILD_TARGETS TEST_TARGETS DEVICE_ONLY_TARGETS
 
 declare -a host_targets
 host_targets+=( "${BUILD_TARGETS[@]}" )
 host_targets+=( "${TEST_TARGETS[@]}" )
 host_targets+=( "${HOST_ONLY_TEST_TARGETS[@]}" )
-
-# atest uses `b test` for these targets.
-host_targets+=("$(cat tools/asuite/atest/test_runners/roboleaf_launched.txt | grep --invert-match "#" | tr '\n' ' ')")
 
 build_and_test_for_host ${host_targets[@]}
 

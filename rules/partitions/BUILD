@@ -9,6 +9,7 @@ partition_toolchain(
     e2fsdroid = "//external/e2fsprogs/contrib/android:e2fsdroid",
     fec = "//system/extras/verity/fec",
     mke2fs = "//external/e2fsprogs/misc:mke2fs",
+    mkfs_erofs = "//external/erofs-utils:mkfs.erofs",
     mkuserimg_mke2fs = "//system/extras/ext4_utils:mkuserimg_mke2fs",
     openssl = "//prebuilts/build-tools:linux-x86/bin/openssl",
     simg2img = "//system/core/libsparse:simg2img",
@@ -20,12 +21,12 @@ partition_toolchain(
 toolchain(
     name = "partition_toolchain_def",
     exec_compatible_with = [
-        "//build/bazel/platforms/arch:x86_64",
-        "//build/bazel/platforms/os:linux",
+        "//build/bazel_common_rules/platforms/arch:x86_64",
+        "//build/bazel_common_rules/platforms/os:linux",
     ],
     tags = ["manual"],
     target_compatible_with = [
-        "//build/bazel/platforms/os:android",
+        "//build/bazel_common_rules/platforms/os:android",
     ],
     toolchain = ":partition_toolchain",
     toolchain_type = ":partition_toolchain_type",

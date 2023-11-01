@@ -232,7 +232,6 @@ def cc_library_shared(
         name = unstripped_name,
         user_link_flags = linkopts + [soname_flag],
         dynamic_deps = shared_dynamic_deps,
-        experimental_disable_topo_sort_do_not_use_remove_before_7_0 = True,  # TODO(b/280902394) remove
         additional_linker_inputs = additional_linker_inputs,
         deps = [shared_root_name] + whole_archive_deps + [imp_deps_stub],
         features = features,
@@ -431,6 +430,10 @@ def _cc_library_shared_proxy_impl(ctx):
         CcUnstrippedInfo(unstripped = shared_debuginfo[0]),
         ctx.attr.abi_dump[0][AbiDiffInfo],
         collect_deps_clang_tidy_info(ctx),
+        cc_common.CcSharedLibraryHintInfo(
+            # cc_shared_library doesn't need to traverse any attrs of a cc_shared_library dep
+            attributes = [],
+        ),
     ]
 
 _cc_library_shared_proxy = rule(
@@ -501,19 +504,19 @@ _cc_library_shared_proxy = rule(
         ),
         "linkopts": attr.string_list(default = []),  # Used for validation
         "_android_constraint": attr.label(
-            default = Label("//build/bazel/platforms/os:android"),
+            default = Label("//build/bazel_common_rules/platforms/os:android"),
         ),
         "_darwin_constraint": attr.label(
-            default = Label("//build/bazel/platforms/os:darwin"),
+            default = Label("//build/bazel_common_rules/platforms/os:darwin"),
         ),
         "_linux_constraint": attr.label(
-            default = Label("//build/bazel/platforms/os:linux"),
+            default = Label("//build/bazel_common_rules/platforms/os:linux"),
         ),
         "_windows_constraint": attr.label(
-            default = Label("//build/bazel/platforms/os:windows"),
+            default = Label("//build/bazel_common_rules/platforms/os:windows"),
         ),
     },
-    provides = [CcAndroidMkInfo, CcInfo, CcTocInfo],
+    provides = [CcAndroidMkInfo, CcInfo, CcTocInfo, cc_common.CcSharedLibraryHintInfo],
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
