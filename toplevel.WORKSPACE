@@ -103,7 +103,7 @@ load(
 json2bzl_repository(
     name = "toolchain_defs",
     config_mapping = {
-        "//external/qemu/android/build:toolchains.json": "TOOL_VERSIONS",
+        "//build/bazel/rules:toolchains.json": "TOOL_VERSIONS",
     },
     output_file = "defs.bzl",
 )
