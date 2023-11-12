@@ -88,6 +88,21 @@ local_repository(
 )
 
 local_repository(
+    name = "pcre2",
+    path = "external/pcre2",
+)
+
+local_repository(
+    name = "glib",
+    path = "external/glib",
+)
+
+local_repository(
+    name = "pixman",
+    path = "external/pixman",
+)
+
+local_repository(
     name = "zlib",
     path = "external/zlib",
 )
