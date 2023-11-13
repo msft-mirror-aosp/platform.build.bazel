@@ -83,6 +83,11 @@ local_repository(
 )
 
 local_repository(
+    name = "meson",
+    path = "external/meson",
+)
+
+local_repository(
     name = "zlib",
     path = "external/zlib",
 )
