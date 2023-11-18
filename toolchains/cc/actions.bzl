@@ -49,7 +49,6 @@ LINK_ACTIONS = [
 
 ARCHIVER_ACTIONS = [
     ACTION_NAMES.cpp_link_static_library,
-    ACTION_NAMES.objc_archive,
 ]
 
 def create_action_configs(tool_configs):

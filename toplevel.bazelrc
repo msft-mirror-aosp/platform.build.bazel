@@ -6,8 +6,3 @@ import %workspace%/build/bazel/tool.bazelrc
 # collide with the "external" top-level directory.
 common --experimental_sibling_repository_layout
 build --legacy_external_runfiles=false
-
-# Workaround for action cache issue
-# (https://github.com/bazelbuild/bazel/issues/17819)
-build:linux --disk_cache=~/.cache/bazel/disk-cache
-build:macos --disk_cache=~/.cache/bazel/disk-cache

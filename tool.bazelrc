@@ -1,9 +1,6 @@
 # Bazel tool configs
+common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
 build --incompatible_enable_cc_toolchain_resolution
-
-# Workaround for protoc dep check failure
-# (https://github.com/bazelbuild/bazel/issues/17673)
-build --strict_proto_deps=off
 
 build:linux --host_platform='//build/bazel/platforms:host_clang'
 build:linux --features='generate_debug_symbols'
