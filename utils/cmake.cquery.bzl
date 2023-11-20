@@ -25,13 +25,14 @@ def format(target):
 
     quote_includes = compilation_context.quote_includes.to_list()
     system_includes = compilation_context.system_includes.to_list()
+    external_includes = compilation_context.external_includes.to_list()
 
     # includes seems to be always empty, but we don't care and treat it the
     # same as others.
     includes = compilation_context.includes.to_list()
     combined_includes = _uniq([
-        normalize_execroot_path(i)
-        for i in quote_includes + system_includes + includes
+        _normalize_execroot_path(i)
+        for i in quote_includes + system_includes + external_includes + includes
         if not i.startswith("bazel-out/")
     ])
 
@@ -40,7 +41,7 @@ def format(target):
     defines = compilation_context.defines.to_list()
 
     json_struct = {
-        "archive": normalize_execroot_path(archive.path),
+        "archive": _normalize_execroot_path(archive.path),
         "includes": ";".join(combined_includes),
         "defines": ";".join(defines),
     }
@@ -51,7 +52,7 @@ def _uniq(hashables):
     uniq = dict([(o, None) for o in hashables])
     return uniq.keys()
 
-def normalize_execroot_path(path):
+def _normalize_execroot_path(path):
     if path.startswith("../"):
         # For paths to external repositories, use "<output-base>/external" instead.
         return "${output_base}/external/" + path.removeprefix("../")
