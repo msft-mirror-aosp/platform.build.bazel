@@ -20,6 +20,7 @@ sysroot(
 
 # keep sorted
 ALL_FRAMEWORKS = [
+    "ApplicationServices",
     "CFNetwork",
     "CoreFoundation",
     "CoreGraphics",
