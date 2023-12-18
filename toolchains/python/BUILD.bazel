@@ -1,0 +1,25 @@
+load("@bazel_tools//tools/python:toolchain.bzl", "py_runtime_pair")
+
+py_runtime(
+    name = "linux_x86_python3",
+    files = ["@python//:linux_x86_files"],
+    interpreter = "@python//:linux_x86_interpreter",
+    python_version = "PY3",
+)
+
+py_runtime_pair(
+    name = "linux_x86_py_runtime_pair",
+    py2_runtime = None,
+    py3_runtime = ":linux_x86_python3",
+)
+
+toolchain(
+    name = "linux_x86_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    toolchain = ":linux_x86_py_runtime_pair",
+    toolchain_type = "@bazel_tools//tools/python:toolchain_type",
+    visibility = ["//visibility:public"],
+)
