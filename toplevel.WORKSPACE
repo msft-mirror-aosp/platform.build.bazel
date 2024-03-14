@@ -112,6 +112,11 @@ local_repository(
     path = "external/grpc/third_party/upb",
 )
 
+local_repository(
+    name = "com_github_google_flatbuffers",
+    path = "external/flatbuffers",
+)
+
 # CC toolchains
 load(
     "//build/bazel/toolchains/cc:repository_rules.bzl",
