@@ -20,15 +20,25 @@ sysroot(
 
 # keep sorted
 ALL_FRAMEWORKS = [
+    "AppKit",
     "ApplicationServices",
     "CFNetwork",
+    "CoreData",
     "CoreFoundation",
     "CoreGraphics",
+    "CoreImage",
     "CoreServices",
+    "CoreVideo",
     "DiskArbitration",
     "Foundation",
     "IOKit",
+    "IOSurface",
+    "ImageIO",
+    "Metal",
+    "OpenGL",
+    "QuartzCore",
     "Security",
+    "Symbols",
 ]
 
 cc_toolchain_import(
