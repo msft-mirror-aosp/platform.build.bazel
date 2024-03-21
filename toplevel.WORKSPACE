@@ -64,7 +64,7 @@ local_repository(
 
 local_repository(
     name = "com_google_absl",
-    path = "external/webrtc/third_party/abseil-cpp",
+    path = "external/abseil-cpp",
 )
 
 local_repository(
@@ -79,7 +79,7 @@ local_repository(
 
 local_repository(
     name = "com_googlesource_code_re2",
-    path = "external/qemu/android/third_party/re2",
+    path = "external/regex-re2",
 )
 
 local_repository(
