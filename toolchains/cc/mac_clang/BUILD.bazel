@@ -26,7 +26,6 @@ cc_features(
     ],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
-        "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-fuse-ld=lld",
     ],
@@ -107,8 +106,7 @@ cc_features(
         "-D__TIME__=\"redacted\"",
     ],
     link_flags = [
-        "--target=arm64e-apple-darwin-macho",
-        "-undefined dynamic_lookup",
+        "--target=arm64-apple-darwin-macho",
         "-fobjc-link-runtime",
         "-fuse-ld=lld",
     ],
