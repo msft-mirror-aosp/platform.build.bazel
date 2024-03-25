@@ -20,17 +20,22 @@ sysroot(
 
 # keep sorted
 ALL_FRAMEWORKS = [
+    "AVFAudio",
+    "AVFoundation",
     "AppKit",
     "ApplicationServices",
     "CFNetwork",
     "CloudKit",
     "Cocoa",
+    "ColorSync",
     "CoreData",
     "CoreFoundation",
     "CoreGraphics",
     "CoreImage",
     "CoreLocation",
+    "CoreMedia",
     "CoreServices",
+    "CoreText",
     "CoreVideo",
     "DiskArbitration",
     "Foundation",
@@ -42,6 +47,7 @@ ALL_FRAMEWORKS = [
     "QuartzCore",
     "Security",
     "Symbols",
+    "VideoToolbox",
 ]
 
 cc_toolchain_import(
