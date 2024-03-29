@@ -85,6 +85,7 @@ cc_toolchain_import(
     system_provided = False,
     deps = [
         "@gcc_lib//:libc",
+        "@gcc_lib//:libdl",
         "@gcc_lib//:libgcc",
         "@gcc_lib//:libgcc_s",
         "@gcc_lib//:libm",

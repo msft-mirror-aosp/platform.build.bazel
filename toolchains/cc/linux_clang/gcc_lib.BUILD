@@ -80,6 +80,21 @@ cc_toolchain_import(
 )
 
 cc_toolchain_import(
+    name = "libdl",
+    dynamic_mode_libs = [
+        ":sysroot/usr/lib/libdl.so",
+    ],
+    static_mode_libs = [
+        ":sysroot/usr/lib/libdl.so",
+    ],
+    support_files = [
+        ":sysroot/usr/lib/libdl.so.2",
+        ":sysroot/usr/lib/libdl-2.17.so",
+    ],
+    deps = [":libc"],
+)
+
+cc_toolchain_import(
     name = "libpthread",
     dynamic_mode_libs = [
         ":sysroot/usr/lib/libpthread.so",
