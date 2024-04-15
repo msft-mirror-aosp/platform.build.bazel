@@ -25,9 +25,12 @@ ALL_FRAMEWORKS = [
     "AppKit",
     "ApplicationServices",
     "CFNetwork",
+    "Carbon",
     "CloudKit",
     "Cocoa",
     "ColorSync",
+    "CoreAudio",
+    "CoreAudioTypes",
     "CoreData",
     "CoreFoundation",
     "CoreGraphics",
@@ -39,6 +42,7 @@ ALL_FRAMEWORKS = [
     "CoreVideo",
     "DiskArbitration",
     "Foundation",
+    "Hypervisor",
     "IOKit",
     "IOSurface",
     "ImageIO",
@@ -48,6 +52,7 @@ ALL_FRAMEWORKS = [
     "Security",
     "Symbols",
     "VideoToolbox",
+    "vmnet",
 ]
 
 cc_toolchain_import(
