@@ -1,11 +1,11 @@
 """Platform and tool independent toolchain rules."""
 
-load(":actions.bzl", "create_action_configs")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "ArtifactNamePatternInfo",
     "artifact_name_pattern",
 )
+load(":actions.bzl", "create_action_configs")
 
 CcToolInfo = provider(
     "A provider that specifies metadata for a tool.",
@@ -398,6 +398,7 @@ def _cc_toolchain_config_impl(ctx):
                 for p in ctx.attr.artifact_name_patterns
             ],
             builtin_sysroot = sysroot,
+            cxx_builtin_include_directories = ctx.attr.legacy_builtin_include_directories,
             target_cpu = ctx.attr.target_cpu,
             # The attributes below are required by the constructor, but don't
             # affect actions at all.
@@ -447,6 +448,11 @@ cc_toolchain_config = rule(
         "sysroot": attr.label(
             doc = "A target that provides SysrootInfo and related files.",
             providers = [SysrootInfo, DefaultInfo],
+        ),
+        "legacy_builtin_include_directories": attr.string_list(
+            doc = "Built-in include directories in addition to the ones passed from " +
+                  "'toolchain_imports'. This accepts absolute paths and therefore " +
+                  "is considerred non-hermetic. Prefer 'toolchain_imports' if possible",
         ),
     },
     provides = [CcToolchainConfigInfo, DefaultInfo],

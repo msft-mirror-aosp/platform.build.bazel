@@ -1,17 +1,33 @@
-load(":features.bzl", "cc_features")
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
     "cc_toolchain_config",
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
 
 _x64_imports = [
     "@clang//:linux_x64_libcxx",
-    "@gcc_lib//:start_libs",
-]
+] + select({
+    ":host_stdlibs": [],
+    "//conditions:default": [
+        "@gcc_lib//:start_libs",
+        "@gcc_lib//:libc",
+        "@gcc_lib//:libdl",
+        "@gcc_lib//:libgcc",
+        "@gcc_lib//:libgcc_s",
+        "@gcc_lib//:libm",
+        "@gcc_lib//:libpthread",
+        "@gcc_lib//:librt",
+    ],
+})
+
+config_setting(
+    name = "host_stdlibs",
+    values = {"features": "-no_implicit_libs"},
+)
 
 cc_features(
     name = "x64_features",
@@ -22,7 +38,10 @@ cc_features(
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
-    ],
+    ] + select({
+        ":host_stdlibs": ["-nostdinc++"],
+        "//conditions:default": [],
+    }),
     link_flags = [
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
@@ -39,6 +58,13 @@ cc_toolchain_config(
         "@clang//:linux_x64_strip",
     ],
     identifier = "linux_clang_x64",
+    legacy_builtin_include_directories = select({
+        ":host_stdlibs": [
+            "/usr/include",
+            "/usr/include/x86_64-linux-gnu",
+        ],
+        "//conditions:default": [],
+    }),
     target_cpu = "k8",
     toolchain_imports = _x64_imports,
 )
