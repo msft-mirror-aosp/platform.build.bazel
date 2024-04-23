@@ -1,3 +1,5 @@
+load("//build/bazel/rules:windows_resources.bzl", "windows_resources")
+
 cc_library(
     name = "hello-greet",
     srcs = ["hello-greet.cc"],
@@ -10,6 +12,16 @@ cc_binary(
     deps = [
         ":hello-greet",
         "//build/bazel/toolchains/cc/example/lib:hello-time",
+    ] + select({
+        "@platforms//os:windows": [":resources"],
+        "//conditions:default": [],
+    }),
+)
+
+windows_resources(
+    name = "resources",
+    rc_files = [
+        "hello-world.rc",
     ],
 )
 
