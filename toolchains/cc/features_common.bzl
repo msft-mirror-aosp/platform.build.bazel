@@ -1,7 +1,6 @@
 """Common cc toolchain features independent of compilers."""
 
 load("@bazel_skylib//lib:collections.bzl", "collections")
-load(":utils.bzl", "check_args", "filter_none", "tee_filter")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
@@ -16,6 +15,7 @@ load(
     "LINK_ACTIONS",
 )
 load(":rules.bzl", "CcToolchainImportInfo")
+load(":utils.bzl", "check_args", "filter_none", "tee_filter")
 
 OBJECT_EXTENSIONS_UNIX = ["o"]
 
@@ -117,7 +117,7 @@ def get_toolchain_cxx_flags_feature(flags):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = CPP_COMPILE_ACTIONS + LINK_ACTIONS,
+                actions = CPP_COMPILE_ACTIONS,
                 flag_groups = filter_none([
                     check_args(len, flag_group, flags = flags),
                 ]),

@@ -24,6 +24,7 @@ cc_features(
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
     ],
+    cxx_flags = ["-std=c++20"],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
         "-undefined dynamic_lookup",
@@ -106,6 +107,7 @@ cc_features(
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
     ],
+    cxx_flags = ["-std=c++20"],
     link_flags = [
         "--target=arm64e-apple-darwin-macho",
         "-undefined dynamic_lookup",
