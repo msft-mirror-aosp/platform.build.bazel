@@ -13,3 +13,5 @@ build:macos --force_pic
 build:windows --host_platform='//build/bazel/platforms:host_clang-cl'
 build:windows --features='-supports_start_end_lib'
 build:windows --features='generate_pdb_file'
+# On windows cleaning up python zips can fail and leak disk (see b/277781554)
+build:windows --nobuild_python_zip
