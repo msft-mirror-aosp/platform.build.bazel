@@ -128,6 +128,19 @@ cc_toolchain_import(
     ],
 )
 
+cc_import(
+    name = "libpulse",
+    interface_library = ":sysroot/usr/lib/libpulse.so",
+    shared_library = ":sysroot/usr/lib/libpulse.so.0.15.3",
+    visibility = ["//visibility:public"],
+)
+
+cc_import(
+    name = "libutil",
+    static_library = ":sysroot/usr/lib/libutil.a",
+    visibility = ["//visibility:public"],
+)
+
 cc_toolchain_import(
     name = "libgcc_s",
     dynamic_mode_libs = [
