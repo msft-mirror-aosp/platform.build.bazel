@@ -137,7 +137,8 @@ cc_import(
 
 cc_import(
     name = "libutil",
-    static_library = ":sysroot/usr/lib/libutil.a",
+    interface_library = ":sysroot/usr/lib/libutil.so",
+    shared_library = ":sysroot/usr/lib/libutil-2.17.so",
     visibility = ["//visibility:public"],
 )
 
