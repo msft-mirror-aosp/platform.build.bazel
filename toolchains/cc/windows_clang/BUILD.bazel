@@ -21,6 +21,7 @@ cc_features(
     compile_flags = [
         "/wd4117",
         "-Wno-builtin-macro-redefined",
+        "/D__STDC_NO_ATOMICS__",
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
