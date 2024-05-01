@@ -51,34 +51,42 @@ ARCHIVER_ACTIONS = [
     ACTION_NAMES.cpp_link_static_library,
 ]
 
-def create_action_configs(tool_configs):
+def create_action_configs(tool_label_and_configs):
     """Creates a list of action configs to specify cc tools to each action.
 
     Args:
-        tool_configs: A list of CcToolInfo providers containing the tool
-            configs. Order matters when multiple tool configs specify the same
-            applied action - details:
-            https://cs.opensource.google/bazel/bazel/+/master:tools/cpp/cc_toolchain_config_lib.bzl?q=symbol:action_config&ss=bazel%2Fbazel
+        tool_label_and_configs: A list of (Label, CcToolInfo). We do not support
+            having multiple tools for the same action due to the added
+            complexity of tool selection strategy.
 
     Returns:
         A list of action configs
     """
     tools_by_action = {}
-    for tool_config in tool_configs:
+    for label, tool_config in tool_label_and_configs:
         for action in tool_config.applied_actions:
-            tools_by_action.setdefault(action, []).append(tool_config)
+            if action in tools_by_action:
+                fail(
+                    "cannot associate tool",
+                    label,
+                    "with action",
+                    action,
+                    ": action already associated with",
+                    tools_by_action[action],
+                )
+            tools_by_action[action] = tool_config
 
     action_configs = []
-    for action, tool_configs in tools_by_action.items():
+    for action, tool_config in tools_by_action.items():
         tools = [tool(
-            tool = t.tool,
+            tool = tool_config.tool,
             with_features = [
                 with_feature_set(
-                    features = t.with_features,
-                    not_features = t.with_no_features,
+                    features = tool_config.with_features,
+                    not_features = tool_config.with_no_features,
                 ),
             ],
-        ) for t in tool_configs]
+        )]
         action_configs.append(
             action_config(
                 action_name = action,

@@ -46,9 +46,16 @@ load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 
 rules_pkg_dependencies()
 
+http_archive(
+    name = "with_cfg.bzl",
+    sha256 = "06a2b1b56a58c471ab40d8af166c4d51f0982e1c6bc46375b805915b3fc0658e",
+    strip_prefix = "with_cfg.bzl-0.2.4",
+    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.4/with_cfg.bzl-v0.2.4.tar.gz",
+)
+
 new_local_repository(
     name = "boringssl",
-    build_file = "external/boringssl/BUILD",
+    build_file = "//external/boringssl:BUILD",
     path = "external/boringssl",
 )
 

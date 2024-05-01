@@ -4,8 +4,14 @@ load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "ArtifactNamePatternInfo",
     "artifact_name_pattern",
+    "env_entry",
+    "env_set",
+    "feature",
+    "flag_group",
+    "flag_set",
 )
 load(":actions.bzl", "create_action_configs")
+load(":utils.bzl", "filter_none")
 
 CcToolInfo = provider(
     "A provider that specifies metadata for a tool.",
@@ -14,6 +20,8 @@ CcToolInfo = provider(
         "applied_actions": "Cc actions where this tool applies.",
         "with_features": "Feature names that need to be enabled to select this tool.",
         "with_no_features": "Feature names that need to be disabled to select this tool.",
+        "env": "A map of environment variables applied when running the tool.",
+        "args": "A list of args always passed to the tool",
     },
 )
 
@@ -22,12 +30,23 @@ def _cc_tool_impl(ctx):
         files = [ctx.executable.tool] + ctx.files.runfiles,
     )
     runfiles = runfiles.merge(ctx.attr.tool[DefaultInfo].default_runfiles)
+    expandable_targets = ctx.attr.runfiles + [ctx.attr.tool]
+    expanded_env = {
+        k: ctx.expand_location(v, expandable_targets)
+        for k, v in ctx.attr.env.items()
+    }
+    expanded_args = [
+        ctx.expand_location(arg, expandable_targets)
+        for arg in ctx.attr.args
+    ]
     return [
         CcToolInfo(
             tool = ctx.executable.tool,
             applied_actions = ctx.attr.applied_actions,
             with_features = ctx.features,
             with_no_features = ctx.disabled_features,
+            env = expanded_env,
+            args = expanded_args,
         ),
         DefaultInfo(
             files = depset([ctx.executable.tool]),
@@ -40,7 +59,7 @@ cc_tool = rule(
     attrs = {
         "tool": attr.label(
             doc = "The tool target.",
-            allow_single_file = True,
+            allow_files = True,
             executable = True,
             cfg = "exec",
             mandatory = True,
@@ -53,6 +72,12 @@ cc_tool = rule(
             doc = "A list of cc action names where the tool applies.",
             mandatory = True,
             allow_empty = False,
+        ),
+        "env": attr.string_dict(
+            doc = "A map of strings containing the environment variables applied. Values in the map are subject to location expansions.",
+        ),
+        "args": attr.string_list(
+            doc = "A list of arguments to be passed to the tool, subject to location expansions.",
         ),
     },
     provides = [CcToolInfo, DefaultInfo],
@@ -383,15 +408,56 @@ def _toolchain_files(ctx):
                      sysroot_files,
     )
 
+def _cc_tools_env_args_feature(tool_configs):
+    """Creates a feature that applies the env variables and arguments from the CcToolInfo providers.
+
+    Args:
+        tool_configs: A list of CcToolInfo providers.
+
+    Returns:
+        None if no args or env variables are passed by the providers. Otherwise
+        a FeatureInfo.
+    """
+    flag_sets = [
+        flag_set(
+            actions = t.applied_actions,
+            flag_groups = flag_group(flags = t.args),
+        )
+        for t in tool_configs
+        if t.args
+    ]
+    env_sets = [
+        env_set(
+            actions = t.applied_actions,
+            env_entries = [env_entry(k, v) for k, v in t.env.items()],
+        )
+        for t in tool_configs
+        if t.env
+    ]
+    if not flag_sets and not env_sets:
+        return None
+    return feature(
+        name = "cc_tool_feature",
+        enabled = True,
+        flag_sets = flag_sets,
+        env_sets = env_sets,
+    )
+
 def _cc_toolchain_config_impl(ctx):
     sysroot = ctx.attr.sysroot[SysrootInfo].path if ctx.attr.sysroot else None
+    features = filter_none([
+        _cc_tools_env_args_feature(
+            [tool[CcToolInfo] for tool in ctx.attr.cc_tools],
+        ),
+    ])
+    features.extend(ctx.attr.cc_features[CcFeatureConfigInfo].features)
     return [
         cc_common.create_cc_toolchain_config_info(
             ctx = ctx,
             toolchain_identifier = ctx.attr.identifier,
-            features = ctx.attr.cc_features[CcFeatureConfigInfo].features,
+            features = features,
             action_configs = create_action_configs(
-                [tool[CcToolInfo] for tool in ctx.attr.cc_tools],
+                [(tool.label, tool[CcToolInfo]) for tool in ctx.attr.cc_tools],
             ),
             artifact_name_patterns = [
                 p[ArtifactNamePatternInfo]

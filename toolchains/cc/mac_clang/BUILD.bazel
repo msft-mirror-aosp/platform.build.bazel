@@ -23,14 +23,20 @@ cc_features(
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
-    ],
+    ] + select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
+    }),
     cxx_flags = ["-std=c++20"],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-fuse-ld=lld",
-    ],
+    ] + select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
+    }),
     toolchain_imports = _imports,
 )
 
@@ -106,14 +112,20 @@ cc_features(
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
-    ],
+    ] + select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
+    }),
     cxx_flags = ["-std=c++20"],
     link_flags = [
         "--target=arm64e-apple-darwin-macho",
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-fuse-ld=lld",
-    ],
+    ] + select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
+    }),
     toolchain_imports = _imports,
 )
 

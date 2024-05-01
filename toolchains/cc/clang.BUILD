@@ -90,6 +90,12 @@ cc_toolchain_import(
 cc_tool(
     name = "macos_all_clang",
     applied_actions = C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+    env = select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": {},
+        "//conditions:default": {
+            "WRAPPER_WRAP_BINARY": "$(execpath {}/bin/clang)".format(CLANG_MACOS_ALL),
+        },
+    }),
     runfiles = glob(
         [CLANG_MACOS_ALL + "/bin/*"],
         exclude = [
@@ -103,12 +109,21 @@ cc_tool(
             CLANG_MACOS_ALL + "/bin/llvm-cfi-verify",
         ],
     ),
-    tool = target_macos_all + "/bin/clang",
+    tool = select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": target_macos_all + "/bin/clang",
+        "//conditions:default": "@//build/bazel/toolchains/cc:wrapper",
+    }),
 )
 
 cc_tool(
     name = "macos_all_clang++",
     applied_actions = CPP_COMPILE_ACTIONS + LINK_ACTIONS,
+    env = select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": {},
+        "//conditions:default": {
+            "WRAPPER_WRAP_BINARY": "$(execpath {}/bin/clang++)".format(CLANG_MACOS_ALL),
+        },
+    }),
     runfiles = glob(
         [CLANG_MACOS_ALL + "/bin/*"],
         exclude = [
@@ -122,7 +137,10 @@ cc_tool(
             CLANG_MACOS_ALL + "/bin/llvm-cfi-verify",
         ],
     ),
-    tool = target_macos_all + "/bin/clang++",
+    tool = select({
+        "@//build/bazel/toolchains/cc:is_bootstrap": target_macos_all + "/bin/clang++",
+        "//conditions:default": "@//build/bazel/toolchains/cc:wrapper",
+    }),
 )
 
 cc_tool(
