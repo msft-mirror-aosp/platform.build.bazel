@@ -44,8 +44,10 @@ cc_features(
     link_flags = [
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
+        "-Wl,--as-needed",
         "-lm",
         "-ldl",
+        "-Wl,--no-as-needed",
     ],
     toolchain_imports = _x64_imports,
 )
