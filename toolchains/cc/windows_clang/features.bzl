@@ -11,7 +11,6 @@ load(
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
-    "OBJECT_EXTENSIONS_WINDOWS",
     "dynamic_linking_mode_feature",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
@@ -306,40 +305,6 @@ def get_toolchain_lib_search_paths_feature(import_config):
         ],
     )
 
-def get_toolchain_libraries_to_link_feature(import_config):
-    return feature(
-        name = "toolchain_libraries_to_link",
-        enabled = True,
-        flag_sets = [
-            flag_set(
-                actions = LINK_ACTIONS,
-                flag_groups = filter_none([
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = [str(obj.path) for obj in import_config.dynamic_linked_objects],
-                    ),
-                ]),
-                with_features = [
-                    with_feature_set(features = ["dynamic_linking_mode"]),
-                ],
-            ),
-            flag_set(
-                actions = LINK_ACTIONS,
-                flag_groups = filter_none([
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = [str(obj.path) for obj in import_config.static_linked_objects],
-                    ),
-                ]),
-                with_features = [
-                    with_feature_set(features = ["static_linking_mode"]),
-                ],
-            ),
-        ],
-    )
-
 has_configured_linker_path_feature = feature(
     name = "has_configured_linker_path",
     enabled = True,
@@ -600,10 +565,7 @@ windows_export_all_symbols_feature = feature(
 )
 
 def _cc_features_impl(ctx):
-    import_config = toolchain_import_configs(
-        ctx.attr.toolchain_imports,
-        OBJECT_EXTENSIONS_WINDOWS,
-    )
+    import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
         # features set / consumed by bazel
         no_legacy_features,
@@ -644,7 +606,6 @@ def _cc_features_impl(ctx):
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
-        get_toolchain_libraries_to_link_feature(import_config),
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,

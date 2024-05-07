@@ -8,7 +8,6 @@ load(
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
-    "OBJECT_EXTENSIONS_UNIX",
     "dynamic_linking_mode_feature",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
@@ -43,7 +42,6 @@ load(
     "generate_debug_symbols_feature",
     "get_toolchain_include_paths_feature",
     "get_toolchain_lib_search_paths_feature",
-    "get_toolchain_libraries_to_link_feature",
     "include_paths_feature",
     "includes_feature",
     "lib_search_paths_feature",
@@ -286,10 +284,7 @@ opt_feature = feature(
 )
 
 def _cc_features_impl(ctx):
-    import_config = toolchain_import_configs(
-        ctx.attr.toolchain_imports,
-        OBJECT_EXTENSIONS_UNIX,
-    )
+    import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
         # features set / consumed by bazel
         no_legacy_features,
@@ -323,7 +318,6 @@ def _cc_features_impl(ctx):
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
-        get_toolchain_libraries_to_link_feature(import_config),
         force_pic_feature,
         strip_debug_symbols_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),

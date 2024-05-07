@@ -82,7 +82,6 @@ cc_toolchain_import(
             CLANG_LINUX_X64 + "/lib/clang/17/include/**",
         ],
     ),
-    system_provided = False,
 )
 
 ###################### macOS ######################
@@ -177,7 +176,6 @@ cc_toolchain_import(
             CLANG_MACOS_ALL + "/lib/clang/17/include/**",
         ],
     ),
-    system_provided = False,
 )
 
 ###################### Windows X64 ######################

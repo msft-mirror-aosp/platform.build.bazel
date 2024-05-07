@@ -87,13 +87,10 @@ CcToolchainImportInfo = provider(
     doc = "Provides info about the imported toolchain library.",
     fields = {
         "include_paths": "Include directories for this library.",
-        "dynamic_mode_libraries": "Libraries to be linked in dynamic linking mode.",
         "dynamic_runtimes": "Libraries used as the dynamic runtime library of cc_toolchain.",
         "framework_paths": "Framework search directories to add.",
         "lib_search_paths": "Additional library search paths.",
-        "static_mode_libraries": "Libraries to be linked in static linking mode.",
         "static_runtimes": "Libraries used as the static runtime library of cc_toolchain.",
-        "so_linked_objects": "Directly linked objects to shared libraries.",
     },
 )
 
@@ -101,6 +98,8 @@ def _cc_toolchain_import_impl(ctx):
     include_paths = [p.path for p in ctx.files.include_paths]
     framework_paths = [p.path for p in ctx.files.framework_paths]
     lib_search_paths = [p.path for p in ctx.files.lib_search_paths]
+    static_runtimes = ctx.files.static_mode_libs
+    dynamic_runtimes = ctx.files.dynamic_mode_libs
 
     dep_include_paths = [
         dep[CcToolchainImportInfo].include_paths
@@ -114,14 +113,6 @@ def _cc_toolchain_import_impl(ctx):
         dep[CcToolchainImportInfo].lib_search_paths
         for dep in ctx.attr.deps
     ]
-    dep_shared_libs = [
-        dep[CcToolchainImportInfo].dynamic_mode_libraries
-        for dep in ctx.attr.deps
-    ]
-    dep_static_libs = [
-        dep[CcToolchainImportInfo].static_mode_libraries
-        for dep in ctx.attr.deps
-    ]
     dep_dynamic_runtimes = [
         dep[CcToolchainImportInfo].dynamic_runtimes
         for dep in ctx.attr.deps
@@ -130,19 +121,6 @@ def _cc_toolchain_import_impl(ctx):
         dep[CcToolchainImportInfo].static_runtimes
         for dep in ctx.attr.deps
     ]
-    dep_so_linked_objs = [
-        dep[CcToolchainImportInfo].so_linked_objects
-        for dep in ctx.attr.deps
-    ]
-
-    if ctx.attr.system_provided:
-        static_runtimes, dynamic_runtimes = [], []
-        static_libs = ctx.files.static_mode_libs
-        dynamic_libs = ctx.files.dynamic_mode_libs
-    else:
-        static_libs, dynamic_libs = [], []
-        static_runtimes = ctx.files.static_mode_libs
-        dynamic_runtimes = ctx.files.dynamic_mode_libs
 
     return [
         CcToolchainImportInfo(
@@ -161,16 +139,6 @@ def _cc_toolchain_import_impl(ctx):
                 transitive = dep_lib_search_paths,
                 order = "topological",
             ),
-            dynamic_mode_libraries = depset(
-                direct = dynamic_libs,
-                transitive = dep_shared_libs,
-                order = "topological",
-            ),
-            static_mode_libraries = depset(
-                direct = static_libs,
-                transitive = dep_static_libs,
-                order = "topological",
-            ),
             dynamic_runtimes = depset(
                 direct = dynamic_runtimes,
                 transitive = dep_dynamic_runtimes,
@@ -181,17 +149,12 @@ def _cc_toolchain_import_impl(ctx):
                 transitive = dep_static_runtimes,
                 order = "topological",
             ),
-            so_linked_objects = depset(
-                direct = ctx.files.so_linked_objects,
-                transitive = dep_so_linked_objs,
-            ),
         ),
         DefaultInfo(
             files = depset(
                 direct = ctx.files.dynamic_mode_libs +
                          ctx.files.static_mode_libs +
-                         ctx.files.support_files +
-                         ctx.files.so_linked_objects,
+                         ctx.files.support_files,
                 transitive = [dep[DefaultInfo].files for dep in ctx.attr.deps],
             ),
         ),
@@ -215,16 +178,16 @@ cc_toolchain_import = rule(
             default = [],
             doc = "Libraries to be linked in dynamic linking mode." +
                   "\n" +
-                  "When is_runtime_lib is True, libraries will be passed to cc_toolchain " +
-                  "as 'dynamic_runtime_lib', which places them in the runpath.",
+                  "These libraries will be passed to cc_toolchain as " +
+                  "'dynamic_runtime_lib', which places them in the runpath.",
             allow_files = True,
         ),
         "static_mode_libs": attr.label_list(
             default = [],
             doc = "Libraries to be linked in static linking mode." +
                   "\n" +
-                  "When is_runtime_lib is True, libraries will be passed to cc_toolchain " +
-                  "as 'static_runtime_lib' (requires all libs to be static).",
+                  "These libraries will be passed to cc_toolchain as " +
+                  "'static_runtime_lib' (requires all libs to be static).",
             allow_files = True,
         ),
         "lib_search_paths": attr.label_list(
@@ -237,24 +200,6 @@ cc_toolchain_import = rule(
         "support_files": attr.label_list(
             default = [],
             doc = "Files needed but not forcefully linked.",
-            allow_files = True,
-        ),
-        "system_provided": attr.bool(
-            doc = "Defaults to true, meaning that the dynamic libraries must " +
-                  "be provided by the system at runtime.\n" +
-                  "\n" +
-                  "If set to false, the libraries are passed to the " +
-                  "appropriate *_runtime_lib attributes of cc_toolchain and " +
-                  "made available at runtime.\n" +
-                  "\n" +
-                  "Used in conjunction with dynamic_mode_libs and " +
-                  "static_mode_libs to pass values to cc_toolchain via the " +
-                  "cc_toolchain_(dynamic|static)_runtime rules.",
-            default = True,
-        ),
-        "so_linked_objects": attr.label_list(
-            default = [],
-            doc = "Objects to be directly linked to shared libraries.",
             allow_files = True,
         ),
         "deps": attr.label_list(

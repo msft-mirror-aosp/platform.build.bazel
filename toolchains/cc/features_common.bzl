@@ -1,6 +1,5 @@
 """Common cc toolchain features independent of compilers."""
 
-load("@bazel_skylib//lib:collections.bzl", "collections")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
@@ -15,14 +14,9 @@ load(
     "LINK_ACTIONS",
 )
 load(":rules.bzl", "CcToolchainImportInfo")
-load(":utils.bzl", "check_args", "filter_none", "tee_filter")
+load(":utils.bzl", "check_args", "filter_none")
 
-OBJECT_EXTENSIONS_UNIX = ["o"]
-
-# On Windows "lib" is directly linked like an object.
-OBJECT_EXTENSIONS_WINDOWS = ["obj", "lib"]
-
-def toolchain_import_configs(import_libs, object_extensions):
+def toolchain_import_configs(import_libs):
     """Convert cc_toolchain_import targets to configs for features.
 
     This feature purposefully ignores the (dynamic|static)_runtimes
@@ -30,7 +24,6 @@ def toolchain_import_configs(import_libs, object_extensions):
 
     Args:
         import_libs: A list of labels to cc_toolchain_import targets.
-        object_extensions: File extensions of objects files.
 
     Returns:
         A struct containing the paths to be consumed by feature definition.
@@ -43,51 +36,15 @@ def toolchain_import_configs(import_libs, object_extensions):
         lib[CcToolchainImportInfo].framework_paths
         for lib in import_libs
     ], order = "topological").to_list()
-    dynamic_mode_libs = depset(transitive = [
-        lib[CcToolchainImportInfo].dynamic_mode_libraries
-        for lib in import_libs
-    ], order = "topological").to_list()
-    static_mode_libs = depset(transitive = [
-        lib[CcToolchainImportInfo].static_mode_libraries
-        for lib in import_libs
-    ], order = "topological").to_list()
-    dynamic_linked_objects, dynamic_mode_libs = tee_filter(
-        dynamic_mode_libs,
-        lambda f: f.extension in object_extensions,
-    )
-    static_linked_objects, static_mode_libs = tee_filter(
-        static_mode_libs,
-        lambda f: f.extension in object_extensions,
-    )
-    lib_search_paths = collections.uniq([
-        f.dirname
-        for f in dynamic_mode_libs + static_mode_libs
-    ] + depset(transitive = [
+    lib_search_paths = depset(transitive = [
         lib[CcToolchainImportInfo].lib_search_paths
         for lib in import_libs
-    ], order = "topological").to_list())
-    dynamic_lib_filenames = collections.uniq([
-        f.basename
-        for f in dynamic_mode_libs
-    ])
-    static_lib_filenames = collections.uniq([
-        f.basename
-        for f in static_mode_libs
-    ])
-    so_linked_objects = depset(transitive = [
-        lib[CcToolchainImportInfo].so_linked_objects
-        for lib in import_libs
-    ]).to_list()
+    ], order = "topological").to_list()
 
     return struct(
         include_paths = include_paths,
         framework_paths = framework_paths,
-        dynamic_linked_objects = dynamic_linked_objects,
-        static_linked_objects = static_linked_objects,
         lib_search_paths = lib_search_paths,
-        dynamic_lib_filenames = dynamic_lib_filenames,
-        static_lib_filenames = static_lib_filenames,
-        so_linked_objects = so_linked_objects,
     )
 
 def toolchain_import_files(import_libs):
@@ -146,9 +103,13 @@ def get_b_prefix_feature(file):
         flag_sets = [
             flag_set(
                 actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LINK_ACTIONS,
-                flag_groups = [
-                    flag_group(flags = ["-B", file.path] if file else []),
-                ],
+                flag_groups = filter_none([
+                    check_args(
+                        len,
+                        flag_group,
+                        flags = ["-B", file.path] if file else [],
+                    ),
+                ]),
             ),
         ],
     )

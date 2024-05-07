@@ -12,7 +12,6 @@ load(
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
-    "OBJECT_EXTENSIONS_UNIX",
     "dynamic_linking_mode_feature",
     "get_b_prefix_feature",
     "get_toolchain_compile_flags_feature",
@@ -47,7 +46,6 @@ load(
     "flag_group",
     "flag_set",
     "variable_with_value",
-    "with_feature_set",
 )
 
 def get_toolchain_include_paths_feature(import_config):
@@ -94,70 +92,6 @@ def get_toolchain_lib_search_paths_feature(import_config):
                         len,
                         flag_group,
                         flags = ["-L" + p for p in import_config.lib_search_paths],
-                    ),
-                ]),
-            ),
-        ],
-    )
-
-def get_toolchain_libraries_to_link_feature(import_config):
-    return feature(
-        name = "toolchain_libraries_to_link",
-        enabled = True,
-        flag_sets = [
-            flag_set(
-                actions = [
-                    ACTION_NAMES.cpp_link_executable,
-                    ACTION_NAMES.objc_executable,
-                ],
-                flag_groups = filter_none([
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = [obj.path for obj in import_config.dynamic_linked_objects],
-                    ),
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = ["-l:" + f for f in import_config.dynamic_lib_filenames],
-                    ),
-                ]),
-                with_features = [
-                    with_feature_set(features = ["dynamic_linking_mode"]),
-                ],
-            ),
-            flag_set(
-                actions = [
-                    ACTION_NAMES.cpp_link_executable,
-                    ACTION_NAMES.objc_executable,
-                ],
-                flag_groups = filter_none([
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = [obj.path for obj in import_config.static_linked_objects],
-                    ),
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = ["-l:" + f for f in import_config.static_lib_filenames],
-                    ),
-                ]),
-                with_features = [
-                    with_feature_set(features = ["static_linking_mode"]),
-                ],
-            ),
-            flag_set(
-                actions = [
-                    ACTION_NAMES.cpp_link_dynamic_library,
-                    ACTION_NAMES.cpp_link_nodeps_dynamic_library,
-                    ACTION_NAMES.objc_fully_link,
-                ],
-                flag_groups = filter_none([
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = [obj.path for obj in import_config.so_linked_objects],
                     ),
                 ]),
             ),
@@ -705,10 +639,7 @@ dbg_feature = feature(
 )
 
 def _cc_features_impl(ctx):
-    import_config = toolchain_import_configs(
-        ctx.attr.toolchain_imports,
-        OBJECT_EXTENSIONS_UNIX,
-    )
+    import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
         # features set / consumed by bazel
         no_legacy_features,
@@ -742,7 +673,6 @@ def _cc_features_impl(ctx):
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
-        get_toolchain_libraries_to_link_feature(import_config),
         force_pic_feature,
         strip_debug_symbols_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
