@@ -319,17 +319,13 @@ SysrootInfo = provider(
 )
 
 def _sysroot_impl(ctx):
-    if ctx.attr.path:
-        sysroot_path = "{}/{}/{}".format(
+    sysroot_path = ctx.attr.path or ""
+    if not sysroot_path.startswith("/"):
+        sysroot_path = "/".join([s for s in (
             ctx.label.workspace_root,
             ctx.label.package,
-            ctx.attr.path,
-        )
-    else:
-        sysroot_path = "{}/{}".format(
-            ctx.label.workspace_root,
-            ctx.label.package,
-        )
+            sysroot_path.rstrip("/"),
+        ) if s])
     return [
         SysrootInfo(path = sysroot_path),
         DefaultInfo(files = depset(direct = ctx.files.all_files)),

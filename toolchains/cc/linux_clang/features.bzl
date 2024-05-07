@@ -14,6 +14,7 @@ load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
     "OBJECT_EXTENSIONS_UNIX",
     "dynamic_linking_mode_feature",
+    "get_b_prefix_feature",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
     "get_toolchain_link_flags_feature",
@@ -163,29 +164,10 @@ def get_toolchain_libraries_to_link_feature(import_config):
         ],
     )
 
+# TODO(zachyu) remove when host stdlibs are no longer needed.
 no_implicit_libs_feature = feature(
     name = "no_implicit_libs",
     enabled = True,
-    flag_sets = [
-        flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
-            flag_groups = [
-                flag_group(flags = ["-nostdinc"]),
-            ],
-        ),
-        flag_set(
-            actions = CPP_COMPILE_ACTIONS,
-            flag_groups = [
-                flag_group(flags = ["-nostdinc++"]),
-            ],
-        ),
-        flag_set(
-            actions = LINK_ACTIONS,
-            flag_groups = [
-                flag_group(flags = ["-nostdlib"]),
-            ],
-        ),
-    ],
 )
 
 # https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;l=98;drc=6d03a2ecf25ad596446c296ef1e881b60c379812
@@ -768,6 +750,7 @@ def _cc_features_impl(ctx):
         user_compile_flags_feature,
         ### End flag ordering ##
         sysroot_feature,
+        get_b_prefix_feature(ctx.file.b_prefix),
         linker_param_file_feature,
         compiler_input_feature,
         compiler_output_feature,
@@ -778,13 +761,18 @@ cc_features = rule(
     implementation = _cc_features_impl,
     doc = "A rule to create features for cc toolchain config.",
     attrs = {
+        "b_prefix": attr.label(
+            doc = "Specifies where to find the executables, libraries, include " +
+                  "files and data files of the compiler itself (-B flag).",
+            allow_single_file = True,
+        ),
         "compile_flags": attr.string_list(
             doc = "Flags always added to compile actions.",
             default = [],
         ),
         "cxx_flags": attr.string_list(
             doc = "Flags always added to c++ actions.",
-            default = ["-std=c++20"],
+            default = [],
         ),
         "link_flags": attr.string_list(
             doc = "Flags always added to link actions.",

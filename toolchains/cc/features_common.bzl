@@ -139,6 +139,20 @@ def get_toolchain_link_flags_feature(flags):
         ],
     )
 
+def get_b_prefix_feature(file):
+    return feature(
+        name = "b_prefix",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LINK_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = ["-B", file.path] if file else []),
+                ],
+            ),
+        ],
+    )
+
 no_legacy_features = feature(
     name = "no_legacy_features",
     enabled = True,
