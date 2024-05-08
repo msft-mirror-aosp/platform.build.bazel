@@ -213,3 +213,46 @@ register_toolchains(
 register_toolchains(
     "//build/bazel/toolchains/python:linux_x86_toolchain",
 )
+
+# Rust crates, note that these follow the AOSP style of naming, where every crate
+# is basically @..crate..
+# Once the rust team has an automated bazel generation tool, we will no longer need these.
+# See b/335734830 for details
+[
+    new_local_repository(
+        name = create,
+        build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.{}".format(create),
+        path = "external/rust/crates/{}".format(create),
+    )
+    for create in [
+        "bitflags",
+        "byteorder",
+        "cfg-if",
+        "libc",
+        "log",
+        "memoffset",
+        "nix",
+        "once_cell",
+        "proc-macro2",
+        "quote",
+        "remain",
+        "syn",
+        "thiserror-impl",
+        "thiserror",
+        "unicode-ident",
+        "zerocopy-derive",
+        "zerocopy",
+    ]
+]
+
+new_local_repository(
+    name = "winapi",
+    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi",
+    path = "hardware/generic/goldfish/third_party/rust/crates/winapi",
+)
+
+new_local_repository(
+    name = "winapi-x86_64-pc-windows-gnu",
+    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi-x86_64-pc-windows-gnu",
+    path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
+)
