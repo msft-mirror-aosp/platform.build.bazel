@@ -62,6 +62,8 @@ cc_toolchain_import(
         ":sysroot/usr/lib/librt.so",
         ":sysroot/usr/lib/librt.so.1",
         ":sysroot/usr/lib/librt-2.17.so",
+        ":sysroot/usr/lib/libutil.so",
+        ":sysroot/usr/lib/libutil-2.17.so",
         ":x86_64-linux/lib64/libgcc_s.so",
         ":x86_64-linux/lib64/libgcc_s.so.1",
     ],
