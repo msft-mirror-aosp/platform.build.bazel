@@ -1,23 +1,21 @@
-"""
-Copyright (C) 2023 The Android Open Source Project
+# Copyright (C) 2023 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
-load(":cc_test.bzl", "cc_test")
+load(":cc_library_common_test.bzl", "target_provides_androidmk_info_test")
 load(":cc_library_shared.bzl", "cc_library_shared")
 load(":cc_library_static.bzl", "cc_library_static")
-load(":cc_library_common_test.bzl", "target_provides_androidmk_info_test")
+load(":cc_test.bzl", "cc_test")
 
 def _cc_test_provides_androidmk_info():
     name = "cc_test_provides_androidmk_info"
@@ -49,7 +47,8 @@ def _cc_test_provides_androidmk_info():
         deps = [dep_name],
         whole_archive_deps = [whole_archive_dep_name],
         dynamic_deps = [dynamic_dep_name],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        runs_on = ["host_without_device", "device"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
         tags = ["manual"],
     )
     android_test_name = name + "_android"
@@ -60,7 +59,7 @@ def _cc_test_provides_androidmk_info():
         expected_static_libs = [dep_name, "libgtest_main", "libgtest", "libc++demangle", "libunwind"],
         expected_whole_static_libs = [whole_archive_dep_name],
         expected_shared_libs = [dynamic_dep_name, "libc++", "libc", "libdl", "libm"],
-        target_compatible_with = ["//build/bazel/platforms/os:android"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:android"],
     )
     target_provides_androidmk_info_test(
         name = linux_test_name,
@@ -68,7 +67,7 @@ def _cc_test_provides_androidmk_info():
         expected_static_libs = [dep_name, "libgtest_main", "libgtest"],
         expected_whole_static_libs = [whole_archive_dep_name],
         expected_shared_libs = [dynamic_dep_name, "libc++"],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
     return [
         android_test_name,

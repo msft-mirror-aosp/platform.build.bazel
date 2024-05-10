@@ -1,22 +1,18 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 """A macro to handle build number stamping."""
-
-load(":stripped_cc_common.bzl", "StrippedCcBinaryInfo")
 
 def stamp_build_number(ctx, prefix = "", extension = ""):
     if len(ctx.files.src) != 1:
@@ -60,11 +56,11 @@ common_attrs = {
         cfg = "exec",
         doc = "The build number stamp tool.",
         executable = True,
-        default = "//prebuilts/build-tools:linux-x86/bin/symbol_inject",
+        default = "//build/soong/symbol_inject/cmd:symbol_inject",
         allow_single_file = True,
     ),
     "_android_constraint": attr.label(
-        default = Label("//build/bazel/platforms/os:android"),
+        default = Label("//build/bazel_common_rules/platforms/os:android"),
     ),
 }
 
@@ -82,6 +78,7 @@ def _versioned_binary_impl(ctx):
         DefaultInfo(
             files = depset([out_file]),
             executable = out_file,
+            runfiles = ctx.attr.src[DefaultInfo].default_runfiles,
         ),
     ] + common_providers
 
@@ -108,8 +105,6 @@ versioned_shared_library = rule(
         common_attrs,
         src = attr.label(
             mandatory = True,
-            # TODO(b/217908237): reenable allow_single_file
-            # allow_single_file = True,
             providers = [CcSharedLibraryInfo],
         ),
     ),

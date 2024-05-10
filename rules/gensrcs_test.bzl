@@ -1,22 +1,20 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("@bazel_skylib//lib:new_sets.bzl", "sets")
-load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
 load("//build/bazel/rules:gensrcs.bzl", "gensrcs")
 
 SRCS = [
@@ -43,6 +41,23 @@ def _test_actions_impl(ctx):
     # Expect an action for each pair of input/output file
     asserts.equals(env, expected = len(SRCS), actual = len(actions))
 
+    package = target.label.package
+    data_paths = [paths.join(package, d) for d in ctx.attr.data]
+    data_set = sets.make(data_paths)
+    for action in actions:
+        for d in data_paths:
+            asserts.true(
+                env,
+                d in " ".join(action.argv),
+                "Expected data file %s to be in command %s" % (d, action.argv),
+            )
+        inputs = sets.make([i.path for i in action.inputs.to_list()])
+        asserts.true(
+            env,
+            sets.is_subset(data_set, inputs),
+            "Expected %s to be a subset of all inputs %s" % (data_set, inputs),
+        )
+
     asserts.set_equals(
         env,
         sets.make([
@@ -64,24 +79,32 @@ def _test_actions_impl(ctx):
 
     return analysistest.end(env)
 
-actions_test = analysistest.make(_test_actions_impl)
+actions_test = analysistest.make(
+    _test_actions_impl,
+    attrs = {
+        "data": attr.string_list(),
+    },
+)
 
 def _test_actions():
     name = "gensrcs_output_paths"
     test_name = name + "_test"
+    data = ["foo/bar.txt", "baz.txt"]
 
     # Rule under test
     gensrcs(
         name = name,
-        cmd = "cat $(SRC) > $(OUT)",
+        cmd = "cat $(SRC) > $(OUT) && cat $(location foo/bar.txt) >> $(OUT) && cat $(location baz.txt) >> $(OUT)",
         srcs = SRCS,
         output_extension = OUTPUT_EXTENSION,
+        data = data,
         tags = ["manual"],  # make sure it's not built using `:all`
     )
 
     actions_test(
         name = test_name,
         target_under_test = name,
+        data = data,
     )
     return test_name
 
@@ -165,7 +188,7 @@ __gensrcs_tool_builds_for_host_test = analysistest.make(
 
 def _gensrcs_tool_builds_for_host_test(**kwargs):
     __gensrcs_tool_builds_for_host_test(
-        target_compatible_with = ["//build/bazel/platforms/os:android"],  # ensure target != host so there is a transition
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:android"],  # ensure target != host so there is a transition
         **kwargs
     )
 
@@ -177,7 +200,7 @@ def _test_gensrcs_tool_builds_for_host():
         cmd = "touch $@",
         target_compatible_with = select({
             # only supported OS is that specified as host_platform
-            "//build/bazel/platforms/os:linux": [],
+            "//build/bazel_common_rules/platforms/os:linux": [],
             "//conditions:default": ["@platforms//:incompatible"],
         }),
         tags = ["manual"],

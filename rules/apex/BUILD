@@ -1,13 +1,26 @@
-load("//build/bazel/flags:common.bzl", "is_env_true")
-load("//build/bazel/product_variables:constants.bzl", "constants")
-load("//build/bazel/rules/apex:toolchain.bzl", "apex_toolchain")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "bool_setting", "string_list_setting", "string_setting")
-load("@soong_injection//product_config:product_variables.bzl", "product_vars")
-load("//build/bazel/rules/common:api.bzl", api_levels = "api_levels_with_previews")
-load(":apex_test.bzl", "apex_test_suite")
+load("@env//:env.bzl", "env")
+load("@soong_injection//api_levels:platform_versions.bzl", "platform_versions")
+load("//build/bazel/flags:common.bzl", "is_env_true")
+load("//build/bazel/platforms/arch/variants:constants.bzl", "arch_variant_to_constraints")
+load("//build/bazel/rules:metadata.bzl", "metadata")
+load("//build/bazel/rules/apex:toolchain.bzl", "apex_toolchain")
+load("//build/bazel/rules/common:api.bzl", "api")
 load(":apex_aab_test.bzl", "apex_aab_test_suite")
 load(":apex_key_test.bzl", "apex_key_test_suite")
-load("@env//:env.bzl", "env")
+load(":apex_mk_test.bzl", "apex_mk_test_suite")
+load(":apex_test.bzl", "apex_test_suite")
+
+# Setup package and default_metadata_file for _test_apex_sbom in apex_test.bzl
+package(default_package_metadata = [":default_metadata_file"])
+
+metadata(name = "default_metadata_file")
+
+string_setting(
+    name = "api_domain",
+    build_setting_default = "system",
+    visibility = ["//visibility:public"],
+)
 
 string_setting(
     name = "apex_name",
@@ -27,17 +40,45 @@ string_setting(
     visibility = ["//visibility:public"],
 )
 
-string_setting(
-    name = "apex_global_min_sdk_version_override",
-    # TODO(b/269577299): Make this read from //build/bazel/product_config:product_vars instead.
-    build_setting_default = product_vars.get("ApexGlobalMinSdkVersionOverride", ""),
-    visibility = ["//visibility:public"],
-)
-
 bool_setting(
     name = "within_apex",
     build_setting_default = False,
     visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "system",
+    constraint_values = [
+        arch_variant_to_constraints["android"],
+    ],
+    flag_values = {
+        ":api_domain": "system",
+        ":within_apex": "False",
+    },
+)
+
+# config setting to build sdk variants
+config_setting(
+    name = "unbundled_app",
+    constraint_values = [
+        arch_variant_to_constraints["android"],
+    ],
+    flag_values = {
+        ":api_domain": "unbundled_app",
+        ":within_apex": "False",
+    },
+)
+
+config_setting(
+    name = "unbundled_app.arm",
+    constraint_values = [
+        arch_variant_to_constraints["android"],
+        arch_variant_to_constraints["arm"],
+    ],
+    flag_values = {
+        ":api_domain": "unbundled_app",
+        ":within_apex": "False",
+    },
 )
 
 config_setting(
@@ -57,7 +98,7 @@ config_setting(
 config_setting(
     name = "android-in_apex",
     constraint_values = [
-        constants.ArchVariantToConstraints["android"],
+        arch_variant_to_constraints["android"],
     ],
     flag_values = {
         ":within_apex": "True",
@@ -67,7 +108,7 @@ config_setting(
 config_setting(
     name = "android-non_apex",
     constraint_values = [
-        constants.ArchVariantToConstraints["android"],
+        arch_variant_to_constraints["android"],
     ],
     flag_values = {
         ":within_apex": "False",
@@ -77,7 +118,7 @@ config_setting(
 config_setting(
     name = "linux_bionic-in_apex",
     constraint_values = [
-        constants.ArchVariantToConstraints["linux_bionic"],
+        arch_variant_to_constraints["linux_bionic"],
     ],
     flag_values = {
         ":within_apex": "True",
@@ -87,7 +128,7 @@ config_setting(
 config_setting(
     name = "linux_bionic-non_apex",
     constraint_values = [
-        constants.ArchVariantToConstraints["linux_bionic"],
+        arch_variant_to_constraints["linux_bionic"],
     ],
     flag_values = {
         ":within_apex": "False",
@@ -100,12 +141,6 @@ string_list_setting(
     visibility = ["//visibility:public"],
 )
 
-bool_flag(
-    name = "apexer_verbose",
-    build_setting_default = False,
-    visibility = ["//visibility:public"],
-)
-
 string_setting(
     name = "min_sdk_version",
     build_setting_default = "",
@@ -114,17 +149,29 @@ string_setting(
 
 [
     config_setting(
-        name = "min_sdk_version_" + str(api),
+        name = "min_sdk_version_" + str(level),
         flag_values = {
-            ":min_sdk_version": str(api),
+            ":min_sdk_version": str(level),
         },
     )
-    for api in api_levels.values()
+    for level in api.api_levels.values()
 ]
 
 bool_flag(
     name = "unsafe_disable_apex_allowed_deps_check",
     build_setting_default = is_env_true(env.get("UNSAFE_DISABLE_APEX_ALLOWED_DEPS_CHECK")),
+    visibility = ["//visibility:public"],
+)
+
+bool_flag(
+    name = "unbundled_build_target_sdk_with_api_fingerprint",
+    build_setting_default = is_env_true(env.get("UNBUNDLED_BUILD_TARGET_SDK_WITH_API_FINGERPRINT")),
+    visibility = ["//visibility:public"],
+)
+
+string_setting(
+    name = "platform_sdk_codename",
+    build_setting_default = platform_versions.platform_sdk_codename,
     visibility = ["//visibility:public"],
 )
 
@@ -145,7 +192,7 @@ apex_toolchain(
     jsonmodify = "//build/soong/scripts:jsonmodify",
     manifest_fixer = "//build/soong/scripts:manifest_fixer",
     mke2fs = "//external/e2fsprogs/misc:mke2fs",
-    notice_generator = "//build/bazel/compliance/cmd:bazel_notice_gen",
+    notice_generator = "//build/bazel/compliance:bazel_notice_gen",
     readelf = "//prebuilts/clang/host/linux-x86:llvm-readelf",
     resize2fs = "//external/e2fsprogs/resize:resize2fs",
     sefcontext_compile = "//external/selinux/libselinux:sefcontext_compile",
@@ -155,11 +202,11 @@ apex_toolchain(
 toolchain(
     name = "apex_toolchain_def",
     exec_compatible_with = [
-        "//build/bazel/platforms/arch:x86_64",
-        "//build/bazel/platforms/os:linux",
+        "//build/bazel_common_rules/platforms/arch:x86_64",
+        "//build/bazel_common_rules/platforms/os:linux",
     ],
     target_compatible_with = [
-        "//build/bazel/platforms/os:android",
+        "//build/bazel_common_rules/platforms/os:android",
     ],
     toolchain = ":apex_toolchain",
     toolchain_type = "//build/bazel/rules/apex:apex_toolchain_type",
@@ -175,6 +222,10 @@ apex_aab_test_suite(
 
 apex_key_test_suite(
     name = "apex_key_tests",
+)
+
+apex_mk_test_suite(
+    name = "apex_mk_tests",
 )
 
 filegroup(

@@ -13,10 +13,14 @@
 # limitations under the License.
 
 load("//build/bazel/platforms:platform_utils.bzl", "platforms")
-load(":cc_library_static.bzl", "cc_library_static")
+load("//build/bazel/rules/apis:api_surface.bzl", "MODULE_LIB_API", "PUBLIC_API")
+load("//build/bazel/rules/common:api.bzl", "api")
+load(":cc_library_headers.bzl", "cc_library_headers")
 load(":cc_library_shared.bzl", "CcStubLibrariesInfo")
-load(":fdo_profile_transitions.bzl", "drop_fdo_profile_transition")
-load("//build/bazel/rules/common:api.bzl", "parse_api_level_from_version", api_levels = "api_levels_with_previews")
+load(":cc_library_static.bzl", "cc_library_static")
+load(":composed_transitions.bzl", "drop_lto_sanitizer_and_fdo_profile_incoming_transition")
+load(":fdo_profile_transitions.bzl", "FDO_PROFILE_ATTR_KEY")
+load(":generate_toc.bzl", "CcTocInfo", "generate_toc")
 
 # This file contains the implementation for the cc_stub_library rule.
 #
@@ -30,6 +34,20 @@ CcStubInfo = provider(
         "abi_symbol_list": "A plain-text list of all symbols of this library for the specific API version.",
     },
 )
+
+def _stub_gen_additional_args(ctx):
+    if ctx.attr.api_surface == PUBLIC_API:
+        return []
+
+    # TODO: Support LLNDK
+    # Module-lib api, i.e. apex use case
+    apex_stub_args = ["--systemapi", "--apex"]
+
+    # If this is not an ndk library, add --no-ndk
+    if not ctx.attr.included_in_ndk:
+        # https://cs.android.com/android/_/android/platform/build/soong/+/main:cc/library.go;l=1318-1323;drc=d9b7f17f372a196efc82112c29efb86abf91e266;bpv=1;bpt=0
+        apex_stub_args.append("--no-ndk")
+    return apex_stub_args
 
 def _cc_stub_gen_impl(ctx):
     # The name of this target.
@@ -47,9 +65,8 @@ def _cc_stub_gen_impl(ctx):
     ndkstubgen_args.add_all(["--api", ctx.attr.version])
     ndkstubgen_args.add_all(["--api-map", ctx.file._api_levels_file])
 
-    # TODO(b/207812332): This always parses and builds the stub library as a dependency of an APEX. Parameterize this
-    # for non-APEX use cases.
-    ndkstubgen_args.add_all(["--systemapi", "--apex", ctx.file.symbol_file])
+    ndkstubgen_args.add_all(_stub_gen_additional_args(ctx))
+    ndkstubgen_args.add(ctx.file.symbol_file)
     ndkstubgen_args.add_all(outputs)
     ctx.actions.run(
         executable = ctx.executable._ndkstubgen,
@@ -78,9 +95,26 @@ def _cc_stub_gen_impl(ctx):
 cc_stub_gen = rule(
     implementation = _cc_stub_gen_impl,
     attrs = {
+        FDO_PROFILE_ATTR_KEY: attr.label(),
         # Public attributes
         "symbol_file": attr.label(mandatory = True, allow_single_file = [".map.txt"]),
         "version": attr.string(mandatory = True, default = "current"),
+        "source_library_label": attr.label(mandatory = True),
+        "api_surface": attr.string(mandatory = True, values = [PUBLIC_API, MODULE_LIB_API]),
+        "included_in_ndk": attr.bool(
+            mandatory = False,
+            default = False,
+            doc = """
+Set to true if the source library is part of the NDK (e.g. libc, liblog). This property is a no-op unless api_surface = module-libapi.
+When generating the stubs for this API surface, this property will be used to gate apis
+1. If True, every un-annotated api, i.e. public api will be present in stubs
+2. If False, un-annonated apis will be missing in stubs. Only #systemapi and #apex annotated apis will be present
+
+Another way to interpret this
+- For (1: True) module-libapi is a superset of publicapi and (#systemapi/#apex symbols)
+- For (2: False), module-libapi is just (#systemapi/#apex symbols)
+""",
+        ),
         # Private attributes
         "_api_levels_file": attr.label(default = "@soong_injection//api_levels:api_levels.json", allow_single_file = True),
         "_ndkstubgen": attr.label(default = "//build/soong/cc/ndkstubgen", executable = True, cfg = "exec"),
@@ -90,7 +124,7 @@ cc_stub_gen = rule(
 
 CcStubLibrarySharedInfo = provider(
     fields = {
-        "source_library": "The source library label of the cc_stub_library_shared",
+        "source_library_label": "The source library label of the cc_stub_library_shared",
     },
 )
 
@@ -98,14 +132,17 @@ CcStubLibrarySharedInfo = provider(
 # from a library's .map.txt files and ndkstubgen. The top level target returns the same
 # providers as a cc_library_shared, with the addition of a CcStubInfo
 # containing metadata files and versions of the stub library.
-def cc_stub_library_shared(name, stubs_symbol_file, version, export_includes, soname, source_library, deps, target_compatible_with, features, tags):
+def cc_stub_library_shared(name, stubs_symbol_file, version, export_includes, soname, source_library_label, deps, target_compatible_with, features, tags, api_surface, included_in_ndk = False):
     # Call ndkstubgen to generate the stub.c source file from a .map.txt file. These
     # are accessible in the CcStubInfo provider of this target.
     cc_stub_gen(
         name = name + "_files",
         symbol_file = stubs_symbol_file,
         version = version,
+        source_library_label = source_library_label,
         target_compatible_with = target_compatible_with,
+        api_surface = api_surface,
+        included_in_ndk = included_in_ndk,
         tags = ["manual"],
     )
 
@@ -170,38 +207,42 @@ def cc_stub_library_shared(name, stubs_symbol_file, version, export_includes, so
         name = name,
         stub_target = name + "_files",
         library_target = name + "_so",
-        deps = [name + "_root"],
-        source_library = source_library,
+        root = name + "_root",
+        source_library_label = source_library_label,
         version = version,
         tags = tags,
     )
 
 def _cc_stub_library_shared_impl(ctx):
-    # Using a "deps" label_list instead of a single mandatory label attribute
-    # is a hack to support aspect propagation of graph_aspect of the native
-    # cc_shared_library. The aspect will only be applied and propagated along
-    # a label_list attribute named "deps".
-    if len(ctx.attr.deps) != 1:
-        fail("Exactly one 'deps' must be specified for cc_stub_library_shared")
-
-    api_level = str(parse_api_level_from_version(ctx.attr.version))
-    version_macro_name = "__" + ctx.attr.source_library.label.name.upper() + "__API__=" + api_level
+    source_library_label = Label(ctx.attr.source_library_label)
+    api_level = str(api.parse_api_level_from_version(ctx.attr.version))
+    version_macro_name = "__" + source_library_label.name.upper() + "_API__=" + api_level
     compilation_context = cc_common.create_compilation_context(
         defines = depset([version_macro_name]),
     )
 
-    cc_infos = [ctx.attr.deps[0][CcInfo]]
-    cc_infos.append(CcInfo(compilation_context = compilation_context))
-    cc_info = cc_common.merge_cc_infos(cc_infos = cc_infos)
+    cc_info = cc_common.merge_cc_infos(cc_infos = [
+        ctx.attr.root[CcInfo],
+        CcInfo(compilation_context = compilation_context),
+    ])
+
+    library_target_so_files = ctx.attr.library_target.files.to_list()
+    if len(library_target_so_files) != 1:
+        fail("expected single .so output file from library_target (%s); got %s" % (
+            ctx.attr.library_target.label,
+            library_target_so_files,
+        ))
+    toc_info = generate_toc(ctx, ctx.attr.name, library_target_so_files[0])
 
     return [
         ctx.attr.library_target[DefaultInfo],
         ctx.attr.library_target[CcSharedLibraryInfo],
         ctx.attr.stub_target[CcStubInfo],
+        toc_info,
         cc_info,
         CcStubLibrariesInfo(has_stubs = True),
         OutputGroupInfo(rule_impl_debug_files = depset()),
-        CcStubLibrarySharedInfo(source_library = ctx.attr.source_library),
+        CcStubLibrarySharedInfo(source_library_label = source_library_label),
     ]
 
 _cc_stub_library_shared = rule(
@@ -209,22 +250,68 @@ _cc_stub_library_shared = rule(
     doc = "Top level rule to merge CcStubInfo and CcSharedLibraryInfo into a single target",
     # Incoming transition to reset //command_line_option:fdo_profile to None
     # to converge the configurations of the stub targets
-    cfg = drop_fdo_profile_transition,
+    # This also resets any lto transitions.
+    cfg = drop_lto_sanitizer_and_fdo_profile_incoming_transition,
     attrs = {
-        "stub_target": attr.label(mandatory = True),
-        "library_target": attr.label(mandatory = True),
-        # "deps" should be a single element: the root target of the stub library.
-        # See _cc_stub_library_shared_impl comment for explanation.
-        "deps": attr.label_list(mandatory = True),
-        "source_library": attr.label(mandatory = True),
+        FDO_PROFILE_ATTR_KEY: attr.label(),
+        "stub_target": attr.label(
+            providers = [CcStubInfo],
+            mandatory = True,
+        ),
+        "library_target": attr.label(
+            providers = [CcSharedLibraryInfo],
+            mandatory = True,
+        ),
+        "root": attr.label(
+            providers = [CcInfo],
+            mandatory = True,
+        ),
+        "source_library_label": attr.string(mandatory = True),
         "version": attr.string(mandatory = True),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
+        "_toc_script": attr.label(
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+            default = "//build/soong/scripts:toc.sh",
+        ),
+        "_readelf": attr.label(
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+            default = "//prebuilts/clang/host/linux-x86:llvm-readelf",
+        ),
     },
+    provides = [
+        CcSharedLibraryInfo,
+        CcTocInfo,
+        CcInfo,
+        CcStubInfo,
+        CcStubLibrariesInfo,
+        CcStubLibrarySharedInfo,
+    ],
 )
 
-def cc_stub_suite(name, source_library, versions, symbol_file, export_includes = [], soname = "", deps = [], data = [], target_compatible_with = [], features = [], tags = ["manual"]):
+def cc_stub_suite(
+        name,
+        source_library_label,
+        versions,
+        symbol_file,
+        export_includes = [],
+        soname = "",
+        deps = [],
+        data = [],  # @unused
+        target_compatible_with = [],
+        features = [],
+        tags = ["manual"],
+        api_surface = PUBLIC_API,
+        included_in_ndk = False):
+    # Implicitly add "current" to versions. This copies the behavior from Soong (aosp/1641782)
+    if "current" not in versions:
+        versions.append("current")
+
     for version in versions:
         cc_stub_library_shared(
             # Use - as the seperator of name and version. "current" might be the version of some libraries.
@@ -233,17 +320,27 @@ def cc_stub_suite(name, source_library, versions, symbol_file, export_includes =
             stubs_symbol_file = symbol_file,
             export_includes = export_includes,
             soname = soname,
-            source_library = source_library,
+            source_library_label = str(native.package_relative_label(source_library_label)),
             deps = deps,
             target_compatible_with = target_compatible_with,
             features = features,
             tags = tags,
+            api_surface = api_surface,
+            included_in_ndk = included_in_ndk,
         )
+
+    # Create a header library target for this API surface (ModuleLibApi)
+    # The external @api_surfaces repository will contain an alias to this header library.
+    cc_library_headers(
+        name = "%s_%s_headers" % (name, MODULE_LIB_API),
+        export_includes = export_includes,
+        deps = deps,  # Necessary for exporting headers that might exist in a different directory (e.g. libEGL)
+    )
 
     native.alias(
         # Use _ as the seperator of name and version in alias. So there is no
         # duplicated name if "current" is one of the versions of a library.
         name = name + "_current",
-        actual = name + "-" + versions[-1],
+        actual = name + "-" + "current",
         tags = tags,
     )

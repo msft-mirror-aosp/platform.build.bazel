@@ -1,29 +1,32 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//lib:unittest.bzl", "analysistest", "asserts")
+load("//build/bazel/rules/cc:cc_binary.bzl", "cc_binary")
+load("//build/bazel/rules/cc:cc_library_headers.bzl", "cc_library_headers")
 load("//build/bazel/rules/cc:cc_library_shared.bzl", "cc_library_shared")
 load("//build/bazel/rules/cc:cc_library_static.bzl", "cc_library_static")
-load("//build/bazel/rules/cc:cc_library_headers.bzl", "cc_library_headers")
 load("//build/bazel/rules/cc:cc_prebuilt_library_static.bzl", "cc_prebuilt_library_static")
-load("//build/bazel/rules/cc:cc_binary.bzl", "cc_binary")
-load(":cc_library_common_test.bzl", "target_provides_androidmk_info_test")
+load(
+    "//build/bazel/rules/test_common:flags.bzl",
+    "action_flags_absent_for_mnemonic_test",
+    "action_flags_present_only_for_mnemonic_test",
+)
 load("//build/bazel/rules/test_common:paths.bzl", "get_output_and_package_dir_based_path", "get_package_dir_based_path")
 load("//build/bazel/rules/test_common:rules.bzl", "expect_failure_test")
+load(":cc_library_common_test.bzl", "target_provides_androidmk_info_test", "target_sdk_variant_provides_androidmk_info_test")
 
 def _cc_library_static_propagating_compilation_context_test_impl(ctx):
     env = analysistest.begin(ctx)
@@ -31,11 +34,11 @@ def _cc_library_static_propagating_compilation_context_test_impl(ctx):
     cc_info = target[CcInfo]
     compilation_context = cc_info.compilation_context
 
-    header_paths = [f.path for f in compilation_context.headers.to_list()]
+    header_paths = [f.short_path for f in compilation_context.headers.to_list()]
     for hdr in ctx.files.expected_hdrs:
         asserts.true(
             env,
-            hdr.path in header_paths,
+            hdr.short_path in header_paths,
             "Did not find {hdr} in includes: {hdrs}.".format(hdr = hdr, hdrs = compilation_context.headers),
         )
 
@@ -300,7 +303,7 @@ def _cc_rules_do_not_allow_absolute_includes():
         )
         cc_library_headers(
             name = library_headers_name,
-            absolute_includes = [include_dir],
+            export_absolute_includes = [include_dir],
             tags = ["manual"],
         )
         cc_library_shared(
@@ -436,6 +439,35 @@ def _cc_library_static_whole_archive_deps_objects_precede_target_objects():
 
     return test_name
 
+def _cc_library_static_whole_archive_deps_objects_excluded_when_shared_linking():
+    name = "cc_library_static_whole_archive_deps_objects_excluded_when_shared_linking"
+    dep_name = name + "_dep"
+    test_name = name + "_test"
+
+    cc_library_static(
+        name = dep_name,
+        srcs = ["first.c"],
+        tags = ["manual"],
+    )
+
+    cc_library_static(
+        name = name,
+        shared_linking = True,
+        srcs = ["second.c"],
+        whole_archive_deps = [dep_name],
+        tags = ["manual"],
+    )
+
+    _cc_library_static_linking_object_ordering_test(
+        name = test_name,
+        target_under_test = name,
+        expected_objects_in_order = [
+            "second.o",
+        ],
+    )
+
+    return test_name
+
 def _cc_library_static_provides_androidmk_info():
     name = "cc_library_static_provides_androidmk_info"
     dep_name = name + "_static_dep"
@@ -467,14 +499,32 @@ def _cc_library_static_provides_androidmk_info():
         tags = ["manual"],
     )
     android_test_name = test_name + "_android"
+    android_sdk_variant_test_name = test_name + "_android_sdk_variant"
     linux_test_name = test_name + "_linux"
     target_provides_androidmk_info_test(
         name = android_test_name,
         target_under_test = name,
         expected_static_libs = [dep_name, "libc++_static", "libc++demangle"],
         expected_whole_static_libs = [whole_archive_dep_name],
-        expected_shared_libs = [dynamic_dep_name, "libc", "libdl", "libm"],
-        target_compatible_with = ["//build/bazel/platforms/os:android"],
+        expected_shared_libs = [dynamic_dep_name, "libc_stub_libs-current", "libdl_stub_libs-current", "libm_stub_libs-current"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:android"],
+    )
+    target_sdk_variant_provides_androidmk_info_test(
+        name = android_sdk_variant_test_name,
+        target_under_test = name,
+        expected_static_libs = [dep_name],
+        expected_whole_static_libs = [whole_archive_dep_name],
+        expected_shared_libs = [
+            dynamic_dep_name,
+            # bionic NDK stubs from system_dynamic_dep_defaults
+            "libc.ndk_stub_libs-current",
+            "libdl.ndk_stub_libs-current",
+            "libm.ndk_stub_libs-current",
+            # from STL: "ndk_system".
+            # sdk variants default to system STL.
+            "libstdc++",
+        ],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:android"],
     )
     target_provides_androidmk_info_test(
         name = linux_test_name,
@@ -482,11 +532,99 @@ def _cc_library_static_provides_androidmk_info():
         expected_static_libs = [dep_name, "libc++_static"],
         expected_whole_static_libs = [whole_archive_dep_name],
         expected_shared_libs = [dynamic_dep_name],
-        target_compatible_with = ["//build/bazel/platforms/os:linux"],
+        target_compatible_with = ["//build/bazel_common_rules/platforms/os:linux"],
     )
     return [
         android_test_name,
+        android_sdk_variant_test_name,
         linux_test_name,
+    ]
+
+def _cc_library_static_link_action_should_not_have_arch_cflags():
+    name = "cc_library_static_link_action_should_not_have_cflags"
+    cpp_compile_test_name = name + "_CppCompile_test"
+    cpp_link_test_name = name + "_CppLink_test"
+
+    # https://cs.android.com/android/platform/build/soong/+/master:cc/config/arm_device.go;l=57-59;drc=de7c7847e7e028d46fdff8268689f30163c4c231
+    arm_armv7_a_cflags = ["-march=armv7-a", "-mfloat-abi=softfp"]
+
+    cc_library_static(
+        name = name,
+        srcs = ["foo.cpp"],
+        tags = ["manual"],
+    )
+
+    action_flags_present_only_for_mnemonic_test(
+        name = cpp_compile_test_name,
+        target_under_test = name + "_cpp",
+        mnemonics = ["CppCompile"],
+        expected_flags = arm_armv7_a_cflags,
+        target_compatible_with = [
+            "//build/bazel_common_rules/platforms/os:android",
+            "//build/bazel/platforms/arch/variants:armv7-a-neon",
+        ],
+    )
+
+    action_flags_absent_for_mnemonic_test(
+        name = cpp_link_test_name,
+        target_under_test = name,
+        mnemonics = ["CppLink"],
+        expected_absent_flags = arm_armv7_a_cflags,
+        target_compatible_with = [
+            "//build/bazel_common_rules/platforms/os:android",
+            "//build/bazel/platforms/arch/variants:armv7-a-neon",
+        ],
+    )
+
+    return [
+        cpp_compile_test_name,
+        cpp_link_test_name,
+    ]
+
+def _cc_library_static_defines_do_not_check_manual_binder_interfaces():
+    name = "_cc_library_static_defines_do_not_check_manual_binder_interfaces"
+    cpp_lib_name = name + "_cpp"
+    cpp_test_name = cpp_lib_name + "_test"
+    c_lib_name = name + "_c"
+    c_test_name = c_lib_name + "_test"
+
+    cc_library_static(
+        name = name,
+        srcs = ["a.cpp"],
+        srcs_c = ["b.c"],
+        tags = ["manual"],
+    )
+    action_flags_present_only_for_mnemonic_test(
+        name = cpp_test_name,
+        target_under_test = cpp_lib_name,
+        mnemonics = ["CppCompile"],
+        expected_flags = [
+            "-DDO_NOT_CHECK_MANUAL_BINDER_INTERFACES",
+        ],
+    )
+    action_flags_present_only_for_mnemonic_test(
+        name = c_test_name,
+        target_under_test = c_lib_name,
+        mnemonics = ["CppCompile"],
+        expected_flags = [
+            "-DDO_NOT_CHECK_MANUAL_BINDER_INTERFACES",
+        ],
+    )
+
+    non_allowlisted_package_cpp_name = name + "_non_allowlisted_package_cpp"
+    action_flags_absent_for_mnemonic_test(
+        name = non_allowlisted_package_cpp_name,
+        target_under_test = "//build/bazel/examples/cc:foo_static_cpp",
+        mnemonics = ["CppCompile"],
+        expected_absent_flags = [
+            "-DDO_NOT_CHECK_MANUAL_BINDER_INTERFACES",
+        ],
+    )
+
+    return [
+        cpp_test_name,
+        c_test_name,
+        non_allowlisted_package_cpp_name,
     ]
 
 def cc_library_static_test_suite(name):
@@ -503,8 +641,11 @@ def cc_library_static_test_suite(name):
             _cc_library_static_does_not_propagate_implementation_dynamic_deps(),
             _cc_library_static_links_against_prebuilt_library(),
             _cc_library_static_whole_archive_deps_objects_precede_target_objects(),
+            _cc_library_static_whole_archive_deps_objects_excluded_when_shared_linking(),
         ] + (
             _cc_rules_do_not_allow_absolute_includes() +
-            _cc_library_static_provides_androidmk_info()
+            _cc_library_static_provides_androidmk_info() +
+            _cc_library_static_link_action_should_not_have_arch_cflags() +
+            _cc_library_static_defines_do_not_check_manual_binder_interfaces()
         ),
     )

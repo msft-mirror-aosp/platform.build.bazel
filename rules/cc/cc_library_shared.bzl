@@ -1,46 +1,47 @@
-"""
-Copyright (C) 2021 The Android Open Source Project
+# Copyright (C) 2021 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
-
+load("@bazel_skylib//lib:paths.bzl", "paths")
+load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
+load("//build/bazel/rules/abi:abi_dump.bzl", "AbiDiffInfo", "abi_dump")
 load(
     ":cc_library_common.bzl",
     "CcAndroidMkInfo",
     "add_lists_defaulting_to_none",
-    "create_cc_androidmk_provider",
+    "check_valid_ldlibs",
     "parse_sdk_version",
-    "sanitizer_deps",
     "system_dynamic_deps_defaults",
 )
 load(":cc_library_static.bzl", "cc_library_static")
-load(":clang_tidy.bzl", "ClangTidyInfo", "collect_deps_clang_tidy_info")
+load(":clang_tidy.bzl", "collect_deps_clang_tidy_info")
+load(
+    ":composed_transitions.bzl",
+    "lto_and_fdo_profile_incoming_transition",
+    "lto_and_sanitizer_deps_transition",
+)
 load(
     ":fdo_profile_transitions.bzl",
-    "FDO_PROFILE_ATTR",
-    "fdo_profile_transition",
+    "FDO_PROFILE_ATTR_KEY",
 )
-load(":generate_toc.bzl", "shared_library_toc", _CcTocInfo = "CcTocInfo")
+load(":generate_toc.bzl", "CcTocInfo", "generate_toc")
 load(":stl.bzl", "stl_info_from_attr")
 load(":stripped_cc_common.bzl", "CcUnstrippedInfo", "stripped_shared_library")
 load(":versioned_cc_common.bzl", "versioned_shared_library")
-load("//build/bazel/rules/abi:abi_dump.bzl", "AbiDiffInfo", "abi_dump")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-
-CcTocInfo = _CcTocInfo
 
 def cc_library_shared(
         name,
+        stem = "",
         suffix = "",
         # Common arguments between shared_root and the shared library
         features = [],
@@ -73,16 +74,17 @@ def cc_library_shared(
         cpp_std = "",
         c_std = "",
         additional_linker_inputs = None,
+        additional_compiler_inputs = [],
 
         # Purely _shared arguments
         strip = {},
 
         # TODO(b/202299295): Handle data attribute.
-        data = [],
+        data = [],  # @unused
         use_version_lib = False,
         stubs_symbol_file = None,
         inject_bssl_hash = False,
-        sdk_version = "",
+        sdk_version = "",  # @unused
         min_sdk_version = "",
         abi_checker_enabled = None,
         abi_checker_symbol_file = None,
@@ -109,7 +111,6 @@ def cc_library_shared(
     shared_root_name = name + "__internal_root"
     unstripped_name = name + "_unstripped"
     stripped_name = name + "_stripped"
-    toc_name = name + "_toc"
 
     if system_dynamic_deps == None:
         system_dynamic_deps = system_dynamic_deps_defaults
@@ -123,34 +124,36 @@ def cc_library_shared(
         # This workaround is error-prone because it assumes all the fdo_profile
         # targets are created in a specific way (e.g. fdo_profile target named foo
         # uses an afdo profile file named foo.afdo in the same folder).
-        fdo_profile_path = fdo_profile + ".afdo"
+        fdo_profile_file = fdo_profile + "_file"
         linkopts = linkopts + [
             "-funique-internal-linkage-names",
             "-fprofile-sample-accurate",
-            "-fprofile-sample-use=$(location {})".format(fdo_profile_path),
+            # profile-sample-use is needed to ensure symbol ordering
+            "-fprofile-sample-use=$(location {})".format(fdo_profile_file),
             "-Wl,-mllvm,-no-warn-sample-unused=true",
         ]
         if additional_linker_inputs != None:
-            additional_linker_inputs = additional_linker_inputs + [fdo_profile_path]
+            additional_linker_inputs = additional_linker_inputs + [fdo_profile_file]
         else:
-            additional_linker_inputs = [fdo_profile_path]
+            additional_linker_inputs = [fdo_profile_file]
 
     stl_info = stl_info_from_attr(stl, True)
     linkopts = linkopts + stl_info.linkopts
     copts = copts + stl_info.cppflags
 
-    extra_archive_deps = []
     if not native_coverage:
         features = features + ["-coverage"]
     else:
         features = features + select({
             "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
+            "//build/bazel/rules/cc:android_coverage_lib_flag_cfi": ["android_coverage_lib"],
             "//conditions:default": [],
         })
 
         # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
-        extra_archive_deps = select({
+        deps = deps + select({
             "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
+            "//build/bazel/rules/cc:android_coverage_lib_flag_cfi": ["//system/extras/toolchain-extras:libprofile-clang-extras_cfi_support"],
             "//conditions:default": [],
         })
 
@@ -159,6 +162,7 @@ def cc_library_shared(
     # the static-variant srcs are different than the shared-variant srcs.
     cc_library_static(
         name = shared_root_name,
+        shared_linking = True,
         hdrs = hdrs,
         srcs = srcs,
         srcs_c = srcs_c,
@@ -182,7 +186,7 @@ def cc_library_shared(
         implementation_whole_archive_deps = implementation_whole_archive_deps,
         system_dynamic_deps = system_dynamic_deps,
         deps = deps,
-        whole_archive_deps = whole_archive_deps + extra_archive_deps,
+        whole_archive_deps = whole_archive_deps,
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -194,39 +198,21 @@ def cc_library_shared(
         tidy_disabled_srcs = tidy_disabled_srcs,
         tidy_timeout_srcs = tidy_timeout_srcs,
         tidy_gen_header_filter = tidy_gen_header_filter,
+        additional_compiler_inputs = additional_compiler_inputs,
     )
 
-    sanitizer_deps_name = name + "_sanitizer_deps"
-    sanitizer_deps(
-        name = sanitizer_deps_name,
-        dep = shared_root_name,
-        tags = ["manual"],
-    )
-
-    # implementation_deps and deps are to be linked into the shared library via
-    # --no-whole-archive. In order to do so, they need to be dependencies of
-    # a "root" of the cc_shared_library, but may not be roots themselves.
-    # Below we define stub roots (which themselves have no srcs) in order to facilitate
-    # this.
+    # dynamic deps are to be linked into the shared library via
+    # --no-whole-archive. In order to do so, they need to be dependencies of a
+    # "root" of the cc_shared_library, but may not be roots themselves.  Below
+    # we define stub roots (which themselves have no srcs) in order to
+    # facilitate this.
     imp_deps_stub = name + "_implementation_deps"
-    deps_stub = name + "_deps"
     native.cc_library(
         name = imp_deps_stub,
-        deps = (
-            implementation_deps +
-            implementation_whole_archive_deps +
-            stl_info.static_deps +
-            implementation_dynamic_deps +
-            system_dynamic_deps +
-            stl_info.shared_deps +
-            [sanitizer_deps_name]
-        ),
-        target_compatible_with = target_compatible_with,
-        tags = ["manual"],
-    )
-    native.cc_library(
-        name = deps_stub,
-        deps = deps + dynamic_deps,
+        deps = implementation_dynamic_deps +
+               system_dynamic_deps +
+               stl_info.shared_deps +
+               dynamic_deps,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
     )
@@ -238,7 +224,8 @@ def cc_library_shared(
         stl_info.shared_deps,
     )
 
-    soname = name + suffix + ".so"
+    filename_stem = stem or name
+    soname = filename_stem + suffix + ".so"
     soname_flag = "-Wl,-soname," + soname
 
     native.cc_shared_library(
@@ -246,7 +233,7 @@ def cc_library_shared(
         user_link_flags = linkopts + [soname_flag],
         dynamic_deps = shared_dynamic_deps,
         additional_linker_inputs = additional_linker_inputs,
-        deps = [shared_root_name, imp_deps_stub, deps_stub],
+        deps = [shared_root_name] + whole_archive_deps + [imp_deps_stub],
         features = features,
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
@@ -275,13 +262,6 @@ def cc_library_shared(
         target_compatible_with = target_compatible_with,
         tags = ["manual"],
         **strip
-    )
-
-    shared_library_toc(
-        name = toc_name,
-        src = stripped_name,
-        target_compatible_with = target_compatible_with,
-        tags = ["manual"],
     )
 
     # The logic here is based on the shouldCreateSourceAbiDumpForLibrary() in sabi.go
@@ -325,13 +305,14 @@ def cc_library_shared(
         shared_debuginfo = unstripped_name,
         deps = [shared_root_name],
         features = features,
-        table_of_contents = toc_name,
-        output_file = soname,
+        output_file = paths.join(name, soname),  # Prevent name collision by generating in a directory unique to the target
         target_compatible_with = target_compatible_with,
         has_stubs = stubs_symbol_file != None,
         runtime_deps = runtime_deps,
         abi_dump = abi_dump_name,
         fdo_profile = fdo_profile,
+        linkopts = linkopts,
+        package_name = native.package_name(),
         tags = tags,
     )
 
@@ -355,26 +336,17 @@ def _create_dynamic_library_linker_input_for_file(ctx, shared_info, output):
     )
     return new_linker_input
 
-def _correct_cc_shared_library_linking(ctx, shared_info, new_output, static_root):
+def _correct_cc_shared_library_linking(ctx, shared_info, new_output):
     # we may have done some post-processing of the shared library
     # replace the linker_input that has not been post-processed with the
     # library that has been post-processed
     new_linker_input = _create_dynamic_library_linker_input_for_file(ctx, shared_info, new_output)
 
-    # only export the static internal root, we include other libraries as roots
-    # that should be linked as alwayslink; however, if they remain as exports,
-    # they will be linked dynamically, not statically when they should be
-    static_root_label = str(static_root.label)
-    if static_root_label not in shared_info.exports:
-        fail("Expected %s in exports %s" % (static_root_label, shared_info.exports))
-    exports = [static_root_label]
-
     return CcSharedLibraryInfo(
         dynamic_deps = shared_info.dynamic_deps,
-        exports = exports,
+        exports = shared_info.exports,
         link_once_static_libs = shared_info.link_once_static_libs,
         linker_input = new_linker_input,
-        preloaded_deps = shared_info.preloaded_deps,
     )
 
 CcStubLibrariesInfo = provider(
@@ -397,6 +369,8 @@ CcSharedLibraryOutputInfo = provider(
 )
 
 def _cc_library_shared_proxy_impl(ctx):
+    check_valid_ldlibs(ctx, ctx.attr.linkopts)
+
     # Using a "deps" label_list instead of a single mandatory label attribute
     # is a hack to support aspect propagation of graph_aspect of the native
     # cc_shared_library. The aspect will only be applied and propagated along
@@ -404,13 +378,13 @@ def _cc_library_shared_proxy_impl(ctx):
     if len(ctx.attr.deps) != 1:
         fail("Exactly one 'deps' must be specified for cc_library_shared_proxy")
     root_files = ctx.attr.deps[0][DefaultInfo].files.to_list()
-    shared_files = ctx.attr.shared[DefaultInfo].files.to_list()
-    shared_debuginfo = ctx.attr.shared_debuginfo[DefaultInfo].files.to_list()
+    shared_files = ctx.attr.shared[0][DefaultInfo].files.to_list()
+    shared_debuginfo = ctx.attr.shared_debuginfo[0][DefaultInfo].files.to_list()
     if len(shared_files) != 1 or len(shared_debuginfo) != 1:
         fail("Expected only one shared library file and one debuginfo file for it")
 
     shared_lib = shared_files[0]
-    abi_diff_files = ctx.attr.abi_dump[AbiDiffInfo].diff_files.to_list()
+    abi_diff_files = ctx.attr.abi_dump[0][AbiDiffInfo].diff_files.to_list()
 
     # Copy the output instead of symlinking. This is because this output
     # can be directly installed into a system image; this installation treats
@@ -434,52 +408,70 @@ def _cc_library_shared_proxy_impl(ctx):
         use_default_shell_env = True,
     )
 
-    files = root_files + [ctx.outputs.output_file, ctx.files.table_of_contents[0]] + abi_diff_files
+    toc_info = generate_toc(ctx, ctx.attr.name, ctx.outputs.output_file)
+
+    files = root_files + [ctx.outputs.output_file, toc_info.toc] + abi_diff_files
 
     return [
         DefaultInfo(
             files = depset(direct = files),
             runfiles = ctx.runfiles(files = [ctx.outputs.output_file]),
         ),
-        _correct_cc_shared_library_linking(ctx, ctx.attr.shared[CcSharedLibraryInfo], ctx.outputs.output_file, ctx.attr.deps[0]),
-        ctx.attr.table_of_contents[CcTocInfo],
+        _correct_cc_shared_library_linking(ctx, ctx.attr.shared[0][CcSharedLibraryInfo], ctx.outputs.output_file),
+        toc_info,
         # The _only_ linker_input is the statically linked root itself. We need to propagate this
         # as cc_shared_library identifies which libraries can be linked dynamically based on the
         # linker_inputs of the roots
         ctx.attr.deps[0][CcInfo],
         ctx.attr.deps[0][CcAndroidMkInfo],
         CcStubLibrariesInfo(has_stubs = ctx.attr.has_stubs),
-        ctx.attr.shared[OutputGroupInfo],
+        ctx.attr.shared[0][OutputGroupInfo],
         CcSharedLibraryOutputInfo(output_file = ctx.outputs.output_file),
         CcUnstrippedInfo(unstripped = shared_debuginfo[0]),
-        ctx.attr.abi_dump[AbiDiffInfo],
+        ctx.attr.abi_dump[0][AbiDiffInfo],
         collect_deps_clang_tidy_info(ctx),
+        cc_common.CcSharedLibraryHintInfo(
+            # cc_shared_library doesn't need to traverse any attrs of a cc_shared_library dep
+            attributes = [],
+        ),
     ]
 
 _cc_library_shared_proxy = rule(
     implementation = _cc_library_shared_proxy_impl,
     # Incoming transition to override outgoing transition from rdep
-    cfg = fdo_profile_transition,
+    cfg = lto_and_fdo_profile_incoming_transition,
     attrs = {
-        FDO_PROFILE_ATTR: attr.label(),
-        "shared": attr.label(mandatory = True, providers = [CcSharedLibraryInfo]),
-        "shared_debuginfo": attr.label(mandatory = True),
+        FDO_PROFILE_ATTR_KEY: attr.label(),
+        "shared": attr.label(
+            mandatory = True,
+            providers = [CcSharedLibraryInfo],
+            cfg = lto_and_sanitizer_deps_transition,
+        ),
+        "shared_debuginfo": attr.label(
+            mandatory = True,
+            cfg = lto_and_sanitizer_deps_transition,
+        ),
         # "deps" should be a single element: the root target of the shared library.
         # See _cc_library_shared_proxy_impl comment for explanation.
-        "deps": attr.label_list(mandatory = True, providers = [CcInfo]),
-        "output_file": attr.output(mandatory = True),
-        "table_of_contents": attr.label(
+        "deps": attr.label_list(
             mandatory = True,
-            # TODO(b/217908237): reenable allow_single_file
-            # allow_single_file = True,
-            providers = [CcTocInfo],
+            providers = [CcInfo],
+            cfg = lto_and_sanitizer_deps_transition,
         ),
+        "output_file": attr.output(mandatory = True),
         "has_stubs": attr.bool(default = False),
         "runtime_deps": attr.label_list(
             providers = [CcInfo],
             doc = "Deps that should be installed along with this target. Read by the apex cc aspect.",
         ),
-        "abi_dump": attr.label(providers = [AbiDiffInfo]),
+        "abi_dump": attr.label(
+            providers = [AbiDiffInfo],
+            cfg = lto_and_sanitizer_deps_transition,
+        ),
+        "package_name": attr.string(
+            mandatory = True,
+            doc = "Just the path to the target package. Used by transitions.",
+        ),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
@@ -498,17 +490,39 @@ _cc_library_shared_proxy = rule(
             doc = "All the dynamic deps of the lib. This is used to propagate" +
                   " information to AndroidMk about LOCAL_SHARED_LIBRARIES.",
         ),
+        "_toc_script": attr.label(
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+            default = "//build/soong/scripts:toc.sh",
+        ),
+        "_readelf": attr.label(
+            cfg = "exec",
+            executable = True,
+            allow_single_file = True,
+            default = "//prebuilts/clang/host/linux-x86:llvm-readelf",
+        ),
+        "linkopts": attr.string_list(default = []),  # Used for validation
+        "_android_constraint": attr.label(
+            default = Label("//build/bazel_common_rules/platforms/os:android"),
+        ),
+        "_darwin_constraint": attr.label(
+            default = Label("//build/bazel_common_rules/platforms/os:darwin"),
+        ),
+        "_linux_constraint": attr.label(
+            default = Label("//build/bazel_common_rules/platforms/os:linux"),
+        ),
+        "_windows_constraint": attr.label(
+            default = Label("//build/bazel_common_rules/platforms/os:windows"),
+        ),
     },
-    provides = [CcAndroidMkInfo, CcInfo],
+    provides = [CcAndroidMkInfo, CcInfo, CcTocInfo, cc_common.CcSharedLibraryHintInfo],
     fragments = ["cpp"],
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
 
 def _bssl_hash_injection_impl(ctx):
-    if len(ctx.files.src) != 1:
-        fail("Expected only one shared library file")
-
-    hashed_file = ctx.files.src[0]
+    hashed_file = ctx.file.src
     if ctx.attr.inject_bssl_hash:
         hashed_file = ctx.actions.declare_file("lib" + ctx.attr.name + ".so")
         args = ctx.actions.args()
@@ -535,8 +549,7 @@ _bssl_hash_injection = rule(
     attrs = {
         "src": attr.label(
             mandatory = True,
-            # TODO(b/217908237): reenable allow_single_file
-            # allow_single_file = True,
+            allow_single_file = True,
             providers = [CcSharedLibraryInfo],
         ),
         "inject_bssl_hash": attr.bool(
@@ -547,7 +560,7 @@ _bssl_hash_injection = rule(
             cfg = "exec",
             doc = "The BSSL hash injection tool.",
             executable = True,
-            default = "//prebuilts/build-tools:linux-x86/bin/bssl_inject_hash",
+            default = "//external/boringssl:bssl_inject_hash",
             allow_single_file = True,
         ),
     },

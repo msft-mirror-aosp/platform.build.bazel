@@ -1,31 +1,27 @@
-"""
-Copyright (C) 2022 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2022 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load(
     "//build/bazel/rules/sysprop:sysprop_library.bzl",
     "SyspropGenInfo",
-    "sysprop_library",
 )
-load(":cc_library_shared.bzl", "cc_library_shared")
-load(":cc_library_static.bzl", "cc_library_static")
 load(
     ":cc_library_common.bzl",
     "create_ccinfo_for_includes",
 )
-load("@bazel_skylib//lib:paths.bzl", "paths")
+load(":cc_library_shared.bzl", "cc_library_shared")
+load(":cc_library_static.bzl", "cc_library_static")
 
 # TODO(b/240466571): Implement determination of exported includes
 def _cc_gen_sysprop_impl(ctx):
@@ -47,7 +43,7 @@ def _cc_gen_sysprop_impl(ctx):
         output_src_file = ctx.actions.declare_file(
             "sysprop/%s.cpp" % output_subpath,
         )
-        action_outputs += [output_src_file]
+        action_outputs.append(output_src_file)
 
         output_header_file = ctx.actions.declare_file(
             "sysprop/include/%s.h" % output_subpath,
@@ -120,7 +116,7 @@ def _cc_gen_sysprop_common(
     return sysprop_gen_name
 
 sysprop_deps = select({
-    "//build/bazel/platforms/os:android": ["//system/libbase:libbase_headers"],
+    "//build/bazel_common_rules/platforms/os:android": ["//system/libbase:libbase_headers"],
     "//conditions:default": [
         "//system/libbase:libbase_bp2build_cc_library_static",
         "//system/logging/liblog:liblog_bp2build_cc_library_static",
@@ -128,7 +124,7 @@ sysprop_deps = select({
 })
 
 sysprop_dynamic_deps = select({
-    "//build/bazel/platforms/os:android": [
+    "//build/bazel_common_rules/platforms/os:android": [
         "//system/logging/liblog",
     ],
     "//conditions:default": [],

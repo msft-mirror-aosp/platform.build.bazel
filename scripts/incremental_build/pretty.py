@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # Copyright (C) 2022 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,146 +13,236 @@
 # limitations under the License.
 import argparse
 import csv
-import functools
+import datetime
+import enum
+import logging
 import re
 import statistics
-import sys
-from decimal import Decimal
-from typing import Callable
+import subprocess
+import textwrap
+from pathlib import Path
 
-from typing.io import TextIO
+from typing import Iterable, NewType, TextIO, TypeVar
 
+import plot_metrics
 import util
 
-NA = "   --:--"
+Row = NewType("Row", dict[str, str])
 
 
-def mark_if_clean(line: dict) -> dict:
-  if line['build_type'].startswith("CLEAN "):
-    line["description"] = "CLEAN " + line["description"]
-    line["build_type"] = line["build_type"].replace("CLEAN ", "", 1)
-  return line
+# modify the row in-place
+def _normalize_rebuild(row: Row):
+    row["description"] = re.sub(
+        r"^(rebuild)-[\d+](.*)$", "\\1\\2", row.get("description")
+    )
+
+def _get_tagged_build_type(row: Row) -> str:
+    build_type = row.get("build_type")
+    tag = row.get("tag")
+    return build_type if not tag else f"{build_type}:{tag}"
+
+def _build_types(rows: list[Row]) -> list[str]:
+    return list(dict.fromkeys(_get_tagged_build_type(row) for row in rows).keys())
 
 
-def normalize_rebuild(line: dict) -> dict:
-  line['description'] = re.sub(r'^(rebuild)-[\d+](.*)$', '\\1\\2',
-                               line['description'])
-  return line
+def _write_table(lines: list[list[str]]) -> str:
+    def join_cells(line: list[str]) -> str:
+        return ",".join(str(cell) for cell in line)
+
+    return "\n".join(join_cells(line) for line in lines) + "\n"
 
 
-def groupby(xs: list[dict], keyfn: Callable[[dict], str]) -> dict[
-  str, list[dict]]:
-  grouped = {}
-  for x in xs:
-    k = keyfn(x)
-    grouped.setdefault(k, []).append(x)
-  return grouped
+class Aggregation(enum.Enum):
+    # naked function as value assignment doesn't seem to work,
+    # hence wrapping in a singleton tuple
+    AVG = (statistics.mean,)
+    MAX = (max,)
+    MEDIAN = (statistics.median,)
+    MIN = (min,)
+    STDEV = (statistics.stdev,)
+
+    N = TypeVar("N", int, float)
+
+    def fn(self, xs: Iterable[N]) -> N:
+        return self.value[0](xs)
 
 
-def pretty_time(t_secs: Decimal) -> str:
-  s = int(t_secs.to_integral_exact())
-  h = int(s / 3600)
-  s = s % 3600
-  m = int(s / 60)
-  s = s % 60
-  if h > 0:
-    as_str = f'{h}:{m:02d}:{s:02d}'
-  elif m > 0:
-    as_str = f'{m}:{s:02d}'
-  else:
-    as_str = str(s)
-  return f'{as_str:>8s}'
+def _aggregate(prop: str, rows: list[Row], agg: Aggregation) -> str:
+    """
+    compute the requested aggregation
+    :return formatted values
+    """
+    if not rows:
+        return ""
+    vals = [x.get(prop) for x in rows]
+    vals = [x for x in vals if bool(x)]
+    if len(vals) == 0:
+        return ""
 
-
-def write_table(out: TextIO, rows: list[list[str]]):
-  def cell_width(prev, row):
-    for i in range(len(row)):
-      if len(prev) <= i:
-        prev.append(0)
-      prev[i] = max(prev[i], len(str(row[i])))
-    return prev
-
-  widths = functools.reduce(cell_width, rows, [])
-  fmt = "  ".join([f"%-{width}s" for width in widths]) + "\n"
-
-  def draw_separator():
-    table_width: int = functools.reduce(lambda a, b: a + b + 2, widths)
-    out.write("—" * table_width + "\n")
-
-  draw_separator()
-  out.write(fmt % tuple(str(header) for header in rows[0]))
-  draw_separator()
-  for r in rows[1:]:
-    out.write(fmt % tuple([str(cell) for cell in r]))
-  draw_separator()
-
-
-def seconds(s, acc=Decimal(0.0)) -> Decimal:
-  colonpos = s.find(':')
-  if colonpos > 0:
-    left_part = s[0:colonpos]
-  else:
-    left_part = s
-  acc = acc * 60 + Decimal(left_part)
-  if colonpos > 0:
-    return seconds(s[colonpos + 1:], acc)
-  else:
-    return acc
-
-
-def _get_build_types(xs: list[dict]) -> list[str]:
-  build_types = []
-  for x in xs:
-    b = x["build_type"]
-    if b not in build_types:
-      build_types.append(b)
-  return build_types
-
-
-def pretty(filename: str, include_rebuilds: bool):
-  with open(filename) as f:
-    csv_lines = [mark_if_clean(normalize_rebuild(line)) for line in
-                 csv.DictReader(f) if
-                 include_rebuilds or not line['description'].startswith(
-                     'rebuild-')]
-
-  lines: list[dict] = []
-  for line in csv_lines:
-    if line["build_result"] != "SUCCESS":
-      print(f"{line['build_result']}: "
-            f"{line['description']} / {line['build_type']}")
+    isnum = any(x.isnumeric() for x in vals)
+    if isnum:
+        vals = [int(x) for x in vals]
+        cell = f"{(agg.fn(vals)):.0f}"
     else:
-      lines.append(line)
+        vals = [util.period_to_seconds(x) for x in vals]
+        cell = util.hhmmss(datetime.timedelta(seconds=agg.fn(vals)))
 
-  build_types = _get_build_types(lines)
-  headers = ["cuj", "targets"] + build_types
-  rows: list[list[str]] = [headers]
+    if len(vals) > 1:
+        cell = f"{cell}[N={len(vals)}]"
+    return cell
 
-  by_cuj = groupby(lines, lambda l: l["description"])
-  for (cuj, cuj_rows) in by_cuj.items():
-    for (targets, target_rows) in groupby(cuj_rows,
-                                          lambda l: l["targets"]).items():
-      row = [cuj, targets]
-      by_build_type = groupby(target_rows, lambda l: l["build_type"])
-      for build_type in build_types:
-        selected_lines = by_build_type.get(build_type)
-        if not selected_lines:
-          row.append(NA)
-        else:
-          times = [seconds(l['time']) for l in selected_lines]
-          cell = pretty_time(statistics.median(times))
-          if len(selected_lines) > 1:
-            cell = f'{cell}[N={len(selected_lines)}]'
-          row.append(cell)
-      rows.append(row)
 
-  write_table(sys.stdout, rows)
+def acceptable(row: Row) -> bool:
+    failure = row.get("build_result") == "FAILED"
+    if failure:
+        logging.error(f"Skipping {row.get('description')}/{row.get('build_type')}")
+    return not failure
+
+
+def summarize_helper(metrics: TextIO, regex: str, agg: Aggregation) -> dict[str, str]:
+    """
+    Args:
+      metrics: csv detailed input, each row corresponding to a build
+      regex: regex matching properties to be summarized
+      agg: aggregation to use
+    """
+    reader: csv.DictReader = csv.DictReader(metrics)
+
+    # get all matching properties
+    p = re.compile(regex)
+    properties = [f for f in reader.fieldnames if p.search(f)]
+    if len(properties) == 0:
+        logging.error("no matching properties found")
+        return {}
+
+    all_rows: list[Row] = [row for row in reader if acceptable(row)]
+    for row in all_rows:
+        _normalize_rebuild(row)
+    build_types: list[str] = _build_types(all_rows)
+    by_cuj: dict[str, list[Row]] = util.groupby(
+        all_rows, lambda l: l.get("description")
+    )
+
+    def extract_lines_for_cuj(prop, cuj, cuj_rows) -> list[list[str]]:
+        by_targets = util.groupby(cuj_rows, lambda l: l.get("targets"))
+        lines = []
+        for targets, target_rows in by_targets.items():
+            by_build_type = util.groupby(target_rows, _get_tagged_build_type)
+            vals = [
+                _aggregate(prop, by_build_type.get(build_type), agg)
+                for build_type in build_types
+            ]
+            lines.append([cuj, targets, *vals])
+        return lines
+
+    def tabulate(prop) -> str:
+        headers = ["cuj", "targets"] + build_types
+        lines: list[list[str]] = [headers]
+        for cuj, cuj_rows in by_cuj.items():
+            lines.extend(extract_lines_for_cuj(prop, cuj, cuj_rows))
+        return _write_table(lines)
+
+    return {prop: tabulate(prop) for prop in properties}
+
+
+def _display_summarized_metrics(summary_csv: Path, filter_cujs: bool):
+    cmd = (
+        (
+            f'grep -v "WARMUP\\|rebuild\\|revert\\|delete" {summary_csv}'
+            f" | column -t -s,"
+        )
+        if filter_cujs
+        else f"column -t -s, {summary_csv}"
+    )
+    output = subprocess.check_output(cmd, shell=True, text=True)
+    logging.info(
+        textwrap.dedent(
+            f"""\
+            %s
+            %s
+            """
+        ),
+        cmd,
+        output,
+    )
+
+
+def summarize(
+    metrics_csv: Path,
+    regex: str,
+    output_dir: Path,
+    agg: Aggregation = Aggregation.MEDIAN,
+    filter_cujs: bool = True,
+    plot_format: str = "svg",
+):
+    """
+    writes `summary_data` value as a csv files under `output_dir`
+    if `filter_cujs` is False, then does not filter out WARMUP and rebuild cuj steps
+    """
+    with open(metrics_csv, "rt") as input_file:
+        summary_data = summarize_helper(input_file, regex, agg)
+    for k, v in summary_data.items():
+        summary_csv = output_dir.joinpath(f"{k}.{agg.name}.csv")
+        summary_csv.parent.mkdir(parents=True, exist_ok=True)
+        with open(summary_csv, mode="wt") as f:
+            f.write(v)
+        _display_summarized_metrics(summary_csv, filter_cujs)
+        plot_file = output_dir.joinpath(f"{k}.{agg.name}.{plot_format}")
+        plot_metrics.plot(v, plot_file, filter_cujs)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument(
+        "-p",
+        "--properties",
+        default="^time$",
+        nargs="?",
+        help="regex to select properties",
+    )
+    p.add_argument(
+        "metrics",
+        nargs="?",
+        default=util.get_default_log_dir().joinpath(util.METRICS_TABLE),
+        help="metrics.csv file to parse",
+    )
+    p.add_argument(
+        "--statistic",
+        nargs="?",
+        type=lambda arg: Aggregation[arg],
+        default=Aggregation.MEDIAN,
+        help=f"Defaults to {Aggregation.MEDIAN.name}. "
+        f"Choose from {[a.name for a in Aggregation]}",
+    )
+    p.add_argument(
+        "--filter",
+        default=True,
+        action=argparse.BooleanOptionalAction,
+        help="Filter out 'rebuild-' and 'WARMUP' builds?",
+    )
+    p.add_argument(
+        "--format",
+        nargs="?",
+        default="svg",
+        help="graph output format, e.g. png, svg etc"
+    )
+    options = p.parse_args()
+    metrics_csv = Path(options.metrics)
+    aggregation: Aggregation = options.statistic
+    if metrics_csv.exists() and metrics_csv.is_dir():
+        metrics_csv = metrics_csv.joinpath(util.METRICS_TABLE)
+    if not metrics_csv.exists():
+        raise RuntimeError(f"{metrics_csv} does not exit")
+    summarize(
+        metrics_csv=metrics_csv,
+        regex=options.properties,
+        agg=aggregation,
+        filter_cujs=options.filter,
+        output_dir=metrics_csv.parent.joinpath("perf"),
+        plot_format=options.format,
+    )
 
 
 if __name__ == "__main__":
-  p = argparse.ArgumentParser()
-  p.add_argument('--include-rebuilds', default=False, action='store_true')
-  default_summary_file = util.get_default_log_dir().joinpath(util.SUMMARY_CSV)
-  p.add_argument('summary_file', nargs='?', default=default_summary_file)
-  options = p.parse_args()
-  pretty(options.summary_file, options.include_rebuilds)
+    logging.root.setLevel(logging.INFO)
+    main()

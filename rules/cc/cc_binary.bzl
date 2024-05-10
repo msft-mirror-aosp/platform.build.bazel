@@ -1,18 +1,16 @@
-"""
-Copyright (C) 2021 The Android Open Source Project
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-"""
+# Copyright (C) 2021 The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 load(
     ":cc_library_common.bzl",
@@ -29,6 +27,7 @@ load(":versioned_cc_common.bzl", "versioned_binary")
 
 def cc_binary(
         name,
+        stem = "",
         suffix = "",
         dynamic_deps = [],
         srcs = [],
@@ -42,8 +41,8 @@ def cc_binary(
         whole_archive_deps = [],
         system_deps = None,
         runtime_deps = [],
-        export_includes = [],
-        export_system_includes = [],
+        export_includes = [],  # @unused
+        export_system_includes = [],  # @unused
         local_includes = [],
         absolute_includes = [],
         linkshared = True,
@@ -53,10 +52,11 @@ def cc_binary(
         stl = "",
         cpp_std = "",
         additional_linker_inputs = None,
+        additional_compiler_inputs = [],
         strip = {},
         features = [],
         target_compatible_with = [],
-        sdk_version = "",
+        sdk_version = "",  # @unused
         min_sdk_version = "",
         use_version_lib = False,
         tags = [],
@@ -75,6 +75,7 @@ def cc_binary(
     unstripped_name = name + "_unstripped"
 
     toolchain_features = []
+    toolchain_features.append("cc_binary")
     toolchain_features.extend(["-pic", "pie"])
     if linkshared:
         toolchain_features.extend(["dynamic_executable", "dynamic_linker"])
@@ -82,11 +83,10 @@ def cc_binary(
         toolchain_features.extend(["-dynamic_executable", "-dynamic_linker", "static_executable", "static_flag"])
 
     if not use_libcrt:
-        toolchain_features += ["-use_libcrt"]
+        toolchain_features.append("-use_libcrt")
 
     if min_sdk_version:
         toolchain_features += parse_sdk_version(min_sdk_version) + ["-sdk_version_default"]
-    toolchain_features += features
 
     system_dynamic_deps = []
     system_static_deps = []
@@ -102,7 +102,7 @@ def cc_binary(
         system_static_deps = system_deps
 
     if not native_coverage:
-        toolchain_features += ["-coverage"]
+        toolchain_features.append("-coverage")
     else:
         toolchain_features += select({
             "//build/bazel/rules/cc:android_coverage_lib_flag": ["android_coverage_lib"],
@@ -110,10 +110,16 @@ def cc_binary(
         })
 
         # TODO(b/233660582): deal with the cases where the default lib shouldn't be used
-        whole_archive_deps = whole_archive_deps + select({
+        deps = deps + select({
             "//build/bazel/rules/cc:android_coverage_lib_flag": ["//system/extras/toolchain-extras:libprofile-clang-extras"],
+            "//build/bazel/rules/cc:android_coverage_lib_flag_cfi": ["//system/extras/toolchain-extras:libprofile-clang-extras_cfi_support"],
             "//conditions:default": [],
         })
+
+    # add the passed in features last, the reason is that it might include select statement so
+    # using append() function will not work, but the formatter will insist you to use that for
+    # adding single element.
+    toolchain_features += features
 
     stl_info = stl_info_from_attr(stl, linkshared, is_binary = True)
     linkopts = linkopts + stl_info.linkopts
@@ -155,6 +161,7 @@ def cc_binary(
         tidy_disabled_srcs = tidy_disabled_srcs,
         tidy_timeout_srcs = tidy_timeout_srcs,
         native_coverage = native_coverage,
+        additional_compiler_inputs = additional_compiler_inputs,
     )
 
     binary_dynamic_deps = add_lists_defaulting_to_none(
@@ -197,17 +204,24 @@ def cc_binary(
         stamp_build_number = use_version_lib,
         tags = ["manual"],
         testonly = generate_cc_test,
+        # Potentially have internal cc_test dependency so keep
+        # --trim_test_configuration optimization working. See b/288969037 for more info
+        transitive_configs = ["//command_line_option/fragment:test"] if generate_cc_test else [],
     )
 
     stripped_cc_rule(
         name = name,
+        stem = stem,
         suffix = suffix,
         src = versioned_name,
         runtime_deps = runtime_deps,
         target_compatible_with = target_compatible_with,
         tags = tags,
         unstripped = unstripped_name,
+        features = toolchain_features,
         testonly = generate_cc_test,
         androidmk_deps = [root_name],
+        linkopts = linkopts,
+        package_name = native.package_name(),
         **strip
     )
