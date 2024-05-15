@@ -13,4 +13,11 @@ build --nolegacy_external_runfiles
 # Enable windows symlink and runfiles
 startup --windows_enable_symlinks
 build:windows --enable_runfiles
+
+# See https://github.com/bazelbuild/bazel/issues/4341#issuecomment-758361769
+# Prevent thread-local issues in protobuf.
+build:macos --features=-supports_dynamic_linker
+
 build --proto_compiler=@com_google_protobuf//:protoc
+build --proto_toolchain_for_cc=@com_google_protobuf//:cc_toolchain
+build --define grpc_no_xds=true

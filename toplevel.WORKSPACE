@@ -3,6 +3,7 @@ load(
     "//build/bazel/rules:repository.bzl",
     "json2bzl_repository",
     "selective_local_repository",
+    "setup_aliases",
 )
 
 # Skylib provides common utilities for writing bazel rules and functions.
@@ -280,8 +281,12 @@ local_repository(
     path = "external/protobuf/third_party/utf8_range",
 )
 
-# load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-# grpc_deps()
-# # Not mentioned in official docs... mentioned here https://github.com/grpc/grpc/issues/20511
-# load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-# grpc_extra_deps()
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+setup_aliases()
+
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+
+grpc_extra_deps()
