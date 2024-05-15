@@ -133,6 +133,19 @@ local_repository(
 )
 
 local_repository(
+    name = "tink_cc",
+    path = "external/tink",
+)
+
+load("@tink_cc//:tink_cc_deps.bzl", "tink_cc_deps")
+
+tink_cc_deps()
+
+load("@tink_cc//:tink_cc_deps_init.bzl", "tink_cc_deps_init")
+
+tink_cc_deps_init()
+
+local_repository(
     name = "com_github_google_flatbuffers",
     path = "external/flatbuffers",
 )
