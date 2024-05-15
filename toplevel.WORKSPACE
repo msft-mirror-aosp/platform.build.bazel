@@ -68,8 +68,8 @@ rust_register_toolchains(versions = ["1.73.0"])
 
 new_local_repository(
     name = "boringssl",
-    build_file = "//external/boringssl:BUILD",
-    path = "external/boringssl",
+    build_file = "//external/boringssl/src:BUILD.bazel",
+    path = "external/boringssl/src",
 )
 
 local_repository(
@@ -256,3 +256,19 @@ new_local_repository(
     build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi-x86_64-pc-windows-gnu",
     path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
 )
+
+local_repository(
+    name = "com_github_grpc_grpc",
+    path = "external/grpc",
+)
+
+local_repository(
+    name = "utf8_range",
+    path = "external/protobuf/third_party/utf8_range",
+)
+
+# load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+# grpc_deps()
+# # Not mentioned in official docs... mentioned here https://github.com/grpc/grpc/issues/20511
+# load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+# grpc_extra_deps()
