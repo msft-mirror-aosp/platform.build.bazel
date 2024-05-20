@@ -60,6 +60,7 @@ cc_toolchain_config(
         "@clang//:linux_x64_archiver",
         "@clang//:linux_x64_strip",
     ],
+    compiler_name = "clang",
     identifier = "linux_clang_x64",
     legacy_builtin_include_directories = select({
         ":host_stdlibs": [

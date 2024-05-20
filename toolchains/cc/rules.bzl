@@ -407,10 +407,11 @@ def _cc_toolchain_config_impl(ctx):
             builtin_sysroot = sysroot,
             cxx_builtin_include_directories = ctx.attr.legacy_builtin_include_directories,
             target_cpu = ctx.attr.target_cpu,
+            # This is needed by targets using legacy compiler flag value.
+            compiler = ctx.attr.compiler_name,
             # The attributes below are required by the constructor, but don't
             # affect actions at all.
             target_system_name = "__toolchain_target_system_name__",
-            compiler = "__toolchain_compiler__",
             target_libc = "__toolchain_target_libc__",
             abi_version = "__toolchain_abi_version__",
             abi_libc_version = "__toolchain_abi_libc_version__",
@@ -446,6 +447,11 @@ cc_toolchain_config = rule(
         "target_cpu": attr.string(
             doc = "Target CPU architecture. This only affects the directory name of execution and output trees.",
             mandatory = True,
+        ),
+        "compiler_name": attr.string(
+            doc = "C compiler name. Used by targets to select on the compiler name.",
+            default = "unknown",
+            values = ["clang", "clang-cl", "gcc", "msvc-cl", "mingw", "unknown"],
         ),
         "toolchain_imports": attr.label_list(
             doc = "A list of cc_toolchain_import targets.",

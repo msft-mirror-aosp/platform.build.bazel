@@ -94,6 +94,7 @@ cc_toolchain_config(
         "@clang//:win_x64_link",
         "@clang//:win_x64_archiver",
     ],
+    compiler_name = "clang-cl",
     identifier = "win_clangcl_x64",
     target_cpu = "k8",
     toolchain_imports = _x64_imports,

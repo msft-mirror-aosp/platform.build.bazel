@@ -1,4 +1,6 @@
 # Bazel tool configs
+
+## C++
 common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
 build --incompatible_enable_cc_toolchain_resolution
 # TODO(zachyu) remove when we have a custom rust toolchain with this on by default.
@@ -11,10 +13,19 @@ build:linux --force_pic
 
 build:macos --host_platform='//build/bazel/platforms:host_clang'
 build:macos --features='generate_debug_symbols'
+# See https://github.com/bazelbuild/bazel/issues/4341#issuecomment-758361769
+# Prevent thread-local issues in protobuf.
+build:macos --features=-supports_dynamic_linker
 build:macos --force_pic
 
 build:windows --host_platform='//build/bazel/platforms:host_clang-cl'
 build:windows --features='-supports_start_end_lib'
 build:windows --features='generate_pdb_file'
+
+## Python
 # On windows cleaning up python zips can fail and leak disk (see b/277781554)
 build:windows --nobuild_python_zip
+
+## Protobuf
+build --proto_compiler=@com_google_protobuf//:protoc
+build --proto_toolchain_for_cc=@com_google_protobuf//:cc_toolchain
