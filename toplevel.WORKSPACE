@@ -109,6 +109,11 @@ local_repository(
 )
 
 local_repository(
+    name = "pffft",
+    path = "external/pffft",
+)
+
+local_repository(
     name = "pcre2",
     path = "external/pcre2",
 )
