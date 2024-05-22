@@ -113,6 +113,17 @@ local_repository(
     path = "external/pcre2",
 )
 
+new_local_repository(
+    name = "nasm",
+    build_file = "//external/nasm:BUILD",
+    path = "external/nasm",
+)
+
+local_repository(
+    name = "libjpeg_turbo",
+    path = "external/libjpeg-turbo",
+)
+
 local_repository(
     name = "glib",
     path = "external/glib",
