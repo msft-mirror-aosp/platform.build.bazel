@@ -125,6 +125,11 @@ local_repository(
 )
 
 local_repository(
+    name = "libyuv",
+    path = "external/libyuv",
+)
+
+local_repository(
     name = "glib",
     path = "external/glib",
 )
