@@ -77,6 +77,21 @@ local_repository(
 )
 
 local_repository(
+    name = "perfetto",
+    path = "external/perfetto",
+)
+
+local_repository(
+    name = "perfetto_cfg",
+    path = "build/bazel/perfetto_overrides",
+)
+
+local_repository(
+    name = "rnnoise",
+    path = "external/rnnoise",
+)
+
+local_repository(
     name = "com_github_google_benchmark",
     path = "external/google-benchmark",
 )
@@ -114,6 +129,11 @@ local_repository(
 local_repository(
     name = "pcre2",
     path = "external/pcre2",
+)
+
+local_repository(
+    name = "libvpx",
+    path = "external/libvpx",
 )
 
 new_local_repository(
@@ -235,6 +255,11 @@ new_local_repository(
     name = "python",
     build_file = "//build/bazel/toolchains/python:prebuilts.BUILD",
     path = "prebuilts/python",
+)
+
+local_repository(
+    name = "webrtc",
+    path = "external/webrtc",
 )
 
 register_toolchains(
