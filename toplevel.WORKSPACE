@@ -65,8 +65,6 @@ load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_regi
 
 rules_rust_dependencies()
 
-rust_register_toolchains(versions = ["1.73.0"])
-
 new_local_repository(
     name = "boringssl",
     build_file = "//external/boringssl/src:BUILD.bazel",
@@ -248,6 +246,8 @@ register_toolchains(
 register_toolchains(
     "//build/bazel/toolchains/python:linux_x86_toolchain",
 )
+
+rust_register_toolchains(versions = ["1.78.0"])
 
 # Rust crates, note that these follow the AOSP style of naming, where every crate
 # is basically @..crate..
