@@ -86,6 +86,18 @@ cc_toolchain_import(
 
 ###################### macOS ######################
 
+filegroup(
+    name = "macos_all_llvm_cov",
+    srcs = [CLANG_MACOS_ALL + "/bin/llvm-cov"],
+    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+)
+
+filegroup(
+    name = "macos_all_llvm_profdata",
+    srcs = [CLANG_MACOS_ALL + "/bin/llvm-profdata"],
+    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+)
+
 cc_tool(
     name = "macos_all_clang",
     applied_actions = C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,

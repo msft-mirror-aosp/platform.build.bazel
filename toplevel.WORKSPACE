@@ -186,6 +186,8 @@ json2bzl_repository(
     output_file = "defs.bzl",
 )
 
+load("@toolchain_defs//:defs.bzl", "TOOL_VERSIONS")
+
 # Repository that provides the clang compilers
 selective_local_repository(
     name = "clang",
@@ -247,7 +249,18 @@ register_toolchains(
     "//build/bazel/toolchains/python:linux_x86_toolchain",
 )
 
-rust_register_toolchains(versions = ["1.78.0"])
+new_local_repository(
+    name = "rust_mac",
+    build_file = "//build/bazel/toolchains/rust:mac.BUILD",
+    path = "prebuilts/rust/darwin-x86/{}".format(TOOL_VERSIONS["rust"]),
+)
+
+register_toolchains(
+    "//build/bazel/toolchains/rust:mac_arm64_toolchain",
+    "//build/bazel/toolchains/rust:mac_x64_toolchain",
+)
+
+rust_register_toolchains(versions = [TOOL_VERSIONS["rust"]])
 
 # Rust crates, note that these follow the AOSP style of naming, where every crate
 # is basically @..crate..
