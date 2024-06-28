@@ -106,6 +106,10 @@ toolchain(
 
 cc_features(
     name = "arm64_features",
+    cc_only_link_flags = [
+        "-undefined dynamic_lookup",
+        "-fobjc-link-runtime",
+    ],
     compile_flags = [
         "--target=arm64-apple-darwin-macho",
         "-no-canonical-prefixes",
@@ -120,8 +124,6 @@ cc_features(
     cxx_flags = ["-std=c++17"],
     link_flags = [
         "--target=arm64e-apple-darwin-macho",
-        "-undefined dynamic_lookup",
-        "-fobjc-link-runtime",
         "-fuse-ld=lld",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],

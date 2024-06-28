@@ -3,6 +3,7 @@
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
+    "feature_set",
     "flag_group",
     "flag_set",
 )
@@ -15,6 +16,11 @@ load(
 )
 load(":rules.bzl", "CcToolchainImportInfo")
 load(":utils.bzl", "check_args", "filter_none")
+
+# A feature set that is satisfied only when we are linking c / cpp code.
+# This leverages the fact that certain features are disabled by rules_rust when
+# linking pure-rust with the toolchain.
+LINK_CC_ONLY = feature_set(features = ["rules_rust_link_cc"])
 
 def toolchain_import_configs(import_libs):
     """Convert cc_toolchain_import targets to configs for features.
@@ -96,6 +102,29 @@ def get_toolchain_link_flags_feature(flags):
         ],
     )
 
+def get_toolchain_cc_only_features(flags):
+    return [
+        feature(
+            name = "toolchain_cc_only_link_flags",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    actions = LINK_ACTIONS,
+                    flag_groups = filter_none([
+                        check_args(len, flag_group, flags = flags),
+                    ]),
+                ),
+            ],
+            requires = [LINK_CC_ONLY],
+        ),
+    ] + [
+        feature(
+            name = name,
+            enabled = True,
+        )
+        for name in LINK_CC_ONLY.features
+    ]
+
 def get_b_prefix_feature(file):
     return feature(
         name = "b_prefix",
@@ -142,6 +171,7 @@ supports_pic_feature = feature(
 static_link_cpp_runtimes_feature = feature(
     name = "static_link_cpp_runtimes",
     enabled = True,
+    requires = [LINK_CC_ONLY],
 )
 
 dynamic_linking_mode_feature = feature(

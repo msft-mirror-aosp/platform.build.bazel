@@ -9,6 +9,7 @@ load(
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
+    "get_toolchain_cc_only_features",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
     "get_toolchain_link_flags_feature",
@@ -317,6 +318,7 @@ def _cc_features_impl(ctx):
         dbg_feature,
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
+        get_toolchain_cc_only_features(ctx.attr.cc_only_link_flags),
         user_link_flags_feature,
         force_pic_feature,
         strip_debug_symbols_feature,
@@ -345,6 +347,10 @@ cc_features = rule(
         ),
         "link_flags": attr.string_list(
             doc = "Flags always added to link actions.",
+            default = [],
+        ),
+        "cc_only_link_flags": attr.string_list(
+            doc = "Flags added to link actions only when linking cc binaries.",
             default = [],
         ),
         "toolchain_imports": attr.label_list(

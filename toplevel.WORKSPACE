@@ -55,10 +55,10 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    integrity = "sha256-JLN47ZcAbx9wEr5Jiib4HduZATGLiDgK7oUi/fvotzU=",
+    integrity = "sha256-F8U7+AC5MvMtPKGdLLnorVM84cDXKfDRgwd7/dq3rUY=",
     patch_args = ["-p1"],
-    patches = ["//build/bazel/toolchains/rust:rules_rust_sibling_layout.patch"],
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.42.1/rules_rust-v0.42.1.tar.gz"],
+    patches = ["//build/bazel/toolchains/rust:feature-rules_rust_link_cc.patch"],
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.46.0/rules_rust-v0.46.0.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")

@@ -67,6 +67,7 @@ cc_tool = rule(
         "runfiles": attr.label_list(
             doc = "Other files needed to run the tool, in addition to what provided by the tool target.",
             allow_files = True,
+            cfg = "exec",
         ),
         "applied_actions": attr.string_list(
             doc = "A list of cc action names where the tool applies.",

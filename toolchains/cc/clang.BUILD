@@ -100,7 +100,7 @@ filegroup(
 
 cc_tool(
     name = "macos_all_clang",
-    applied_actions = C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
     env = select({
         "@//build/bazel/toolchains/cc:is_bootstrap": {},
         "//conditions:default": {
@@ -128,7 +128,7 @@ cc_tool(
 
 cc_tool(
     name = "macos_all_clang++",
-    applied_actions = CPP_COMPILE_ACTIONS + LINK_ACTIONS,
+    applied_actions = CPP_COMPILE_ACTIONS,
     env = select({
         "@//build/bazel/toolchains/cc:is_bootstrap": {},
         "//conditions:default": {

@@ -1,10 +1,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
-HOST_TRIPLE_MAC = select({
-    "@platforms//cpu:arm64": "aarch64-apple-darwin",
-    "@platforms//cpu:x86_64": "x86_64-apple-darwin",
-})
+HOST_TRIPLE_MAC = "x86_64-apple-darwin"
 
 # Whether the custom toolchains link rust_binary and rust_test targets using
 # cc_common.link instead of rustc. For linux and macOS only.
