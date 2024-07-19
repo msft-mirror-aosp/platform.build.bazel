@@ -124,6 +124,7 @@ cc_features(
     cxx_flags = ["-std=c++17"],
     link_flags = [
         "--target=arm64e-apple-darwin-macho",
+        "-lc++",
         "-fuse-ld=lld",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],
