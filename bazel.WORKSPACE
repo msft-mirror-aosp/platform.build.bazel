@@ -142,8 +142,8 @@ local_repository(
 )
 
 register_toolchains(
-    "//prebuilts/jdk/jdk17:runtime_toolchain_definition",
-    "//build/bazel/rules/java:jdk17_host_toolchain_java_definition",
+    "//prebuilts/jdk/jdk21:runtime_toolchain_definition",
+    "//build/bazel/rules/java:jdk21_host_toolchain_java_definition",
 )
 
 local_repository(
