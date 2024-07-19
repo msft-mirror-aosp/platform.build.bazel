@@ -71,7 +71,7 @@ cc_toolchain_import(
     ],
     include_paths = [
         target_linux_x64 + "/include/c++/v1",
-        target_linux_x64 + "/lib/clang/17/include",
+        target_linux_x64 + "/lib/clang/19/include",
     ],
     static_mode_libs = [
         target_linux_x64 + "/lib/x86_64-unknown-linux-gnu/libc++.a",
@@ -79,7 +79,7 @@ cc_toolchain_import(
     support_files = glob(
         [
             CLANG_LINUX_X64 + "/include/c++/v1/**",
-            CLANG_LINUX_X64 + "/lib/clang/17/include/**",
+            CLANG_LINUX_X64 + "/lib/clang/19/include/**",
         ],
     ),
 )
@@ -171,12 +171,10 @@ cc_toolchain_import(
     name = "macos_all_libcxx",
     dynamic_mode_libs = [
         target_macos_all + "/lib/libc++.dylib",
-        target_macos_all + "/lib/libc++.1.dylib",
-        target_macos_all + "/lib/libc++abi.1.dylib",
     ],
     include_paths = [
         target_macos_all + "/include/c++/v1",
-        target_macos_all + "/lib/clang/17/include",
+        target_macos_all + "/lib/clang/19/include",
     ],
     static_mode_libs = [
         target_macos_all + "/lib/libc++.a",
@@ -185,7 +183,7 @@ cc_toolchain_import(
     support_files = glob(
         [
             CLANG_MACOS_ALL + "/include/c++/v1/**",
-            CLANG_MACOS_ALL + "/lib/clang/17/include/**",
+            CLANG_MACOS_ALL + "/lib/clang/19/include/**",
         ],
     ),
 )
@@ -238,7 +236,7 @@ cc_tool(
 cc_toolchain_import(
     name = "win_x64_compiler_runtime",
     include_paths = [
-        target_win_x64 + "/lib/clang/17/include",
+        target_win_x64 + "/lib/clang/19/include",
     ],
-    support_files = glob([CLANG_WIN_X64 + "/lib/clang/17/include/**"]),
+    support_files = glob([CLANG_WIN_X64 + "/lib/clang/19/include/**"]),
 )

@@ -34,6 +34,9 @@ cc_features(
         "/wd4291",
         "/wd4250",
         "/wd4996",
+        # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
+        # the path absolute when generating a relative prefix.
+        "-no-canonical-prefixes",
     ],
     cxx_flags = ["-std:c++17"],
     link_flags = [
