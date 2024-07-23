@@ -10,6 +10,9 @@ load(
 
 C_COMPILE_ACTIONS = [
     ACTION_NAMES.c_compile,
+]
+
+OBJC_COMPILE_ACTIONS = [
     ACTION_NAMES.objc_compile,
 ]
 

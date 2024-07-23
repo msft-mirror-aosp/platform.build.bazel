@@ -5,6 +5,7 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "OBJC_COMPILE_ACTIONS",
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
@@ -23,6 +24,7 @@ load(
     "toolchain_import_configs",
     "user_compile_flags_feature",
     "user_link_flags_feature",
+    "user_objc_compile_flags_feature",
 )
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
@@ -256,14 +258,17 @@ opt_feature = feature(
     name = "opt",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
-                    "-O2",
+                    # Let's go very aggressive
+                    "-O3",
+                    # No debug symbols.
+                    "-g0",
+                    # Enables Link-Time Optimization
+                    "-flto",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
-                    # Disable assertions
-                    "-DNDEBUG",
                     # Allow removal of unused sections at link time.
                     "-ffunction-sections",
                     "-fdata-sections",
@@ -325,6 +330,7 @@ def _cc_features_impl(ctx):
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
+        user_objc_compile_flags_feature,
         ### End flag ordering ##
         sysroot_feature,
         linker_param_file_feature,

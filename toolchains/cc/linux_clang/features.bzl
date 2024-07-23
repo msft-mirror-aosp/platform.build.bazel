@@ -9,6 +9,7 @@ load(
     "CPP_SOURCE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "OBJC_COMPILE_ACTIONS",
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
@@ -55,7 +56,7 @@ def get_toolchain_include_paths_feature(import_config):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + [
+                actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
                     ACTION_NAMES.preprocess_assemble,
                     ACTION_NAMES.linkstamp_compile,
                 ],
@@ -111,7 +112,7 @@ dependency_file_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_SOURCE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_SOURCE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "dependency_file",
@@ -132,7 +133,7 @@ random_seed_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_CODEGEN_ACTIONS + [ACTION_NAMES.cpp_module_compile],
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_CODEGEN_ACTIONS + [ACTION_NAMES.cpp_module_compile],
             flag_groups = [
                 flag_group(
                     expand_if_available = "output_file",
@@ -151,7 +152,7 @@ pic_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + CPP_CODEGEN_ACTIONS + [
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + CPP_CODEGEN_ACTIONS + [
                 ACTION_NAMES.cpp_module_compile,
                 ACTION_NAMES.linkstamp_compile,
             ],
@@ -171,7 +172,7 @@ preprocessor_defines_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     iterate_over = "preprocessor_defines",
@@ -188,7 +189,7 @@ includes_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + [
+            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
                 ACTION_NAMES.preprocess_assemble,
                 ACTION_NAMES.linkstamp_compile,
             ],
@@ -209,7 +210,7 @@ include_paths_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + [
+            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
                 ACTION_NAMES.preprocess_assemble,
                 ACTION_NAMES.linkstamp_compile,
             ],
@@ -506,7 +507,7 @@ sysroot_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_SOURCE_ACTIONS + LINK_ACTIONS + [
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_SOURCE_ACTIONS + LINK_ACTIONS + [
                 ACTION_NAMES.preprocess_assemble,
                 ACTION_NAMES.linkstamp_compile,
             ],
@@ -543,7 +544,7 @@ compiler_input_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "source_file",
@@ -560,7 +561,7 @@ compiler_output_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "output_assembly_file",
@@ -583,7 +584,7 @@ generate_debug_symbols_feature = feature(
     name = "generate_debug_symbols",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
                 flag_group(flags = ["-g"]),
             ],
@@ -595,14 +596,17 @@ opt_feature = feature(
     name = "opt",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
-                    "-O2",
+                    # Let's go very aggressive
+                    "-O3",
+                    # No debug symbols.
+                    "-g0",
+                    # Enables Link-Time Optimization
+                    "-flto",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
-                    # Disable assertions
-                    "-DNDEBUG",
                     # Allow removal of unused sections and code folding at link
                     # time.
                     "-ffunction-sections",
@@ -628,7 +632,7 @@ dbg_feature = feature(
     name = "dbg",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
                     "-O0",

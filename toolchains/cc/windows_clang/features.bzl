@@ -8,6 +8,7 @@ load(
     "CPP_SOURCE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "OBJC_COMPILE_ACTIONS",
 )
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
@@ -62,7 +63,7 @@ compiler_input_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "source_file",
@@ -78,7 +79,7 @@ compiler_output_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "output_file",
@@ -122,7 +123,7 @@ dbg_feature = feature(
     name = "dbg",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
                 flag_group(flags = ["/Od", "/Z7"]),
             ],
@@ -186,7 +187,7 @@ external_include_paths_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + [
+            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
                 ACTION_NAMES.preprocess_assemble,
                 ACTION_NAMES.linkstamp_compile,
             ],
@@ -274,7 +275,7 @@ def get_toolchain_include_paths_feature(import_config):
         enabled = True,
         env_sets = [
             env_set(
-                actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + [
+                actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
                     ACTION_NAMES.preprocess_assemble,
                     ACTION_NAMES.linkstamp_compile,
                 ],
@@ -315,7 +316,7 @@ include_paths_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + [
+            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
                 ACTION_NAMES.preprocess_assemble,
                 ACTION_NAMES.linkstamp_compile,
             ],
@@ -440,7 +441,7 @@ opt_feature = feature(
     name = "opt",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
                     "/O2",
@@ -448,6 +449,9 @@ opt_feature = feature(
                     # time.
                     "/Gy",
                     "/Gw",
+                    # Disable security checks, "we know what we are doing"
+                    "/GS-",
+                    "/GR",
                 ]),
             ],
         ),
@@ -486,7 +490,7 @@ parse_showincludes_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [flag_group(flags = ["/showIncludes"])],
         ),
     ],
@@ -497,7 +501,7 @@ preprocessor_defines_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
             flag_groups = [
                 flag_group(
                     iterate_over = "preprocessor_defines",

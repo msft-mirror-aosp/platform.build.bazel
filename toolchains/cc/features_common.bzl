@@ -13,6 +13,7 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "OBJC_COMPILE_ACTIONS",
 )
 load(":rules.bzl", "CcToolchainImportInfo")
 load(":utils.bzl", "check_args", "filter_none")
@@ -66,7 +67,7 @@ def get_toolchain_compile_flags_feature(flags):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
                 flag_groups = filter_none([
                     check_args(len, flag_group, flags = flags),
                 ]),
@@ -131,7 +132,7 @@ def get_b_prefix_feature(file):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LINK_ACTIONS,
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LINK_ACTIONS,
                 flag_groups = filter_none([
                     check_args(
                         len,
@@ -210,6 +211,32 @@ user_link_flags_feature = feature(
                     expand_if_available = "user_link_flags",
                     iterate_over = "user_link_flags",
                     flags = ["%{user_link_flags}"],
+                ),
+            ],
+        ),
+    ],
+)
+
+user_objc_compile_flags_feature = feature(
+    name = "user_objc_compile_flags_feature",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = OBJC_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    expand_if_available = "user_compile_flags",
+                    iterate_over = "user_compile_flags",
+                    flags = ["%{user_compile_flags}"],
+                ),
+                # Depending on the compilation mode we can introduce the NDEBUG variable.
+                # This gets placed behind all the copts that are provided in a objc rule.
+                # Unfortunately this causes QEMU to break, since qemu does not compile with
+                # the NDEBUG flag. To work around this we will explicitly disable the NDEBUG
+                # flag. Note that we have limited number of objc sources.
+                # Details can be found here b/355027962
+                flag_group(
+                    flags = ["-UNDEBUG"],
                 ),
             ],
         ),

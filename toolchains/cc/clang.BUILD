@@ -5,6 +5,7 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "OBJC_COMPILE_ACTIONS",
 )
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
@@ -33,7 +34,7 @@ target_win_x64 = ":" + CLANG_WIN_X64
 
 cc_tool(
     name = "linux_x64_clang",
-    applied_actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
     runfiles = glob(
         [CLANG_LINUX_X64 + "/bin/*"],
         exclude = [
@@ -100,7 +101,7 @@ filegroup(
 
 cc_tool(
     name = "macos_all_clang",
-    applied_actions = C_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
     env = select({
         "@//build/bazel/toolchains/cc:is_bootstrap": {},
         "//conditions:default": {
@@ -192,7 +193,7 @@ cc_toolchain_import(
 
 cc_tool(
     name = "win_x64_clang-cl",
-    applied_actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
     runfiles = glob(
         [CLANG_WIN_X64 + "/bin/*"],
         exclude = [
