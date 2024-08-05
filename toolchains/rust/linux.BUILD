@@ -10,7 +10,10 @@ filegroup(
 
 filegroup(
     name = "rustc_lib",
-    srcs = glob(["lib/*.dylib*"]),
+    srcs = glob([
+        "lib/*.so*",
+        "lib/rustlib/x86_64-unknown-linux-gnu/lib/*.so*",
+    ]),
 )
 
 filegroup(
@@ -40,11 +43,6 @@ native_binary(
 )
 
 rust_stdlib_filegroup(
-    name = "rust_std_arm64",
-    srcs = glob(["lib/rustlib/aarch64-apple-darwin/lib/**"]),
-)
-
-rust_stdlib_filegroup(
     name = "rust_std_x64",
-    srcs = glob(["lib/rustlib/x86_64-apple-darwin/lib/**"]),
+    srcs = glob(["lib/rustlib/x86_64-unknown-linux-gnu/lib/**"]),
 )

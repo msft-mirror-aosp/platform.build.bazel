@@ -32,6 +32,18 @@ target_win_x64 = ":" + CLANG_WIN_X64
 
 ###################### Linux X64 ######################
 
+filegroup(
+    name = "linux_x64_llvm_cov",
+    srcs = [CLANG_LINUX_X64 + "/bin/llvm-cov"],
+    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+)
+
+filegroup(
+    name = "linux_x64_llvm_profdata",
+    srcs = [CLANG_LINUX_X64 + "/bin/llvm-profdata"],
+    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+)
+
 cc_tool(
     name = "linux_x64_clang",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,

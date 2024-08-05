@@ -255,9 +255,16 @@ new_local_repository(
     path = "prebuilts/rust/darwin-x86/{}".format(TOOL_VERSIONS["rust"]),
 )
 
+new_local_repository(
+    name = "rust_linux",
+    build_file = "//build/bazel/toolchains/rust:linux.BUILD",
+    path = "prebuilts/rust/linux-x86/{}".format(TOOL_VERSIONS["rust"]),
+)
+
 register_toolchains(
     "//build/bazel/toolchains/rust:mac_arm64_toolchain",
     "//build/bazel/toolchains/rust:mac_x64_toolchain",
+    "//build/bazel/toolchains/rust:linux_x64_toolchain",
 )
 
 rust_register_toolchains(versions = [TOOL_VERSIONS["rust"]])

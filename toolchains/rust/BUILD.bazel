@@ -1,8 +1,6 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_rust//rust:toolchain.bzl", "rust_toolchain")
 
-HOST_TRIPLE_MAC = "x86_64-apple-darwin"
-
 # Whether the custom toolchains link rust_binary and rust_test targets using
 # cc_common.link instead of rustc. For linux and macOS only.
 bool_flag(
@@ -17,7 +15,7 @@ rust_toolchain(
     cargo = "@rust_mac//:cargo",
     clippy_driver = "@rust_mac//:clippy_driver_bin",
     dylib_ext = ".dylib",
-    exec_triple = HOST_TRIPLE_MAC,
+    exec_triple = "x86_64-apple-darwin",
     experimental_use_cc_common_link = ":use_cc_common_link",
     extra_exec_rustc_flags = [],
     extra_rustc_flags = [],
@@ -58,7 +56,7 @@ rust_toolchain(
     cargo = "@rust_mac//:cargo",
     clippy_driver = "@rust_mac//:clippy_driver_bin",
     dylib_ext = ".dylib",
-    exec_triple = HOST_TRIPLE_MAC,
+    exec_triple = "x86_64-apple-darwin",
     experimental_use_cc_common_link = ":use_cc_common_link",
     extra_exec_rustc_flags = [],
     extra_rustc_flags = [],
@@ -88,6 +86,48 @@ toolchain(
         "@platforms//os:macos",
     ],
     toolchain = ":mac_x64",
+    toolchain_type = "@rules_rust//rust:toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+rust_toolchain(
+    name = "linux_x64",
+    allocator_library = "@rules_rust//ffi/cc/allocator_library",
+    binary_ext = "",
+    cargo = "@rust_linux//:cargo",
+    clippy_driver = "@rust_linux//:clippy_driver_bin",
+    dylib_ext = ".so",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    experimental_use_cc_common_link = ":use_cc_common_link",
+    extra_exec_rustc_flags = [],
+    extra_rustc_flags = [],
+    global_allocator_library = "@rules_rust//ffi/cc/global_allocator_library",
+    llvm_cov = "@clang//:linux_x64_llvm_cov",
+    llvm_profdata = "@clang//:linux_x64_llvm_profdata",
+    rust_doc = "@rust_linux//:rustdoc",
+    rust_std = "@rust_linux//:rust_std_x64",
+    rustc = "@rust_linux//:rustc",
+    rustc_lib = "@rust_linux//:rustc_lib",
+    rustfmt = "@rust_linux//:rustfmt_bin",
+    staticlib_ext = ".a",
+    stdlib_linkflags = [
+        "-ldl",
+        "-lpthread",
+    ],
+    target_triple = "x86_64-unknown-linux-gnu",
+)
+
+toolchain(
+    name = "linux_x64_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    toolchain = ":linux_x64",
     toolchain_type = "@rules_rust//rust:toolchain_type",
     visibility = ["//visibility:public"],
 )
