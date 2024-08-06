@@ -189,10 +189,6 @@ cc_toolchain_import(
         target_macos_all + "/include/c++/v1",
         target_macos_all + "/lib/clang/19/include",
     ],
-    static_mode_libs = [
-        target_macos_all + "/lib/libc++.a",
-        target_macos_all + "/lib/libc++abi.a",
-    ],
     support_files = glob(
         [
             CLANG_MACOS_ALL + "/include/c++/v1/**",
