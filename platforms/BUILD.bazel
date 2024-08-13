@@ -1,10 +1,15 @@
 package(default_visibility = ["//visibility:public"])
 
+# cache-silo-key: this is essentially a "salt" added to the remote cache key.
+# Change it to a new value when we want to create a new cache from scratch.
+EXEC_PROPERTIES = {"cache-silo-key": "20240813"}
+
 platform(
     name = "host_clang",
     constraint_values = [
         "@bazel_tools//tools/cpp:clang",
     ],
+    exec_properties = EXEC_PROPERTIES,
     parents = ["@local_config_platform//:host"],
 )
 
@@ -13,6 +18,7 @@ platform(
     constraint_values = [
         "@bazel_tools//tools/cpp:clang-cl",
     ],
+    exec_properties = EXEC_PROPERTIES,
     parents = ["@local_config_platform//:host"],
 )
 

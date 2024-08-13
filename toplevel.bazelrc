@@ -20,7 +20,7 @@ build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
 build:release --compilation_mode=opt
 build:release-assert --compilation_mode=opt --copt=-UNDEBUG
 
-build:san-common --config=debug --strip=never --copt=-O0 --copt=-fno-omit-frame-pointer
+build:san-common --config=debug --copt=-fno-omit-frame-pointer
 
 build:asan --config=san-common --copt=-fsanitize=address --linkopt=-fsanitize=address --copt=-fsanitize-address-use-after-scope
 # ASAN hits ODR violations with shared linkage due to rules_proto.
@@ -32,3 +32,21 @@ build:msan --copt=-fsanitize-memory-use-after-dtor
 build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
 
 build:tsan --config=san-common --copt=-fsanitize=thread --linkopt=-fsanitize=thread
+
+## Base RBE configuration
+build:_remote_base --bes_timeout=240s --grpc_keepalive_time=30s
+build:_remote_base --experimental_build_event_upload_max_retries=5
+build:_remote_base --google_default_credentials
+build:_remote_base --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build:_remote_base --remote_instance_name=projects/emulator-builds/instances/default_instance
+
+## Configs for local builds with remote cache in read-only.
+## This avoids re-running cached actions.
+build:rcache --config=_remote_base
+build:rcache --noremote_upload_local_results
+# remote_local_fallback allows bazel to continue if there are
+# network connectivity failures (e.g., offline)
+build:rcache --remote_local_fallback
+
+## Configs for CI builds
+build:ci --config=_remote_base
