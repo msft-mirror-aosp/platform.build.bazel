@@ -177,6 +177,13 @@ local_repository(
     path = "external/tink",
 )
 
+http_archive(
+    name = "wycheproof",
+    sha256 = "eb1d558071acf1aa6d677d7f1cabec2328d1cf8381496c17185bd92b52ce7545",
+    strip_prefix = "wycheproof-d8ed1ba95ac4c551db67f410c06131c3bc00a97c",
+    url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
+)
+
 load("@tink_cc//:tink_cc_deps.bzl", "tink_cc_deps")
 
 tink_cc_deps()
