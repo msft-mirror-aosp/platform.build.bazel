@@ -15,7 +15,6 @@ load(
     "dynamic_linking_mode_feature",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
-    "get_toolchain_link_flags_feature",
     "linkstamps_feature",
     "no_legacy_features",
     "no_stripping_feature",
@@ -47,11 +46,18 @@ load(
     "env_entry",
     "env_set",
     "feature",
+    "feature_set",
     "flag_group",
     "flag_set",
     "variable_with_value",
     "with_feature_set",
 )
+
+# A feature set that is satisfied when the driving mode should be MSVC.
+# rules_rust would disable this mode because we link rust with mingw instead.
+MODE_MSVC = feature_set(features = ["rules_rust_unsupported_feature"])
+WITH_MODE_MSVC = with_feature_set(features = MODE_MSVC.features)
+WITH_MODE_GNU = with_feature_set(not_features = MODE_MSVC.features)
 
 archive_param_file_feature = feature(
     name = "archive_param_file",
@@ -289,7 +295,7 @@ def get_toolchain_include_paths_feature(import_config):
         ],
     )
 
-def get_toolchain_lib_search_paths_feature(import_config):
+def get_toolchain_lib_search_paths_feature(import_config_msvc, import_config_gnu):
     return feature(
         name = "toolchain_library_search_directories",
         enabled = True,
@@ -299,9 +305,45 @@ def get_toolchain_lib_search_paths_feature(import_config):
                 env_entries = [
                     env_entry(
                         key = "LIB",
-                        value = ";".join(import_config.lib_search_paths),
+                        value = ";".join(import_config_msvc.lib_search_paths),
                     ),
                 ],
+                with_features = [WITH_MODE_MSVC],
+            ),
+        ],
+        flag_sets = [
+            flag_set(
+                actions = LINK_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(
+                        len,
+                        flag_group,
+                        flags = ["-L" + p for p in import_config_gnu.lib_search_paths],
+                    ),
+                ]),
+                with_features = [WITH_MODE_GNU],
+            ),
+        ],
+    )
+
+def get_toolchain_link_flags_feature(flags_msvc, flags_gnu):
+    return feature(
+        name = "toolchain_link_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = LINK_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(len, flag_group, flags = flags_msvc),
+                ]),
+                with_features = [WITH_MODE_MSVC],
+            ),
+            flag_set(
+                actions = LINK_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(len, flag_group, flags = flags_gnu),
+                ]),
+                with_features = [WITH_MODE_GNU],
             ),
         ],
     )
@@ -512,6 +554,11 @@ preprocessor_defines_feature = feature(
     ],
 )
 
+rules_rust_unsupported_feature = feature(
+    name = "rules_rust_unsupported_feature",
+    enabled = True,
+)
+
 shared_flag_feature = feature(
     name = "shared_flag",
     enabled = True,
@@ -569,7 +616,8 @@ windows_export_all_symbols_feature = feature(
 )
 
 def _cc_features_impl(ctx):
-    import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
+    import_config_msvc = toolchain_import_configs(ctx.attr.toolchain_imports_msvc)
+    import_config_gnu = toolchain_import_configs(ctx.attr.toolchain_imports_gnu)
     all_features = flatten([
         # features set / consumed by bazel
         no_legacy_features,
@@ -588,11 +636,12 @@ def _cc_features_impl(ctx):
         no_windows_export_all_symbols_feature,
 
         # features for tool invocations
+        rules_rust_unsupported_feature,
         preprocessor_defines_feature,
         parse_showincludes_feature,
         include_paths_feature,
         external_include_paths_feature,
-        get_toolchain_include_paths_feature(import_config),
+        get_toolchain_include_paths_feature(import_config_msvc),
         shared_flag_feature,
         linkstamps_feature,
         output_execpath_feature,
@@ -601,14 +650,14 @@ def _cc_features_impl(ctx):
         dynamic_link_cpp_runtimes_feature,
         static_link_cpp_runtimes_feature,
         generate_pdb_file_feature,
-        get_toolchain_lib_search_paths_feature(import_config),
+        get_toolchain_lib_search_paths_feature(import_config_msvc, import_config_gnu),
         get_archiver_flags_feature(ctx.attr.archive_flags),
         # Start flag ordering: the order of following features impacts how
         # flags override each other.
         opt_feature,
         dbg_feature,
         libraries_to_link_feature,
-        get_toolchain_link_flags_feature(ctx.attr.link_flags),
+        get_toolchain_link_flags_feature(ctx.attr.link_flags_msvc, ctx.attr.link_flags_gnu),
         user_link_flags_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
@@ -636,12 +685,21 @@ cc_features = rule(
             doc = "Flags always added to c++ compile actions.",
             default = [],
         ),
-        "link_flags": attr.string_list(
-            doc = "Flags always added to link actions.",
+        "link_flags_msvc": attr.string_list(
+            doc = "Flags always added to link actions in MSVC driving mode.",
             default = [],
         ),
-        "toolchain_imports": attr.label_list(
-            doc = "A list of cc_toolchain_import targets.",
+        "link_flags_gnu": attr.string_list(
+            doc = "Flags always added to link actions in GNU driving mode.",
+            default = [],
+        ),
+        "toolchain_imports_msvc": attr.label_list(
+            doc = "A list of cc_toolchain_import targets in MSVC driving mode.",
+            providers = [CcToolchainImportInfo],
+            default = [],
+        ),
+        "toolchain_imports_gnu": attr.label_list(
+            doc = "A list of cc_toolchain_import targets in GNU driving mode, for linking only",
             providers = [CcToolchainImportInfo],
             default = [],
         ),

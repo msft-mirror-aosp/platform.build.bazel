@@ -199,6 +199,18 @@ cc_toolchain_import(
 
 ###################### Windows X64 ######################
 
+filegroup(
+    name = "win_x64_llvm_cov",
+    srcs = [CLANG_WIN_X64 + "/bin/llvm-cov.exe"],
+    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+)
+
+filegroup(
+    name = "win_x64_llvm_profdata",
+    srcs = [CLANG_WIN_X64 + "/bin/llvm-profdata.exe"],
+    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+)
+
 cc_tool(
     name = "win_x64_clang-cl",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,

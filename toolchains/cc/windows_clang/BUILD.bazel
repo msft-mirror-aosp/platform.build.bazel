@@ -7,10 +7,14 @@ load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
 
-_x64_imports = [
+_x64_imports_msvc = [
     "@vctools//:msvc_runtimes_x64",
     "@windows_sdk//:sdk_libs_x64",
     "@clang//:win_x64_compiler_runtime",
+]
+
+_x64_imports_gnu = [
+    "@mingw64//:mingw_libs_x64",
 ]
 
 cc_features(
@@ -39,10 +43,11 @@ cc_features(
         "-no-canonical-prefixes",
     ],
     cxx_flags = ["-std:c++17"],
-    link_flags = [
+    link_flags_msvc = [
         "/ignore:4070",
     ],
-    toolchain_imports = _x64_imports,
+    toolchain_imports_gnu = _x64_imports_gnu,
+    toolchain_imports_msvc = _x64_imports_msvc,
 )
 
 cc_artifact_name(
@@ -100,7 +105,7 @@ cc_toolchain_config(
     compiler_name = "clang-cl",
     identifier = "win_clangcl_x64",
     target_cpu = "k8",
-    toolchain_imports = _x64_imports,
+    toolchain_imports = _x64_imports_msvc + _x64_imports_gnu,
 )
 
 cc_toolchain(

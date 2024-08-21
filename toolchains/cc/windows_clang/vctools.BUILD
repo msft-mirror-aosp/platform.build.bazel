@@ -18,8 +18,14 @@ cc_toolchain_import(
             "lib/x64/**",
         ],
         exclude = [
+            "include/cliext/**",
+            "include/codeanalysis/**",
+            "include/experimental/**",
+            "include/maifest/**",
+            "include/msclr/**",
             "lib/x64/store/**",
             "lib/x64/uwp/**",
+            "lib/x64/clang_rt*",
         ],
     ),
 )

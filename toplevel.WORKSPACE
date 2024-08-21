@@ -55,13 +55,13 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    integrity = "sha256-F8U7+AC5MvMtPKGdLLnorVM84cDXKfDRgwd7/dq3rUY=",
+    integrity = "sha256-3QBrdyIdWeTRQSB8DnrfEbH7YNFEC4/KA7+SVheTKmA=",
     patch_args = ["-p1"],
-    patches = ["//build/bazel/toolchains/rust:feature-rules_rust_link_cc.patch"],
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.46.0/rules_rust-v0.46.0.tar.gz"],
+    patches = ["//build/bazel/toolchains/rust:fix-generated-file-with-sibling-layout.patch"],
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.49.3/rules_rust-v0.49.3.tar.gz"],
 )
 
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies")
 
 rules_rust_dependencies()
 
@@ -257,6 +257,12 @@ windows_sdk_repository(
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 
+new_local_repository(
+    name = "mingw64",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:mingw64.BUILD",
+    path = "prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8",
+)
+
 # Repository that provides Python 3
 new_local_repository(
     name = "python",
@@ -293,13 +299,18 @@ new_local_repository(
     path = "prebuilts/rust/linux-x86/{}".format(TOOL_VERSIONS["rust"]),
 )
 
+new_local_repository(
+    name = "rust_windows",
+    build_file = "//build/bazel/toolchains/rust:windows.BUILD",
+    path = "prebuilts/rust/windows-x86/{}".format(TOOL_VERSIONS["rust"]),
+)
+
 register_toolchains(
     "//build/bazel/toolchains/rust:mac_arm64_toolchain",
     "//build/bazel/toolchains/rust:mac_x64_toolchain",
     "//build/bazel/toolchains/rust:linux_x64_toolchain",
+    "//build/bazel/toolchains/rust:windows_x64_toolchain",
 )
-
-rust_register_toolchains(versions = [TOOL_VERSIONS["rust"]])
 
 # Rust crates, note that these follow the AOSP style of naming, where every crate
 # is basically @..crate..
