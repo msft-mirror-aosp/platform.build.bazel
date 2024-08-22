@@ -186,6 +186,7 @@ dynamic_link_cpp_runtimes_feature = feature(
         ),
     ],
     provides = ["runtime_select"],
+    requires = [MODE_MSVC],
 )
 
 external_include_paths_feature = feature(
@@ -570,6 +571,14 @@ shared_flag_feature = feature(
             ],
             flag_groups = [flag_group(flags = ["/DLL"])],
         ),
+        flag_set(
+            actions = [
+                ACTION_NAMES.cpp_link_dynamic_library,
+                ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+            ],
+            flag_groups = [flag_group(flags = ["-entry=DllMainCRTStartup"])],
+            with_features = [WITH_MODE_GNU],
+        ),
     ],
 )
 
@@ -598,6 +607,7 @@ static_link_cpp_runtimes_feature = feature(
         ),
     ],
     provides = ["runtime_select"],
+    requires = [MODE_MSVC],
 )
 
 supports_interface_shared_libraries_feature = feature(
