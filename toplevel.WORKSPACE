@@ -208,7 +208,7 @@ load(
 json2bzl_repository(
     name = "toolchain_defs",
     config_mapping = {
-        "//build/bazel/rules:toolchains.json": "TOOL_VERSIONS",
+        "//build/bazel/toolchains:tool_versions.json": "TOOL_VERSIONS",
     },
     output_file = "defs.bzl",
 )
