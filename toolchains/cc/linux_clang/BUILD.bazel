@@ -9,7 +9,7 @@ load(":features.bzl", "cc_features")
 package(default_visibility = ["//visibility:public"])
 
 _x64_imports = [
-    "@clang//:linux_x64_libcxx",
+    "@clang_linux_x64//:libcxx",
 ] + select({
     ":host_stdlibs": [],
     "//conditions:default": [
@@ -56,9 +56,9 @@ cc_toolchain_config(
     name = "x64_config",
     cc_features = ":x64_features",
     cc_tools = [
-        "@clang//:linux_x64_clang",
-        "@clang//:linux_x64_archiver",
-        "@clang//:linux_x64_strip",
+        "@clang_linux_x64//:clang",
+        "@clang_linux_x64//:archiver",
+        "@clang_linux_x64//:strip",
     ],
     compiler_name = "clang",
     identifier = "linux_clang_x64",
@@ -90,15 +90,15 @@ cc_toolchain_static_runtime(
 cc_toolchain(
     name = "x64",
     all_files = ":x64_config",
-    ar_files = "@clang//:linux_x64_archiver",
-    as_files = "@clang//:linux_x64_clang",
+    ar_files = "@clang_linux_x64//:archiver",
+    as_files = "@clang_linux_x64//:clang",
     compiler_files = ":x64_config",
     dwp_files = "@//build/bazel/toolchains/cc:empty",
     dynamic_runtime_lib = ":x64_dynamic_runtime",
     linker_files = ":x64_config",
     objcopy_files = "@//build/bazel/toolchains/cc:empty",
     static_runtime_lib = ":x64_static_runtime",
-    strip_files = "@clang//:linux_x64_strip",
+    strip_files = "@clang_linux_x64//:strip",
     supports_param_files = 1,
     toolchain_config = ":x64_config",
 )

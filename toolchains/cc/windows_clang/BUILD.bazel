@@ -10,7 +10,7 @@ package(default_visibility = ["//visibility:public"])
 _x64_imports_msvc = [
     "@vctools//:msvc_runtimes_x64",
     "@windows_sdk//:sdk_libs_x64",
-    "@clang//:win_x64_compiler_runtime",
+    "@clang_win_x64//:compiler_runtime",
 ]
 
 _x64_imports_gnu = [
@@ -98,9 +98,9 @@ cc_toolchain_config(
     ],
     cc_features = ":x64_features",
     cc_tools = [
-        "@clang//:win_x64_clang-cl",
-        "@clang//:win_x64_link",
-        "@clang//:win_x64_archiver",
+        "@clang_win_x64//:clang-cl",
+        "@clang_win_x64//:link",
+        "@clang_win_x64//:archiver",
     ],
     compiler_name = "clang-cl",
     identifier = "win_clangcl_x64",
@@ -111,8 +111,8 @@ cc_toolchain_config(
 cc_toolchain(
     name = "x64",
     all_files = ":x64_config",
-    ar_files = "@clang//:win_x64_archiver",
-    as_files = "@clang//:win_x64_clang-cl",
+    ar_files = "@clang_win_x64//:archiver",
+    as_files = "@clang_win_x64//:clang-cl",
     compiler_files = ":x64_config",
     dwp_files = "@//build/bazel/toolchains/cc:empty",
     linker_files = ":x64_config",

@@ -215,17 +215,29 @@ json2bzl_repository(
 
 load("@toolchain_defs//:defs.bzl", "TOOL_VERSIONS")
 
-# Repository that provides the clang compilers
+# Repositories that provide the clang compilers
 selective_local_repository(
-    name = "clang",
-    build_file = "//build/bazel/toolchains/cc:clang.BUILD",
+    name = "clang_linux_x64",
+    build_file = "//build/bazel/toolchains/cc/linux_clang:clang.BUILD",
     # Ignore pre-existing BUILD files so we can use our own BUILD file without
     # touching the ones added by go/roboleaf.
     ignore_filenames = [
         "BUILD",
         "BUILD.bazel",
     ],
-    path = "prebuilts/clang/host",
+    path = "prebuilts/clang/host/linux-x86/{}".format(TOOL_VERSIONS["clang"]),
+)
+
+new_local_repository(
+    name = "clang_mac_all",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:clang.BUILD",
+    path = "prebuilts/clang/host/darwin-x86/{}".format(TOOL_VERSIONS["clang"]),
+)
+
+new_local_repository(
+    name = "clang_win_x64",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:clang.BUILD",
+    path = "prebuilts/clang/host/windows-x86/{}".format(TOOL_VERSIONS["clang"]),
 )
 
 # Repository that provides include / libs from GCC

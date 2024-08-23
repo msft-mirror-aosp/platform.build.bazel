@@ -10,7 +10,7 @@ load(":features.bzl", "cc_features")
 package(default_visibility = ["//visibility:public"])
 
 _imports = [
-    "@clang//:macos_all_libcxx",
+    "@clang_mac_all//:libcxx",
     "@macos_sdk//:frameworks",
 ]
 
@@ -52,10 +52,10 @@ cc_toolchain_config(
     artifact_name_patterns = [":dylib"],
     cc_features = ":x64_features",
     cc_tools = [
-        "@clang//:macos_all_clang",
-        "@clang//:macos_all_clang++",
-        "@clang//:macos_all_archiver",
-        "@clang//:macos_all_strip",
+        "@clang_mac_all//:clang",
+        "@clang_mac_all//:clang++",
+        "@clang_mac_all//:archiver",
+        "@clang_mac_all//:strip",
     ],
     compiler_name = "clang",
     identifier = "macos_clang_x64",
@@ -77,15 +77,15 @@ cc_toolchain_static_runtime(
 cc_toolchain(
     name = "x64",
     all_files = ":x64_config",
-    ar_files = "@clang//:macos_all_archiver",
-    as_files = "@clang//:macos_all_clang",
+    ar_files = "@clang_mac_all//:archiver",
+    as_files = "@clang_mac_all//:clang",
     compiler_files = ":x64_config",
     dwp_files = "@//build/bazel/toolchains/cc:empty",
     dynamic_runtime_lib = ":dynamic_runtime",
     linker_files = ":x64_config",
     objcopy_files = "@//build/bazel/toolchains/cc:empty",
     static_runtime_lib = ":static_runtime",
-    strip_files = "@clang//:macos_all_strip",
+    strip_files = "@clang_mac_all//:strip",
     supports_param_files = 1,
     toolchain_config = ":x64_config",
 )
@@ -138,10 +138,10 @@ cc_toolchain_config(
     artifact_name_patterns = [":dylib"],
     cc_features = ":arm64_features",
     cc_tools = [
-        "@clang//:macos_all_clang",
-        "@clang//:macos_all_clang++",
-        "@clang//:macos_all_archiver",
-        "@clang//:macos_all_strip",
+        "@clang_mac_all//:clang",
+        "@clang_mac_all//:clang++",
+        "@clang_mac_all//:archiver",
+        "@clang_mac_all//:strip",
     ],
     compiler_name = "clang",
     identifier = "macos_clang_arm64",
@@ -153,15 +153,15 @@ cc_toolchain_config(
 cc_toolchain(
     name = "arm64",
     all_files = ":arm64_config",
-    ar_files = "@clang//:macos_all_archiver",
-    as_files = "@clang//:macos_all_clang",
+    ar_files = "@clang_mac_all//:archiver",
+    as_files = "@clang_mac_all//:clang",
     compiler_files = ":arm64_config",
     dwp_files = "@//build/bazel/toolchains/cc:empty",
     dynamic_runtime_lib = ":dynamic_runtime",
     linker_files = ":arm64_config",
     objcopy_files = "@//build/bazel/toolchains/cc:empty",
     static_runtime_lib = ":static_runtime",
-    strip_files = "@clang//:macos_all_strip",
+    strip_files = "@clang_mac_all//:strip",
     supports_param_files = 1,
     toolchain_config = ":arm64_config",
 )
