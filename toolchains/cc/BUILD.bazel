@@ -19,12 +19,12 @@ config_setting(
     },
     visibility = [
         "//build/bazel/toolchains/cc:__subpackages__",
-        "@clang//:__subpackages__",
+        "@clang_mac_all//:__subpackages__",
     ],
 )
 
 cc_bootstrap_binary(
     name = "wrapper",
     srcs = ["wrapper.cc"],
-    visibility = ["@clang//:__subpackages__"],
+    visibility = ["@clang_mac_all//:__subpackages__"],
 )

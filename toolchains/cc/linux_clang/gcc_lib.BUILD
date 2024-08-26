@@ -2,7 +2,7 @@ load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import", "sysroot")
 
 package(default_visibility = [
     "@//build/bazel/toolchains/cc:__subpackages__",
-    "@clang//:__subpackages__",
+    "@clang_linux_x64//:__subpackages__",
 ])
 
 cc_toolchain_import(
