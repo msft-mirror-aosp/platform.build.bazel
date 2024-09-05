@@ -63,19 +63,51 @@ cc_toolchain_import(
     name = "libcxx",
     dynamic_mode_libs = [
         ":lib/x86_64-unknown-linux-gnu/libc++.so",
-        ":lib/x86_64-unknown-linux-gnu/libc++.so.1",
+        ":lib/x86_64-unknown-linux-gnu/libc++abi.so",
     ],
     include_paths = [
         ":include/c++/v1",
-        ":lib/clang/19/include",
     ],
     static_mode_libs = [
         ":lib/x86_64-unknown-linux-gnu/libc++.a",
+        ":lib/x86_64-unknown-linux-gnu/libc++abi.a",
     ],
     support_files = glob(
         [
             "include/c++/v1/**",
-            "lib/clang/19/include/**",
         ],
     ),
+)
+
+cc_toolchain_import(
+    name = "compiler_rt",
+    include_paths = glob(
+        [
+            "lib/clang/*/include",
+        ],
+        exclude_directories = 0,
+    ),
+    lib_search_paths = glob(
+        [
+            "lib/clang/*/lib/x86_64-unknown-linux-gnu",
+        ],
+        exclude_directories = 0,
+    ),
+    support_files = glob(
+        [
+            "lib/clang/*/include/**",
+            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*.o",
+            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*.a",
+        ],
+    ),
+)
+
+cc_toolchain_import(
+    name = "libunwind",
+    lib_search_paths = [
+        ":lib/x86_64-unknown-linux-gnu",
+    ],
+    support_files = [
+        ":lib/x86_64-unknown-linux-gnu/libunwind.a",
+    ],
 )
