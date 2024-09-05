@@ -157,9 +157,3 @@ json2bzl_repository = repository_rule(
         ),
     },
 )
-
-def setup_aliases():
-    native.bind(
-        name = "googletest",
-        actual = "@com_google_googletest",
-    )

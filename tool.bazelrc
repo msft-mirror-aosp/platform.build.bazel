@@ -7,9 +7,6 @@ build --incompatible_enable_cc_toolchain_resolution
 build:linux --host_platform='//build/bazel/platforms:host_clang'
 build:linux --features='generate_debug_symbols'
 build:linux --force_pic
-# TODO(zachyu) remove when we have a custom rust toolchain with this on by default.
-# Link rust with cc_common
-build:linux --@rules_rust//rust/settings:experimental_use_cc_common_link
 
 build:macos --host_platform='//build/bazel/platforms:host_clang'
 build:macos --features='generate_debug_symbols'
@@ -17,9 +14,6 @@ build:macos --features='generate_debug_symbols'
 # Prevent thread-local issues in protobuf.
 build:macos --features=-supports_dynamic_linker
 build:macos --force_pic
-# TODO(zachyu) remove when we have a custom rust toolchain with this on by default.
-# Link rust with cc_common
-build:macos --@rules_rust//rust/settings:experimental_use_cc_common_link
 
 build:windows --host_platform='//build/bazel/platforms:host_clang-cl'
 build:windows --features='-supports_start_end_lib'

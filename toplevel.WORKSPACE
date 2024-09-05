@@ -2,8 +2,6 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load(
     "//build/bazel/rules:repository.bzl",
     "json2bzl_repository",
-    "selective_local_repository",
-    "setup_aliases",
 )
 
 # Skylib provides common utilities for writing bazel rules and functions.
@@ -69,6 +67,7 @@ new_local_repository(
     name = "boringssl",
     build_file = "//external/boringssl/src:BUILD.bazel",
     path = "external/boringssl/src",
+    repo_mapping = {"@googletest": "@com_google_googletest"},
 )
 
 local_repository(
@@ -216,15 +215,9 @@ json2bzl_repository(
 load("@toolchain_defs//:defs.bzl", "TOOL_VERSIONS")
 
 # Repositories that provide the clang compilers
-selective_local_repository(
+new_local_repository(
     name = "clang_linux_x64",
     build_file = "//build/bazel/toolchains/cc/linux_clang:clang.BUILD",
-    # Ignore pre-existing BUILD files so we can use our own BUILD file without
-    # touching the ones added by go/roboleaf.
-    ignore_filenames = [
-        "BUILD",
-        "BUILD.bazel",
-    ],
     path = "prebuilts/clang/host/linux-x86/{}".format(TOOL_VERSIONS["clang"]),
 )
 
@@ -241,15 +234,9 @@ new_local_repository(
 )
 
 # Repository that provides include / libs from GCC
-selective_local_repository(
+new_local_repository(
     name = "gcc_lib",
     build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
-    # Ignore pre-existing BUILD files so we can use our own BUILD file without
-    # touching the ones added by go/roboleaf.
-    ignore_filenames = [
-        "BUILD",
-        "BUILD.bazel",
-    ],
     path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
 )
 
@@ -380,8 +367,6 @@ local_repository(
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
 grpc_deps()
-
-setup_aliases()
 
 load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
