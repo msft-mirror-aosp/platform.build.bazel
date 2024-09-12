@@ -22,9 +22,9 @@ bazel_skylib_workspace()
 # Python rules (https://github.com/bazelbuild/rules_python)
 http_archive(
     name = "rules_python",
-    sha256 = "c68bdc4fbec25de5b5493b8819cfc877c4ea299c0dcb15c244c5a00208cde311",
-    strip_prefix = "rules_python-0.31.0",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.31.0/rules_python-0.31.0.tar.gz",
+    sha256 = "be04b635c7be4604be1ef20542e9870af3c49778ce841ee2d92fcb42f9d9516a",
+    strip_prefix = "rules_python-0.35.0",
+    url = "https://github.com/bazelbuild/rules_python/releases/download/0.35.0/rules_python-0.35.0.tar.gz",
 )
 
 load("@rules_python//python:repositories.bzl", "py_repositories")
@@ -176,13 +176,6 @@ local_repository(
     path = "external/tink",
 )
 
-http_archive(
-    name = "wycheproof",
-    sha256 = "eb1d558071acf1aa6d677d7f1cabec2328d1cf8381496c17185bd92b52ce7545",
-    strip_prefix = "wycheproof-d8ed1ba95ac4c551db67f410c06131c3bc00a97c",
-    url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
-)
-
 load("@tink_cc//:tink_cc_deps.bzl", "tink_cc_deps")
 
 tink_cc_deps()
@@ -194,6 +187,18 @@ tink_cc_deps_init()
 local_repository(
     name = "com_github_google_flatbuffers",
     path = "external/flatbuffers",
+)
+
+local_repository(
+    name = "webrtc",
+    path = "external/webrtc",
+)
+
+http_archive(
+    name = "wycheproof",
+    sha256 = "eb1d558071acf1aa6d677d7f1cabec2328d1cf8381496c17185bd92b52ce7545",
+    strip_prefix = "wycheproof-d8ed1ba95ac4c551db67f410c06131c3bc00a97c",
+    url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
 )
 
 # CC toolchains
@@ -262,18 +267,6 @@ new_local_repository(
     path = "prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8",
 )
 
-# Repository that provides Python 3
-new_local_repository(
-    name = "python",
-    build_file = "//build/bazel/toolchains/python:prebuilts.BUILD",
-    path = "prebuilts/python",
-)
-
-local_repository(
-    name = "webrtc",
-    path = "external/webrtc",
-)
-
 register_toolchains(
     "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
@@ -282,8 +275,17 @@ register_toolchains(
     "//build/bazel/toolchains/cc/windows_clang:resource_compiler_x64",
 )
 
+# Repository that provides Python 3
+new_local_repository(
+    name = "python",
+    build_file = "//build/bazel/toolchains/python:prebuilts.BUILD",
+    path = "prebuilts/python",
+)
+
 register_toolchains(
     "//build/bazel/toolchains/python:linux_x86_toolchain",
+    "//build/bazel/toolchains/python:windows_x86_toolchain",
+    "//build/bazel/toolchains/python:mac_all_toolchain",
 )
 
 new_local_repository(
