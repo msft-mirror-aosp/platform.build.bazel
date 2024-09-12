@@ -104,12 +104,32 @@ cc_toolchain_import(
     ],
     include_paths = [
         ":include/c++/v1",
-        ":lib/clang/19/include",
     ],
     support_files = glob(
         [
             "include/c++/v1/**",
-            "lib/clang/19/include/**",
+        ],
+    ),
+)
+
+cc_toolchain_import(
+    name = "compiler_rt",
+    include_paths = glob(
+        [
+            "lib/clang/*/include",
+        ],
+        exclude_directories = 0,
+    ),
+    lib_search_paths = glob(
+        [
+            "lib/clang/*/lib/darwin",
+        ],
+        exclude_directories = 0,
+    ),
+    support_files = glob(
+        [
+            "lib/clang/*/include/**",
+            "lib/clang/*/lib/darwin/*",
         ],
     ),
 )

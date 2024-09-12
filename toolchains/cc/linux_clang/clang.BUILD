@@ -31,18 +31,17 @@ cc_tool(
     name = "clang",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
     runfiles = glob(
-        ["bin/*"],
+        [
+            "bin/clang*",
+            "bin/*lld",
+        ],
         exclude = [
             "bin/clang-check",
             "bin/clangd",
             "bin/*clang-format",
             "bin/clang-tidy*",
-            "bin/lldb*",
-            "bin/llvm-bolt",
-            "bin/llvm-config",
-            "bin/llvm-cfi-verify",
         ],
-    ),
+    ) + ["bin/lld-link"],
     tool = ":bin/clang",
 )
 
@@ -96,8 +95,7 @@ cc_toolchain_import(
     support_files = glob(
         [
             "lib/clang/*/include/**",
-            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*.o",
-            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*.a",
+            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*",
         ],
     ),
 )

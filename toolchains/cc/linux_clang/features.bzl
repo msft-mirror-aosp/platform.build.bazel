@@ -15,6 +15,7 @@ load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
     "get_b_prefix_feature",
+    "get_sanitizer_feature",
     "get_toolchain_cc_only_features",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
@@ -643,6 +644,56 @@ dbg_feature = feature(
     implies = ["generate_debug_symbols"],
 )
 
+fastbuild_feature = feature(
+    name = "fastbuild",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-O1",
+                ]),
+            ],
+        ),
+    ],
+)
+
+asan_feature = get_sanitizer_feature(
+    name = "asan",
+    compile_flags = [
+        "-fsanitize=address",
+        "-fno-optimize-sibling-calls",
+        "-fsanitize-address-use-after-scope",
+        "-fno-common",
+    ],
+    link_flags = [
+        "-fsanitize=address",
+    ],
+)
+
+tsan_feature = get_sanitizer_feature(
+    name = "tsan",
+    compile_flags = [
+        "-fsanitize=thread",
+    ],
+    link_flags = [
+        "-fsanitize=thread",
+    ],
+)
+
+msan_feature = get_sanitizer_feature(
+    name = "msan",
+    compile_flags = [
+        "-fsanitize=memory",
+        "-fno-optimize-sibling-calls",
+        "-fsanitize-memory-track-origins",
+        "-fsanitize-memory-use-after-dtor",
+    ],
+    link_flags = [
+        "-fsanitize=memory",
+    ],
+)
+
 def _cc_features_impl(ctx):
     import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
@@ -675,7 +726,11 @@ def _cc_features_impl(ctx):
         # flags override each other.
         opt_feature,
         dbg_feature,
+        fastbuild_feature,
         libraries_to_link_feature,
+        asan_feature,
+        tsan_feature,
+        msan_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         get_toolchain_cc_only_features([]),
         user_link_flags_feature,
