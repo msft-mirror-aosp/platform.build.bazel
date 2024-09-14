@@ -10,7 +10,7 @@ load(":features.bzl", "cc_features")
 package(default_visibility = ["//visibility:public"])
 
 _imports = [
-    "@clang_mac_all//:libcxx",
+    "@macos_sdk//:libcxx",
     "@clang_mac_all//:compiler_rt",
     "@macos_sdk//:frameworks",
 ]
@@ -21,6 +21,7 @@ cc_features(
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-lc++",
+        "-lc++abi",
     ],
     compile_flags = [
         "--target=x86_64-apple-darwin-macho",
@@ -114,6 +115,7 @@ cc_features(
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-lc++",
+        "-lc++abi",
     ],
     compile_flags = [
         "--target=arm64-apple-darwin-macho",
