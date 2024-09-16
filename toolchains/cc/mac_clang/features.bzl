@@ -38,10 +38,12 @@ load(
 load(
     "@//build/bazel/toolchains/cc/linux_clang:features.bzl",
     "archiver_flags_feature",
+    "asan_feature",
     "compiler_input_feature",
     "compiler_output_feature",
     "dbg_feature",
     "dependency_file_feature",
+    "fastbuild_feature",
     "generate_debug_symbols_feature",
     "get_toolchain_include_paths_feature",
     "get_toolchain_lib_search_paths_feature",
@@ -56,6 +58,7 @@ load(
     "shared_flag_feature",
     "strip_debug_symbols_feature",
     "sysroot_feature",
+    "tsan_feature",
 )
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
@@ -321,6 +324,9 @@ def _cc_features_impl(ctx):
         # flags override each other.
         opt_feature,
         dbg_feature,
+        fastbuild_feature,
+        asan_feature,
+        tsan_feature,
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         get_toolchain_cc_only_features(ctx.attr.cc_only_link_flags),

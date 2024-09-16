@@ -144,6 +144,34 @@ def get_b_prefix_feature(file):
         ],
     )
 
+def get_sanitizer_feature(name, compile_flags, link_flags):
+    return feature(
+        name = name,
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = [
+                        "-fno-omit-frame-pointer",
+                    ] + compile_flags),
+                ],
+            ),
+            flag_set(
+                actions = LINK_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = link_flags),
+                ],
+            ),
+        ],
+        requires = [
+            feature_set(features = ["dbg"]),
+            feature_set(features = [
+                "fastbuild",
+                "generate_debug_symbols",
+            ]),
+        ],
+    )
+
 no_legacy_features = feature(
     name = "no_legacy_features",
     enabled = True,

@@ -98,18 +98,23 @@ cc_tool(
 )
 
 cc_toolchain_import(
-    name = "libcxx",
-    dynamic_mode_libs = [
-        ":lib/libc++.dylib",
-    ],
-    include_paths = [
-        ":include/c++/v1",
-        ":lib/clang/19/include",
-    ],
+    name = "compiler_rt",
+    include_paths = glob(
+        [
+            "lib/clang/*/include",
+        ],
+        exclude_directories = 0,
+    ),
+    lib_search_paths = glob(
+        [
+            "lib/clang/*/lib/darwin",
+        ],
+        exclude_directories = 0,
+    ),
     support_files = glob(
         [
-            "include/c++/v1/**",
-            "lib/clang/19/include/**",
+            "lib/clang/*/include/**",
+            "lib/clang/*/lib/darwin/*",
         ],
     ),
 )

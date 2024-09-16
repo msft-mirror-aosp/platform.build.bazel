@@ -7,15 +7,8 @@ build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
 build:release --compilation_mode=opt
 build:release-assert --compilation_mode=opt --copt=-UNDEBUG
 
-build:san-common --config=debug --copt=-fno-omit-frame-pointer
-
-build:asan --config=san-common --copt=-fsanitize=address --linkopt=-fsanitize=address --copt=-fsanitize-address-use-after-scope
+build:asan --features='asan'
 # ASAN hits ODR violations with shared linkage due to rules_proto.
 build:asan --dynamic_mode=off
-
-build:msan --config=san-common --copt=-fsanitize=memory --linkopt=-fsanitize=memory
-build:msan --copt=-fsanitize-memory-track-origins
-build:msan --copt=-fsanitize-memory-use-after-dtor
-build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
-
-build:tsan --config=san-common --copt=-fsanitize=thread --linkopt=-fsanitize=thread
+build:msan --features='msan'
+build:tsan --features='tsan'
