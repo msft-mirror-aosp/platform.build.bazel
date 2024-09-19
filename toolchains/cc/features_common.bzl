@@ -13,6 +13,8 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "LTO_BACKEND_ACTIONS",
+    "LTO_INDEX_ACTIONS",
     "OBJC_COMPILE_ACTIONS",
 )
 load(":rules.bzl", "CcToolchainImportInfo")
@@ -67,7 +69,7 @@ def get_toolchain_compile_flags_feature(flags):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LTO_BACKEND_ACTIONS,
                 flag_groups = filter_none([
                     check_args(len, flag_group, flags = flags),
                 ]),
@@ -81,7 +83,7 @@ def get_toolchain_cxx_flags_feature(flags):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = CPP_COMPILE_ACTIONS,
+                actions = CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
                 flag_groups = filter_none([
                     check_args(len, flag_group, flags = flags),
                 ]),
@@ -95,7 +97,7 @@ def get_toolchain_link_flags_feature(flags):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = LINK_ACTIONS,
+                actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
                 flag_groups = filter_none([
                     check_args(len, flag_group, flags = flags),
                 ]),
@@ -110,7 +112,7 @@ def get_toolchain_cc_only_features(flags):
             enabled = True,
             flag_sets = [
                 flag_set(
-                    actions = LINK_ACTIONS,
+                    actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
                     flag_groups = filter_none([
                         check_args(len, flag_group, flags = flags),
                     ]),
@@ -132,7 +134,7 @@ def get_b_prefix_feature(file):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LINK_ACTIONS,
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LINK_ACTIONS + LTO_BACKEND_ACTIONS + LTO_INDEX_ACTIONS,
                 flag_groups = filter_none([
                     check_args(
                         len,
@@ -149,7 +151,7 @@ def get_sanitizer_feature(name, compile_flags, link_flags):
         name = name,
         flag_sets = [
             flag_set(
-                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LTO_BACKEND_ACTIONS,
                 flag_groups = [
                     flag_group(flags = [
                         "-fno-omit-frame-pointer",
@@ -157,7 +159,7 @@ def get_sanitizer_feature(name, compile_flags, link_flags):
                 ],
             ),
             flag_set(
-                actions = LINK_ACTIONS,
+                actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
                 flag_groups = [
                     flag_group(flags = link_flags),
                 ],
@@ -216,7 +218,7 @@ linkstamps_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "linkstamp_paths",
@@ -233,7 +235,7 @@ user_link_flags_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "user_link_flags",
@@ -245,18 +247,23 @@ user_link_flags_feature = feature(
     ],
 )
 
-user_objc_compile_flags_feature = feature(
-    name = "user_objc_compile_flags_feature",
+user_compile_flags_feature = feature(
+    name = "user_compile_flags",
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = OBJC_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LTO_BACKEND_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "user_compile_flags",
                     iterate_over = "user_compile_flags",
                     flags = ["%{user_compile_flags}"],
                 ),
+            ],
+        ),
+        flag_set(
+            actions = OBJC_COMPILE_ACTIONS,
+            flag_groups = [
                 # Depending on the compilation mode we can introduce the NDEBUG variable.
                 # This gets placed behind all the copts that are provided in a objc rule.
                 # Unfortunately this causes QEMU to break, since qemu does not compile with
@@ -265,23 +272,6 @@ user_objc_compile_flags_feature = feature(
                 # Details can be found here b/355027962
                 flag_group(
                     flags = ["-UNDEBUG"],
-                ),
-            ],
-        ),
-    ],
-)
-
-user_compile_flags_feature = feature(
-    name = "user_compile_flags",
-    enabled = True,
-    flag_sets = [
-        flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
-            flag_groups = [
-                flag_group(
-                    expand_if_available = "user_compile_flags",
-                    iterate_over = "user_compile_flags",
-                    flags = ["%{user_compile_flags}"],
                 ),
             ],
         ),
