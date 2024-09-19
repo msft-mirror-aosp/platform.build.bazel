@@ -9,6 +9,8 @@ load(
     "CPP_SOURCE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "LTO_BACKEND_ACTIONS",
+    "LTO_INDEX_ACTIONS",
     "OBJC_COMPILE_ACTIONS",
 )
 load(
@@ -46,6 +48,7 @@ load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
+    "feature_set",
     "flag_group",
     "flag_set",
     "variable_with_value",
@@ -89,7 +92,7 @@ def get_toolchain_lib_search_paths_feature(import_config):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = LINK_ACTIONS,
+                actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
                 flag_groups = filter_none([
                     check_args(
                         len,
@@ -247,6 +250,8 @@ shared_flag_feature = feature(
                 ACTION_NAMES.cpp_link_dynamic_library,
                 ACTION_NAMES.cpp_link_nodeps_dynamic_library,
                 ACTION_NAMES.objc_fully_link,
+                ACTION_NAMES.lto_index_for_dynamic_library,
+                ACTION_NAMES.lto_index_for_nodeps_dynamic_library,
             ],
             flag_groups = [
                 flag_group(
@@ -265,7 +270,7 @@ output_execpath_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "output_execpath",
@@ -282,7 +287,7 @@ rpath_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     iterate_over = "runtime_library_search_directories",
@@ -307,7 +312,7 @@ lib_search_paths_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "library_search_directories",
@@ -371,7 +376,7 @@ libraries_to_link_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = ([
                 flag_group(
                     expand_if_true = "thinlto_param_file",
@@ -474,6 +479,7 @@ force_pic_feature = feature(
             actions = [
                 ACTION_NAMES.cpp_link_executable,
                 ACTION_NAMES.objc_executable,
+                ACTION_NAMES.lto_index_for_executable,
             ],
             flag_groups = [
                 flag_group(
@@ -491,7 +497,7 @@ strip_debug_symbols_feature = feature(
     name = "strip_debug_symbols",
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "strip_debug_symbols",
@@ -511,7 +517,7 @@ sysroot_feature = feature(
             actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_SOURCE_ACTIONS + LINK_ACTIONS + [
                 ACTION_NAMES.preprocess_assemble,
                 ACTION_NAMES.linkstamp_compile,
-            ],
+            ] + LTO_BACKEND_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "sysroot",
@@ -528,7 +534,7 @@ linker_param_file_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS + ARCHIVER_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS + ARCHIVER_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_available = "linker_param_file",
@@ -585,7 +591,7 @@ generate_debug_symbols_feature = feature(
     name = "generate_debug_symbols",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
             flag_groups = [
                 flag_group(flags = ["-g"]),
             ],
@@ -593,19 +599,93 @@ generate_debug_symbols_feature = feature(
     ],
 )
 
+thinlto_feature = feature(
+    name = "thin_lto",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = [
+                ACTION_NAMES.c_compile,
+                ACTION_NAMES.objc_compile,
+                ACTION_NAMES.cpp_compile,
+                ACTION_NAMES.objcpp_compile,
+            ] + LINK_ACTIONS + LTO_INDEX_ACTIONS,
+            flag_groups = [
+                flag_group(flags = ["-flto=thin", "-fwhole-program-vtables"]),
+                flag_group(
+                    expand_if_available = "lto_indexing_bitcode_file",
+                    flags = [
+                        "-fthin-link-bitcode=%{lto_indexing_bitcode_file}",
+                    ],
+                ),
+            ],
+        ),
+        flag_set(
+            actions = [ACTION_NAMES.linkstamp_compile],
+            flag_groups = [flag_group(flags = ["-DBUILD_LTO_TYPE=thin"])],
+        ),
+        flag_set(
+            actions = LTO_INDEX_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    expand_if_available = "thinlto_indexing_param_file",
+                    flags = [
+                        "-Wl,--thinlto-index-only=%{thinlto_indexing_param_file}",
+                    ],
+                ),
+                flag_group(
+                    expand_if_not_available = "thinlto_indexing_param_file",
+                    flags = [
+                        "-Wl,--thinlto-index-only",
+                    ],
+                ),
+                flag_group(flags = [
+                    "-Wl,--thinlto-emit-imports-files",
+                    "-Wl,--thinlto-prefix-replace=%{thinlto_prefix_replace}",
+                ]),
+                flag_group(
+                    expand_if_available = "thinlto_object_suffix_replace",
+                    flags = [
+                        "-Wl,--thinlto-object-suffix-replace=%{thinlto_object_suffix_replace}",
+                    ],
+                ),
+                flag_group(
+                    expand_if_available = "thinlto_merged_object_file",
+                    flags = [
+                        "-Wl,--lto-obj-path=%{thinlto_merged_object_file}",
+                    ],
+                ),
+            ],
+        ),
+        flag_set(
+            actions = LTO_BACKEND_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "-c",
+                    "-fthinlto-index=%{thinlto_index}",
+                    "-o",
+                    "%{thinlto_output_object_file}",
+                    "-x",
+                    "ir",
+                    "%{thinlto_input_bitcode_file}",
+                ]),
+            ],
+        ),
+    ],
+    requires = [feature_set(features = ["opt"])],
+)
+
 opt_feature = feature(
     name = "opt",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
                     # Let's go very aggressive
                     "-O3",
                     # No debug symbols.
                     "-g0",
-                    # Enables Link-Time Optimization
-                    "-flto",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
                     # Allow removal of unused sections and code folding at link
@@ -618,7 +698,7 @@ opt_feature = feature(
             ],
         ),
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
                     "-Wl,--gc-sections",
@@ -714,6 +794,7 @@ def _cc_features_impl(ctx):
         includes_feature,
         include_paths_feature,
         get_toolchain_include_paths_feature(import_config),
+        thinlto_feature,
         shared_flag_feature,
         linkstamps_feature,
         output_execpath_feature,

@@ -4,6 +4,8 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "LTO_BACKEND_ACTIONS",
+    "LTO_INDEX_ACTIONS",
     "OBJC_COMPILE_ACTIONS",
 )
 load(
@@ -29,7 +31,7 @@ filegroup(
 
 cc_tool(
     name = "clang",
-    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS + LTO_BACKEND_ACTIONS + LTO_INDEX_ACTIONS,
     runfiles = glob(
         [
             "bin/clang*",
