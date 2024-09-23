@@ -355,7 +355,7 @@ cc_features = rule(
         ),
         "cxx_flags": attr.string_list(
             doc = "Flags always added to c++ actions.",
-            default = ["-std=c++17"],
+            default = [],
         ),
         "link_flags": attr.string_list(
             doc = "Flags always added to link actions.",

@@ -16,7 +16,6 @@ build:macos --features=-supports_dynamic_linker
 build:macos --force_pic
 
 build:windows --host_platform='//build/bazel/platforms:host_clang-cl'
-build:windows --features='-supports_start_end_lib'
 build:windows --features='generate_pdb_file'
 
 ## Python
