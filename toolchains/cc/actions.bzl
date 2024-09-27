@@ -54,6 +54,16 @@ ARCHIVER_ACTIONS = [
     ACTION_NAMES.cpp_link_static_library,
 ]
 
+LTO_BACKEND_ACTIONS = [
+    ACTION_NAMES.lto_backend,
+]
+
+LTO_INDEX_ACTIONS = [
+    ACTION_NAMES.lto_index_for_executable,
+    ACTION_NAMES.lto_index_for_dynamic_library,
+    ACTION_NAMES.lto_index_for_nodeps_dynamic_library,
+]
+
 def create_action_configs(tool_label_and_configs):
     """Creates a list of action configs to specify cc tools to each action.
 

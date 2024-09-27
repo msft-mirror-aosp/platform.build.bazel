@@ -24,7 +24,6 @@ load(
     "toolchain_import_configs",
     "user_compile_flags_feature",
     "user_link_flags_feature",
-    "user_objc_compile_flags_feature",
 )
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
@@ -269,7 +268,8 @@ opt_feature = feature(
                     # No debug symbols.
                     "-g0",
                     # Enables Link-Time Optimization
-                    "-flto",
+                    "-flto=thin",
+                    "-fwhole-program-vtables",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
                     # Allow removal of unused sections at link time.
@@ -286,6 +286,9 @@ opt_feature = feature(
                 flag_group(flags = [
                     "-Wl,-dead_strip",
                     "-Wl,--icf=safe",
+                    # Enables Link-Time Optimization
+                    "-flto=thin",
+                    "-fwhole-program-vtables",
                 ]),
             ],
         ),
@@ -336,7 +339,6 @@ def _cc_features_impl(ctx):
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
-        user_objc_compile_flags_feature,
         ### End flag ordering ##
         sysroot_feature,
         linker_param_file_feature,
