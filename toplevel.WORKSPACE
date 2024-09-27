@@ -283,9 +283,9 @@ new_local_repository(
 )
 
 register_toolchains(
-    "//build/bazel/toolchains/python:linux_x86_toolchain",
-    "//build/bazel/toolchains/python:windows_x86_toolchain",
-    "//build/bazel/toolchains/python:mac_all_toolchain",
+    "@python//:linux_x86_toolchain",
+    "@python//:windows_x86_toolchain",
+    "@python//:mac_all_toolchain",
 )
 
 new_local_repository(
@@ -307,10 +307,10 @@ new_local_repository(
 )
 
 register_toolchains(
-    "//build/bazel/toolchains/rust:mac_arm64_toolchain",
-    "//build/bazel/toolchains/rust:mac_x64_toolchain",
-    "//build/bazel/toolchains/rust:linux_x64_toolchain",
-    "//build/bazel/toolchains/rust:windows_x64_toolchain",
+    "@rust_mac//:mac_arm64_toolchain",
+    "@rust_mac//:mac_x64_toolchain",
+    "@rust_linux//:linux_x64_toolchain",
+    "@rust_windows//:windows_x64_toolchain",
 )
 
 # Rust crates, note that these follow the AOSP style of naming, where every crate

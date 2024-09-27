@@ -1,6 +1,6 @@
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
-load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup")
+load("@rules_rust//rust:toolchain.bzl", "rust_stdlib_filegroup", "rust_toolchain")
 
 filegroup(
     name = "rustc",
@@ -70,5 +70,43 @@ rust_stdlib_filegroup(
             "lib/rustlib/x86_64-pc-windows-gnu/lib/self-contained/**",
         ],
     ),
+    visibility = ["//visibility:public"],
+)
+
+rust_toolchain(
+    name = "windows_x64",
+    allocator_library = "@rules_rust//ffi/cc/allocator_library",
+    binary_ext = ".exe",
+    cargo = "@rust_windows//:cargo",
+    clippy_driver = "@rust_windows//:clippy_driver_bin",
+    dylib_ext = ".dll",
+    exec_triple = "x86_64-pc-windows-gnu",
+    extra_exec_rustc_flags = ["-v"],
+    extra_rustc_flags = [],
+    global_allocator_library = "@rules_rust//ffi/cc/global_allocator_library",
+    llvm_cov = "@clang_win_x64//:llvm_cov",
+    llvm_profdata = "@clang_win_x64//:llvm_profdata",
+    rust_doc = "@rust_windows//:rustdoc",
+    rust_std = "@rust_windows//:rust_std_x64",
+    rustc = "@rust_windows//:rustc",
+    rustc_lib = "@rust_windows//:rustc_lib",
+    rustfmt = "@rust_windows//:rustfmt_bin",
+    staticlib_ext = ".lib",
+    stdlib_linkflags = [],
+    target_triple = "x86_64-pc-windows-gnu",
+)
+
+toolchain(
+    name = "windows_x64_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+    ],
+    toolchain = ":windows_x64",
+    toolchain_type = "@rules_rust//rust:toolchain_type",
     visibility = ["//visibility:public"],
 )
