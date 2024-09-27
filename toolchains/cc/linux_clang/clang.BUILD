@@ -18,13 +18,13 @@ package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 filegroup(
     name = "llvm_cov",
     srcs = ["bin/llvm-cov"],
-    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 filegroup(
     name = "llvm_profdata",
     srcs = ["bin/llvm-profdata"],
-    visibility = ["@//build/bazel/toolchains/rust:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 cc_tool(
