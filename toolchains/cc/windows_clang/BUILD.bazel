@@ -13,9 +13,9 @@ _x64_imports_msvc = [
     "@clang_win_x64//:compiler_runtime",
 ]
 
-_x64_imports_gnu = [
-    "@mingw64//:mingw_libs_x64",
-]
+# This list used to include MinGW libs for linking rust. It's now empty as we
+# don't build rust and don't pull the MinGW repo from prebuilts.
+_x64_imports_gnu = []
 
 cc_features(
     name = "x64_features",
