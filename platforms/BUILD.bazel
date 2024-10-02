@@ -5,31 +5,13 @@ package(default_visibility = ["//visibility:public"])
 EXEC_PROPERTIES = {"cache-silo-key": "20240813"}
 
 platform(
-    name = "host_clang",
-    constraint_values = [
-        "@bazel_tools//tools/cpp:clang",
-    ],
-    exec_properties = EXEC_PROPERTIES,
-    parents = ["@local_config_platform//:host"],
-)
-
-platform(
-    name = "host_clang-cl",
-    constraint_values = [
-        "@bazel_tools//tools/cpp:clang-cl",
-    ],
-    exec_properties = EXEC_PROPERTIES,
-    parents = ["@local_config_platform//:host"],
-)
-
-# Target platforms
-platform(
     name = "linux_x64",
     constraint_values = [
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
         "@bazel_tools//tools/cpp:clang",
     ],
+    exec_properties = EXEC_PROPERTIES,
 )
 
 platform(
@@ -39,6 +21,7 @@ platform(
         "@platforms//os:macos",
         "@bazel_tools//tools/cpp:clang",
     ],
+    exec_properties = EXEC_PROPERTIES,
 )
 
 platform(
@@ -48,6 +31,7 @@ platform(
         "@platforms//os:macos",
         "@bazel_tools//tools/cpp:clang",
     ],
+    exec_properties = EXEC_PROPERTIES,
 )
 
 platform(
@@ -57,4 +41,5 @@ platform(
         "@platforms//os:windows",
         "@bazel_tools//tools/cpp:clang-cl",
     ],
+    exec_properties = EXEC_PROPERTIES,
 )

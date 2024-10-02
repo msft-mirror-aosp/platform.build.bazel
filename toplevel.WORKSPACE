@@ -313,6 +313,34 @@ register_toolchains(
     "@rust_windows//:windows_x64_toolchain",
 )
 
+load(
+    "//build/bazel/platforms:host_platform.bzl",
+    "host_conditions",
+    "host_platform_repository",
+)
+
+host_platform_repository(
+    name = "host_platform",
+    host = {
+        host_conditions(
+            arch = "x64",
+            os = "linux",
+        ): "//build/bazel/platforms:linux_x64",
+        host_conditions(
+            arch = "x64",
+            os = "macos",
+        ): "//build/bazel/platforms:macos_x64",
+        host_conditions(
+            arch = "arm64",
+            os = "macos",
+        ): "//build/bazel/platforms:macos_aarch64",
+        host_conditions(
+            arch = "x64",
+            os = "windows",
+        ): "//build/bazel/platforms:windows_x64",
+    },
+)
+
 # Rust crates, note that these follow the AOSP style of naming, where every crate
 # is basically @..crate..
 # Once the rust team has an automated bazel generation tool, we will no longer need these.
