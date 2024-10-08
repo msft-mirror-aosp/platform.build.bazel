@@ -18,6 +18,7 @@
 import getpass
 import socket
 import os
+import sys
 
 
 def getuser() -> str:
@@ -30,6 +31,8 @@ def getuser() -> str:
     except:
         return os.getlogin()
 
+# Force "\n" as line-ending, or we get an unwanted "\r" on windows.
+sys.stdout.reconfigure(newline="\n")
 
 # These keys are needed by Sponge, as the bazel default `BAZEL_USER` and `BAZEL_HOST` are not supported.
 print(f"BUILD_USERNAME {getuser()}")
