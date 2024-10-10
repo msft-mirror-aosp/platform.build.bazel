@@ -26,6 +26,7 @@ load(
     "no_legacy_features",
     "static_link_cpp_runtimes_feature",
     "static_linking_mode_feature",
+    "strip_flags_feature",
     "supports_dynamic_linker_feature",
     "supports_pic_feature",
     "supports_start_end_lib_feature",
@@ -802,6 +803,7 @@ def _cc_features_impl(ctx):
         lib_search_paths_feature,
         get_toolchain_lib_search_paths_feature(import_config),
         archiver_flags_feature,
+        strip_flags_feature,
         generate_debug_symbols_feature,
         # Start flag ordering: the order of following features impacts how
         # flags override each other.
