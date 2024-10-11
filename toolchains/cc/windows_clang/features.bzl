@@ -642,7 +642,6 @@ def _cc_features_impl(ctx):
         targets_windows_feature,
         windows_export_all_symbols_feature,
         no_windows_export_all_symbols_feature,
-
         # features for tool invocations
         rules_rust_unsupported_feature,
         preprocessor_defines_feature,
