@@ -15,6 +15,9 @@ sysroot(
             "usr/include/**",
             "usr/lib/**",
         ],
+        exclude = [
+            "usr/include/c++/**",
+        ],
     ),
 )
 

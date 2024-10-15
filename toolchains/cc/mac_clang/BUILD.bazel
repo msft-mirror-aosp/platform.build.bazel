@@ -21,9 +21,11 @@ cc_features(
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-lc++",
+        "-lc++abi",
     ],
     compile_flags = [
         "--target=x86_64-apple-darwin-macho",
+        "-mmacos-version-min=10.15",
         "-no-canonical-prefixes",
         "-Wno-builtin-macro-redefined",
         "-D__DATE__=\"redacted\"",
@@ -40,7 +42,9 @@ cc_features(
     cxx_flags = ["-std=c++17"],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
+        "-mmacos-version-min=10.15",
         "-fuse-ld=lld",
+        "-rtlib=compiler-rt",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
@@ -121,6 +125,7 @@ cc_features(
     ],
     compile_flags = [
         "--target=arm64-apple-darwin-macho",
+        "-mmacos-version-min=11",
         "-no-canonical-prefixes",
         "-Wno-builtin-macro-redefined",
         "-D__DATE__=\"redacted\"",
@@ -137,6 +142,7 @@ cc_features(
     cxx_flags = ["-std=c++17"],
     link_flags = [
         "--target=arm64-apple-darwin-macho",
+        "-mmacos-version-min=11",
         "-fuse-ld=lld",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],
