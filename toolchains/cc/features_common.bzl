@@ -1,5 +1,6 @@
 """Common cc toolchain features independent of compilers."""
 
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
@@ -211,6 +212,24 @@ dynamic_linking_mode_feature = feature(
 
 static_linking_mode_feature = feature(
     name = "static_linking_mode",
+)
+
+strip_flags_feature = feature(
+    name = "strip_flags",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = [ACTION_NAMES.strip],
+            flag_groups = [
+                flag_group(flags = ["-S", "-o", "%{output_file}"]),
+                flag_group(
+                    flags = ["%{stripopts}"],
+                    iterate_over = "stripopts",
+                ),
+                flag_group(flags = ["%{input_file}"]),
+            ],
+        ),
+    ],
 )
 
 linkstamps_feature = feature(

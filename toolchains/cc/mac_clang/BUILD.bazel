@@ -29,6 +29,10 @@ cc_features(
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
+        "-Wall",
+        "-Wthread-safety",
+        "-fstack-protector-strong",
+        "-fcolor-diagnostics",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
@@ -122,13 +126,17 @@ cc_features(
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
+        "-Wall",
+        "-Wthread-safety",
+        "-fstack-protector-strong",
+        "-fcolor-diagnostics",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
     cxx_flags = ["-std=c++17"],
     link_flags = [
-        "--target=arm64e-apple-darwin-macho",
+        "--target=arm64-apple-darwin-macho",
         "-fuse-ld=lld",
     ] + select({
         "@//build/bazel/toolchains/cc:is_bootstrap": [],
