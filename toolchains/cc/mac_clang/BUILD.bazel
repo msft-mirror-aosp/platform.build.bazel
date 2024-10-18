@@ -25,7 +25,7 @@ cc_features(
     ],
     compile_flags = [
         "--target=x86_64-apple-darwin-macho",
-        "-mmacos-version-min=10.15",
+        "-mmacos-version-min=10.14",
         "-no-canonical-prefixes",
         "-Wno-builtin-macro-redefined",
         "-D__DATE__=\"redacted\"",
@@ -42,7 +42,7 @@ cc_features(
     cxx_flags = ["-std=c++17"],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
-        "-mmacos-version-min=10.15",
+        "-mmacos-version-min=10.14",
         "-fuse-ld=lld",
         "-rtlib=compiler-rt",
     ] + select({
