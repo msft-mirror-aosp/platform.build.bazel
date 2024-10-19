@@ -33,6 +33,7 @@ cc_features(
         "-D__TIME__=\"redacted\"",
         "-Wall",
         "-Wthread-safety",
+        "-Werror=unguarded-availability-new",  # API not available in the targetd OS version.
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ] + select({
@@ -133,6 +134,7 @@ cc_features(
         "-D__TIME__=\"redacted\"",
         "-Wall",
         "-Wthread-safety",
+        "-Werror=unguarded-availability-new",  # API not available in the targetd OS version.
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ] + select({
