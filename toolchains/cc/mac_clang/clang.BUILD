@@ -98,18 +98,6 @@ cc_tool(
 )
 
 cc_toolchain_import(
-    name = "libcxx",
-    include_paths = [
-        ":include/c++/v1",
-    ],
-    support_files = glob(
-        [
-            "include/c++/v1/**",
-        ],
-    ),
-)
-
-cc_toolchain_import(
     name = "compiler_rt",
     include_paths = glob(
         [

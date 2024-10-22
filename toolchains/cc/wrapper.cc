@@ -28,8 +28,11 @@
 #include <unistd.h>
 
 #include <fstream>
+#include <functional>
 #include <iostream>
-#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 using namespace std;
 
@@ -146,7 +149,7 @@ string GetMandatoryEnvVar(const string &var_name) {
 
 // An RAII temporary file.
 class TempFile {
- public:
+public:
   // Create a new temporary file using the given path template string (the same
   // form used by `mkstemp`). The file will automatically be deleted when the
   // object goes out of scope.
@@ -178,7 +181,7 @@ class TempFile {
   // Gets the path to the temporary file.
   string GetPath() const { return path_; }
 
- private:
+private:
   explicit TempFile(const string &path) : path_(path) {}
 
   string path_;
@@ -246,14 +249,15 @@ void ProcessArgument(const string arg, const string cwd,
                      function<void(const string &)> consumer) {
   auto new_arg = arg;
   if (arg[0] == '@') {
-    if (ProcessResponseFile(arg, cwd, consumer)) return;
+    if (ProcessResponseFile(arg, cwd, consumer))
+      return;
   }
 
   FindAndReplace("{BAZEL_EXECUTION_ROOT}", cwd, &new_arg);
   consumer(new_arg);
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char *argv[]) {
   string tool_path = GetMandatoryEnvVar(kBinaryPathVarName);
@@ -275,7 +279,8 @@ int main(int argc, char *argv[]) {
   if (debug) {
     cout << tool_path << '\n';
     ifstream f(response_file->GetPath());
-    if (f.is_open()) cout << f.rdbuf();
+    if (f.is_open())
+      cout << f.rdbuf();
     return EXIT_SUCCESS;
   }
 
