@@ -99,9 +99,6 @@ cc_tool(
 
 cc_toolchain_import(
     name = "libcxx",
-    dynamic_mode_libs = [
-        ":lib/libc++.dylib",
-    ],
     include_paths = [
         ":include/c++/v1",
     ],
