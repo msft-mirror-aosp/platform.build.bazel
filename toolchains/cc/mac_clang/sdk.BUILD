@@ -21,6 +21,23 @@ sysroot(
     ),
 )
 
+cc_toolchain_import(
+    name = "libcxx",
+    include_paths = [
+        ":usr/include/c++/v1",
+    ],
+    lib_search_paths = [
+        ":usr/lib",
+    ],
+    support_files = glob(
+        [
+            "usr/include/c++/v1/**",
+            "usr/lib/libc++.*",
+            "usr/lib/libc++abi.*",
+        ],
+    ),
+)
+
 # keep sorted
 ALL_FRAMEWORKS = [
     "AVFAudio",
