@@ -159,35 +159,6 @@ def_file_feature = feature(
     ],
 )
 
-dynamic_link_cpp_runtimes_feature = feature(
-    name = "dynamic_link_cpp_runtimes",
-    enabled = True,
-    flag_sets = [
-        flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
-            flag_groups = [flag_group(flags = ["/MD"])],
-            with_features = [with_feature_set(not_features = ["dbg"])],
-        ),
-        flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
-            flag_groups = [flag_group(flags = ["/MDd"])],
-            with_features = [with_feature_set(features = ["dbg"])],
-        ),
-        flag_set(
-            actions = LINK_ACTIONS,
-            flag_groups = [flag_group(flags = ["/DEFAULTLIB:msvcrt.lib"])],
-            with_features = [with_feature_set(not_features = ["dbg"])],
-        ),
-        flag_set(
-            actions = LINK_ACTIONS,
-            flag_groups = [flag_group(flags = ["/DEFAULTLIB:msvcrtd.lib"])],
-            with_features = [with_feature_set(features = ["dbg"])],
-        ),
-    ],
-    provides = ["runtime_select"],
-    requires = [MODE_MSVC],
-)
-
 external_include_paths_feature = feature(
     name = "external_include_paths",
     enabled = True,
@@ -477,6 +448,69 @@ libraries_to_link_feature = feature(
     ],
 )
 
+msvc_runtimes_feature = feature(
+    name = "msvc_runtimes",
+    flag_sets = [
+        flag_set(
+            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            flag_groups = [flag_group(flags = ["/MD"])],
+            with_features = [
+                with_feature_set(not_features = ["static_link_msvcrt", "dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            flag_groups = [flag_group(flags = ["/MDd"])],
+            with_features = [
+                with_feature_set(not_features = ["static_link_msvcrt"], features = ["dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [flag_group(flags = ["/DEFAULTLIB:msvcrt.lib"])],
+            with_features = [
+                with_feature_set(not_features = ["static_link_msvcrt", "dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [flag_group(flags = ["/DEFAULTLIB:msvcrtd.lib"])],
+            with_features = [
+                with_feature_set(not_features = ["static_link_msvcrt"], features = ["dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            flag_groups = [flag_group(flags = ["/MT"])],
+            with_features = [
+                with_feature_set(features = ["static_link_msvcrt"], not_features = ["dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            flag_groups = [flag_group(flags = ["/MTd"])],
+            with_features = [
+                with_feature_set(features = ["static_link_msvcrt", "dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [flag_group(flags = ["/DEFAULTLIB:libcmt.lib"])],
+            with_features = [
+                with_feature_set(features = ["static_link_msvcrt"], not_features = ["dbg"]),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS,
+            flag_groups = [flag_group(flags = ["/DEFAULTLIB:libcmtd.lib"])],
+            with_features = [
+                with_feature_set(features = ["static_link_msvcrt", "dbg"]),
+            ],
+        ),
+    ],
+    requires = [MODE_MSVC],
+)
+
 no_windows_export_all_symbols_feature = feature(name = "no_windows_export_all_symbols")
 
 opt_feature = feature(
@@ -581,33 +615,7 @@ shared_flag_feature = feature(
     ],
 )
 
-static_link_cpp_runtimes_feature = feature(
-    name = "static_link_cpp_runtimes",
-    flag_sets = [
-        flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
-            flag_groups = [flag_group(flags = ["/MT"])],
-            with_features = [with_feature_set(not_features = ["dbg"])],
-        ),
-        flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
-            flag_groups = [flag_group(flags = ["/MTd"])],
-            with_features = [with_feature_set(features = ["dbg"])],
-        ),
-        flag_set(
-            actions = LINK_ACTIONS,
-            flag_groups = [flag_group(flags = ["/DEFAULTLIB:libcmt.lib"])],
-            with_features = [with_feature_set(not_features = ["dbg"])],
-        ),
-        flag_set(
-            actions = LINK_ACTIONS,
-            flag_groups = [flag_group(flags = ["/DEFAULTLIB:libcmtd.lib"])],
-            with_features = [with_feature_set(features = ["dbg"])],
-        ),
-    ],
-    provides = ["runtime_select"],
-    requires = [MODE_MSVC],
-)
+static_link_msvcrt_feature = feature(name = "static_link_msvcrt")
 
 supports_interface_shared_libraries_feature = feature(
     name = "supports_interface_shared_libraries",
@@ -654,8 +662,8 @@ def _cc_features_impl(ctx):
         output_execpath_feature,
         interface_library_output_feature,
         def_file_feature,
-        dynamic_link_cpp_runtimes_feature,
-        static_link_cpp_runtimes_feature,
+        static_link_msvcrt_feature,
+        msvc_runtimes_feature,
         generate_pdb_file_feature,
         get_toolchain_lib_search_paths_feature(import_config_msvc, import_config_gnu),
         get_archiver_flags_feature(ctx.attr.archive_flags),
