@@ -47,11 +47,7 @@ cc_features(
         "/EHsc",
     ],
     cxx_flags = ["-std:c++17"],
-    link_flags_gnu = [
-        "--target=x86_64-w64-windows-gnu",
-    ],
     link_flags_msvc = [
-        "--target=x86_64-pc-windows-msvc",
         "/ignore:4070",
     ],
     toolchain_imports_gnu = _x64_imports_gnu,
