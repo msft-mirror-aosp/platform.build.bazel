@@ -24,7 +24,17 @@ def _macos_sdk_repository_impl(repo_ctx):
         if result.return_code == 0:
             break
     if result.return_code != 0:
-        fail("None of the following macOS SDK versions are found:", versions)
+        if versions[-1]:
+            fail(
+                "None of the following macOS SDK versions are found:",
+                versions,
+                "Please check your selected xcode path (xcode-select -p).",
+            )
+        fail(
+            "Cannot find any macOS SDK. Please check your selected xcode path",
+            "(xcode-select -p). If none is installed, install Xcode Command",
+            "Line Tools with 'xcode-select --install'.",
+        )
     sdk_path = result.stdout.strip()
     for entry in resolve_workspace_path(sdk_path, repo_ctx).readdir():
         repo_ctx.symlink(entry, relative_path(str(entry), sdk_path))
@@ -98,6 +108,13 @@ def _msvc_tools_repository_impl(repo_ctx):
     ], repo_ctx)
     vs_paths = vswhere_result.stdout.strip().splitlines()
     vctools_paths = _all_vctools_paths(vs_paths, repo_ctx)
+    if not vctools_paths:
+        fail(
+            "Cannot find any Visual Studio installation with component",
+            "'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'. Please install",
+            "'C++ x64/x86 build tools (Latest)' from Visual Studio installer",
+            "(https://visualstudio.microsoft.com/visual-cpp-build-tools/)",
+        )
     vctools_by_version = {p.basename: p for p in vctools_paths}
     want_versions = repo_ctx.attr.tool_versions if repo_ctx.attr.tool_versions else [""]
     selected_version = _select_version(vctools_by_version, want_versions)
@@ -147,6 +164,8 @@ def _windows_sdk_repository_impl(repo_ctx):
     """Creates a local repository for a Windows SDK."""
     sdk_path = repo_ctx.path(repo_ctx.attr.sdk_path)
     all_versions = {v: None for v in _get_all_win_sdk_versions(sdk_path)}
+    if not all_versions:
+        fail("Cannot find any Windows SDK installation in path", sdk_path)
     want_versions = repo_ctx.attr.sdk_versions if repo_ctx.attr.sdk_versions else [""]
     selected_version = _select_version(all_versions, want_versions)
     if not selected_version:
