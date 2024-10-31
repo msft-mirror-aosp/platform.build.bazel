@@ -49,7 +49,7 @@ def _cc_tool_impl(ctx):
             args = expanded_args,
         ),
         DefaultInfo(
-            files = depset([ctx.executable.tool]),
+            files = depset([ctx.executable.tool] + ctx.files.runfiles),
             runfiles = runfiles,
         ),
     ]

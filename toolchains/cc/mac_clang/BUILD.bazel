@@ -10,7 +10,7 @@ load(":features.bzl", "cc_features")
 package(default_visibility = ["//visibility:public"])
 
 _imports = [
-    "@clang_mac_all//:libcxx",
+    "@macos_sdk//:libcxx",
     "@clang_mac_all//:compiler_rt",
     "@macos_sdk//:frameworks",
 ]
@@ -25,8 +25,9 @@ cc_features(
     ],
     compile_flags = [
         "--target=x86_64-apple-darwin-macho",
-        "-mmacos-version-min=10.15",
+        "-mmacos-version-min=10.14",
         "-no-canonical-prefixes",
+        "-nostdinc++",
         "-Wno-builtin-macro-redefined",
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
@@ -42,7 +43,7 @@ cc_features(
     cxx_flags = ["-std=c++17"],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
-        "-mmacos-version-min=10.15",
+        "-mmacos-version-min=10.14",
         "-fuse-ld=lld",
         "-rtlib=compiler-rt",
     ] + select({
@@ -122,11 +123,13 @@ cc_features(
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",
         "-lc++",
+        "-lc++abi",
     ],
     compile_flags = [
         "--target=arm64-apple-darwin-macho",
         "-mmacos-version-min=11",
         "-no-canonical-prefixes",
+        "-nostdinc++",
         "-Wno-builtin-macro-redefined",
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",

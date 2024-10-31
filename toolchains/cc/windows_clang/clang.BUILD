@@ -31,42 +31,36 @@ cc_tool(
     name = "clang-cl",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
     runfiles = glob(
-        ["bin/*"],
+        ["bin/clang*"],
         exclude = [
             "bin/clang-check.exe",
             "bin/clang-format.exe",
-            "bin/git-clang-format",
+            "bin/clang-scan-deps.exe",
             "bin/clang-tidy.exe",
-            "bin/lldb*",
-            "bin/llvm-config.exe",
-            "bin/llvm-cfi-verify.exe",
         ],
-    ),
+    ) + [
+        ":bin/libwinpthread-1.dll",
+    ],
     tool = ":bin/clang-cl.exe",
 )
 
 cc_tool(
     name = "link",
     applied_actions = LINK_ACTIONS,
-    runfiles = glob(
-        ["bin/*"],
-        exclude = [
-            "bin/clang-check.exe",
-            "bin/clang-format.exe",
-            "bin/git-clang-format",
-            "bin/clang-tidy.exe",
-            "bin/lldb*",
-            "bin/llvm-config.exe",
-            "bin/llvm-cfi-verify.exe",
-        ],
-    ),
+    runfiles = glob(["bin/*lld.exe"]) + [
+        ":bin/libwinpthread-1.dll",
+        ":bin/libxml2.dll",
+    ],
     tool = ":bin/lld-link.exe",
 )
 
 cc_tool(
     name = "archiver",
     applied_actions = [ACTION_NAMES.cpp_link_static_library],
-    runfiles = [":bin/llvm-ar.exe"],
+    runfiles = [
+        ":bin/llvm-ar.exe",
+        ":bin/libwinpthread-1.dll",
+    ],
     tool = ":bin/llvm-lib.exe",
 )
 
