@@ -4,53 +4,6 @@ load(
     "json2bzl_repository",
 )
 
-# Skylib provides common utilities for writing bazel rules and functions.
-# For docs see https://github.com/bazelbuild/bazel-skylib/blob/main/README.md
-http_archive(
-    name = "bazel_skylib",
-    sha256 = "9f38886a40548c6e96c106b752f242130ee11aaa068a56ba7e56f4511f33e4f2",
-    urls = [
-        "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.6.1/bazel-skylib-1.6.1.tar.gz",
-        "https://github.com/bazelbuild/bazel-skylib/releases/download/1.6.1/bazel-skylib-1.6.1.tar.gz",
-    ],
-)
-
-load("@bazel_skylib//:workspace.bzl", "bazel_skylib_workspace")
-
-bazel_skylib_workspace()
-
-# Python rules (https://github.com/bazelbuild/rules_python)
-http_archive(
-    name = "rules_python",
-    sha256 = "be04b635c7be4604be1ef20542e9870af3c49778ce841ee2d92fcb42f9d9516a",
-    strip_prefix = "rules_python-0.35.0",
-    url = "https://github.com/bazelbuild/rules_python/releases/download/0.35.0/rules_python-0.35.0.tar.gz",
-)
-
-load("@rules_python//python:repositories.bzl", "py_repositories")
-
-py_repositories()
-
-# Package rules (https://github.com/bazelbuild/rules_pkg)
-http_archive(
-    name = "rules_pkg",
-    sha256 = "d250924a2ecc5176808fc4c25d5cf5e9e79e6346d79d5ab1c493e289e722d1d0",
-    urls = [
-        "https://github.com/bazelbuild/rules_pkg/releases/download/0.10.1/rules_pkg-0.10.1.tar.gz",
-    ],
-)
-
-load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
-
-rules_pkg_dependencies()
-
-http_archive(
-    name = "with_cfg.bzl",
-    sha256 = "06a2b1b56a58c471ab40d8af166c4d51f0982e1c6bc46375b805915b3fc0658e",
-    strip_prefix = "with_cfg.bzl-0.2.4",
-    url = "https://github.com/fmeum/with_cfg.bzl/releases/download/v0.2.4/with_cfg.bzl-v0.2.4.tar.gz",
-)
-
 http_archive(
     name = "rules_rust",
     integrity = "sha256-3QBrdyIdWeTRQSB8DnrfEbH7YNFEC4/KA7+SVheTKmA=",
@@ -98,6 +51,11 @@ local_repository(
 local_repository(
     name = "com_google_absl",
     path = "external/abseil-cpp",
+)
+
+local_repository(
+    name = "com_google_crashpad",
+    path = "external/crashpad",
 )
 
 local_repository(

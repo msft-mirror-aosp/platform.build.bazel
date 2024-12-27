@@ -1,6 +1,9 @@
 # Bazel-wide general configs
 common --enable_platform_specific_config
 
+# We are going to be using modules
+common --enable_bzlmod
+
 # sibling_repository_layout is needed so external repositories doesn't
 # collide with the "external" top-level directory.
 common --experimental_sibling_repository_layout
