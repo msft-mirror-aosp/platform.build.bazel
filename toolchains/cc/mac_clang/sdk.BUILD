@@ -67,6 +67,7 @@ ALL_FRAMEWORKS = [
     "IOSurface",
     "ImageIO",
     "Metal",
+    "OpenCL",
     "OpenGL",
     "QuartzCore",
     "Security",

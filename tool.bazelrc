@@ -13,6 +13,9 @@ build:macos --features='generate_debug_symbols'
 # Prevent thread-local issues in protobuf.
 build:macos --features=-supports_dynamic_linker
 build:macos --force_pic
+build:macos --macos_sdk_version="13.3"
+build:macos --host_macos_minimum_os=12
+build:macos --macos_minimum_os=11
 
 build:windows --features='generate_pdb_file'
 
