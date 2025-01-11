@@ -117,7 +117,7 @@ def _msvc_tools_repository_impl(repo_ctx):
             "(https://visualstudio.microsoft.com/visual-cpp-build-tools/)",
         )
     vctools_by_version = {p.vctools_path.basename: p for p in vctools}
-    want_versions = repo_ctx.attr.tool_versions if repo_ctx.attr.tool_versions else [""]
+    want_versions = repo_ctx.attr.msvc_versions or [""]
     selected_version = _select_version(vctools_by_version, want_versions)
     if not selected_version:
         fail(
@@ -127,9 +127,8 @@ def _msvc_tools_repository_impl(repo_ctx):
             vctools_by_version.keys(),
         )
     selected_vctools = vctools_by_version[selected_version]
+    repo_ctx.symlink(selected_vctools.vctools_path, "msvc")
     dia_sdk_path = selected_vctools.vs_path.get_child("DIA SDK")
-    for entry in selected_vctools.vctools_path.readdir():
-        repo_ctx.symlink(entry, relative_path(str(entry), str(selected_vctools.vctools_path)))
     repo_ctx.symlink(dia_sdk_path, "ms_dia_sdk")
     create_build_file(repo_ctx.attr.build_file, repo_ctx)
     create_workspace_file(None, repo_ctx, default_workspace_file_content(
@@ -147,8 +146,8 @@ msvc_tools_repository = repository_rule(
             allow_single_file = True,
             mandatory = True,
         ),
-        "tool_versions": attr.string_list(
-            doc = "The tool versions to look for (e.g. 14.29.30133). " +
+        "msvc_versions": attr.string_list(
+            doc = "The msvc versions to look for (e.g. 14.29.30133). " +
                   "The first version found will be used. An empty " +
                   "string can be added at the end for the latest version.",
             default = [""],
