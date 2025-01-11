@@ -64,14 +64,15 @@ macos_sdk_repository = repository_rule(
     },
 )
 
-def _all_vctools_paths(vs_paths, repo_ctx):
-    vctools_paths = []
+def _all_vctools(vs_paths, repo_ctx):
+    vctools = []
     for vs_path in vs_paths:
-        vctools_parent = repo_ctx.path(vs_path).get_child("VC", "Tools", "MSVC")
+        vs_path = repo_ctx.path(vs_path)
+        vctools_parent = vs_path.get_child("VC", "Tools", "MSVC")
         for vctools_path in vctools_parent.readdir():
             if vctools_path.get_child("include", "bit").exists:
-                vctools_paths.append(vctools_path)
-    return vctools_paths
+                vctools.append(struct(vs_path = vs_path, vctools_path = vctools_path))
+    return vctools
 
 def _version_tuple(numeric_version):
     return [int(seg) for seg in numeric_version.split(".")]
@@ -107,15 +108,15 @@ def _msvc_tools_repository_impl(repo_ctx):
         "value",
     ], repo_ctx)
     vs_paths = vswhere_result.stdout.strip().splitlines()
-    vctools_paths = _all_vctools_paths(vs_paths, repo_ctx)
-    if not vctools_paths:
+    vctools = _all_vctools(vs_paths, repo_ctx)
+    if not vctools:
         fail(
             "Cannot find any Visual Studio installation with component",
             "'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'. Please install",
             "'C++ x64/x86 build tools (Latest)' from Visual Studio installer",
             "(https://visualstudio.microsoft.com/visual-cpp-build-tools/)",
         )
-    vctools_by_version = {p.basename: p for p in vctools_paths}
+    vctools_by_version = {p.vctools_path.basename: p for p in vctools}
     want_versions = repo_ctx.attr.tool_versions if repo_ctx.attr.tool_versions else [""]
     selected_version = _select_version(vctools_by_version, want_versions)
     if not selected_version:
@@ -126,8 +127,10 @@ def _msvc_tools_repository_impl(repo_ctx):
             vctools_by_version.keys(),
         )
     selected_vctools = vctools_by_version[selected_version]
-    for entry in selected_vctools.readdir():
-        repo_ctx.symlink(entry, relative_path(str(entry), str(selected_vctools)))
+    dia_sdk_path = selected_vctools.vs_path.get_child("DIA SDK")
+    for entry in selected_vctools.vctools_path.readdir():
+        repo_ctx.symlink(entry, relative_path(str(entry), str(selected_vctools.vctools_path)))
+    repo_ctx.symlink(dia_sdk_path, "ms_dia_sdk")
     create_build_file(repo_ctx.attr.build_file, repo_ctx)
     create_workspace_file(None, repo_ctx, default_workspace_file_content(
         repo_ctx.name,
