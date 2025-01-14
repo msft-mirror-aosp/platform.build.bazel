@@ -36,6 +36,7 @@ cc_toolchain_import(
 cc_import(
     name = "msdia",
     hdrs = glob(["ms_dia_sdk/include/*.h"]),
+    includes = ["ms_dia_sdk/include"],
     interface_library = select({
         "@platforms//cpu:x86_64": ":ms_dia_sdk/lib/amd64/diaguids.lib",
     }),
