@@ -11,14 +11,18 @@ cc_toolchain_import(
     name = "msvc_runtimes_x64",
     include_paths = [
         ":msvc/include",
+        ":msvc/atlmfc/include",
     ],
     lib_search_paths = [
         ":msvc/lib/x64",
+        ":msvc/atlmfc/lib/x64",
     ],
     support_files = glob(
         [
             "msvc/include/**",
             "msvc/lib/x64/**",
+            "msvc/atlmfc/include/**",
+            "msvc/atlmfc/lib/x64/mfc*.lib",
         ],
         exclude = [
             "msvc/include/cliext/**",
