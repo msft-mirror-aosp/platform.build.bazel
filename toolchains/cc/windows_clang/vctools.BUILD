@@ -3,7 +3,7 @@ the corresponding DIA sdk.
 """
 
 load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import")
-load("@rules_cc//cc:defs.bzl", "cc_import")
+load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
@@ -38,14 +38,20 @@ cc_toolchain_import(
 )
 
 cc_import(
-    name = "msdia",
+    name = "msdia_internal",
     hdrs = glob(["ms_dia_sdk/include/*.h"]),
-    includes = ["ms_dia_sdk/include"],
     interface_library = select({
         "@platforms//cpu:x86_64": ":ms_dia_sdk/lib/amd64/diaguids.lib",
     }),
     shared_library = select({
         "@platforms//cpu:x86_64": ":ms_dia_sdk/bin/amd64/msdia140.dll",
     }),
+    visibility = ["//visibility:private"],
+)
+
+cc_library(
+    name = "msdia",
+    includes = ["ms_dia_sdk/include"],
     visibility = ["//visibility:public"],
+    deps = [":msdia_internal"],
 )
