@@ -55,6 +55,7 @@ cc_features(
         "-Wl,--as-needed",
         "-lm",
         "-ldl",
+        "-Wl,--build-id=sha1",
         "-Wl,--no-as-needed",
         "-l:libunwind.a",
     ],

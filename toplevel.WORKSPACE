@@ -359,3 +359,8 @@ grpc_deps()
 load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
+
+local_repository(
+    name = "com_google_breakpad",
+    path = "external/google-breakpad",
+)
