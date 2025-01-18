@@ -12,28 +12,29 @@ sysroot(
     name = "sdk",
     all_files = glob(
         [
-            "usr/include/**",
-            "usr/lib/**",
+            "SDKs/MacOSX.sdk/usr/include/**",
+            "SDKs/MacOSX.sdk/usr/lib/**",
         ],
         exclude = [
-            "usr/include/c++/**",
+            "SDKs/MacOSX.sdk/usr/include/c++/**",
         ],
     ),
+    path = "SDKs/MacOSX.sdk",
 )
 
 cc_toolchain_import(
     name = "libcxx",
     include_paths = [
-        ":usr/include/c++/v1",
+        ":SDKs/MacOSX.sdk/usr/include/c++/v1",
     ],
     lib_search_paths = [
-        ":usr/lib",
+        ":SDKs/MacOSX.sdk/usr/lib",
     ],
     support_files = glob(
         [
-            "usr/include/c++/v1/**",
-            "usr/lib/libc++.*",
-            "usr/lib/libc++abi.*",
+            "SDKs/MacOSX.sdk/usr/include/c++/v1/**",
+            "SDKs/MacOSX.sdk/usr/lib/libc++.*",
+            "SDKs/MacOSX.sdk/usr/lib/libc++abi.*",
         ],
     ),
 )
@@ -78,9 +79,9 @@ ALL_FRAMEWORKS = [
 
 cc_toolchain_import(
     name = "frameworks",
-    framework_paths = [":System/Library/Frameworks"],
+    framework_paths = [":SDKs/MacOSX.sdk/System/Library/Frameworks"],
     support_files = glob([
-        "System/Library/Frameworks/{}.framework/**".format(f)
+        "SDKs/MacOSX.sdk/System/Library/Frameworks/{}.framework/**".format(f)
         for f in ALL_FRAMEWORKS
     ]),
 )
