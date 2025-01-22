@@ -58,6 +58,10 @@ local_repository(
     path = "external/crashpad",
 )
 
+register_toolchains(
+    "@com_google_crashpad//util:mig_toolchain",
+)
+
 local_repository(
     name = "com_google_googletest",
     path = "external/googletest",
