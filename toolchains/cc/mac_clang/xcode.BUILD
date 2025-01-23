@@ -1,5 +1,6 @@
 # Exports macOS SDK from Xcode or Command Line Tools directory.
 
+load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
     "cc_toolchain_import",
@@ -84,4 +85,31 @@ cc_toolchain_import(
         "SDKs/MacOSX.sdk/System/Library/Frameworks/{}.framework/**".format(f)
         for f in ALL_FRAMEWORKS
     ]),
+)
+
+exports_files(
+    glob(["SDKs/MacOSX.sdk/usr/include/mach/*.defs"]),
+    visibility = ["@@com_google_crashpad//:__subpackages__"],
+)
+
+simple_toolchain(
+    name = "mig",
+    args = select({
+        "@platforms//cpu:x86_64": [
+            "-arch",
+            "x86_64",
+        ],
+        "@platforms//cpu:arm64": [
+            "-arch",
+            "arm64",
+        ],
+    }) + [
+        "-migcom",
+        "$(location :usr/libexec/migcom)",
+    ],
+    executable = ":usr/bin/mig",
+    runfiles = [
+        ":usr/libexec/migcom",
+    ],
+    visibility = ["@@com_google_crashpad//:__subpackages__"],
 )
