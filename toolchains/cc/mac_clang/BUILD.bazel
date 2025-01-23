@@ -5,14 +5,15 @@ load(
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
 
 _imports = [
-    "@macos_sdk//:libcxx",
+    "@xcode_tools//:libcxx",
     "@clang_mac_all//:compiler_rt",
-    "@macos_sdk//:frameworks",
+    "@xcode_tools//:frameworks",
 ]
 
 cc_features(
@@ -73,7 +74,7 @@ cc_toolchain_config(
     ],
     compiler_name = "clang",
     identifier = "macos_clang_x64",
-    sysroot = "@macos_sdk//:sdk",
+    sysroot = "@xcode_tools//:sdk",
     target_cpu = "k8",
     toolchain_imports = _imports,
 )
@@ -168,7 +169,7 @@ cc_toolchain_config(
     ],
     compiler_name = "clang",
     identifier = "macos_clang_arm64",
-    sysroot = "@macos_sdk//:sdk",
+    sysroot = "@xcode_tools//:sdk",
     target_cpu = "arm64",
     toolchain_imports = _imports,
 )

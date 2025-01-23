@@ -5,13 +5,75 @@ load(
     "create_build_file",
     "create_workspace_file",
     "default_workspace_file_content",
+    "merge_and_link_tree",
     "relative_path",
     "resolve_workspace_path",
     "run_command",
 )
 
-def _macos_sdk_repository_impl(repo_ctx):
-    """Creates a local repository for macOS SDK from the currently selected Xcode toolchain."""
+_LIMITED_PATHS = [
+    "/usr/local/bin",
+    "/usr/bin",
+    "/bin",
+    "/usr/local/sbin",
+    "/usr/sbin",
+    "/sbin",
+]
+
+def _xcode_tools_repository_impl(repo_ctx):
+    """Creates a local repository for Xcode tools and macOS SDK from the currently selected Xcode toolchain."""
+
+    # Watch the DEVELOPER_DIR environment variable
+    repo_ctx.getenv("DEVELOPER_DIR")
+
+    sdk_path = _find_macos_sdk(repo_ctx)
+
+    # While Xcode Command Line Tools has a single developer root for everything, the full
+    # Xcode splits the developer root in multiple places: a top-level one, one in the
+    # toolchain directory (Toolchains/XcodeDefault.xctoolchain) and one in platform
+    # directory (Platforms/MacOSX.platform/Developer).
+    #
+    # Here we look for the top-level root and the toolchain root using 2 binaries and
+    # combine them to create a single root. We don't use tools from the platform directory.
+    # For Command Line Tools, there is only one root so we can just link the contents.
+    roots = _find_developer_roots(repo_ctx, ["clang", "git"], sdk_path)
+    if len(roots) == 1:
+        repo_ctx.symlink(roots[0] + "/usr", "usr")
+    else:
+        merge_and_link_tree(
+            repo_ctx,
+            [r + "/usr" for r in roots],
+            "usr",
+            lambda _, p: ("share",) if p[0] == "share" else False,
+            lambda r1, r2, _: r1 if "/Toolchains/" in r1 else r2 if "/Toolchains/" in r2 else None,
+        )
+    repo_ctx.symlink(resolve_workspace_path(sdk_path, repo_ctx), "SDKs/MacOSX.sdk")
+    create_build_file(repo_ctx.attr.build_file, repo_ctx)
+    create_workspace_file(None, repo_ctx, default_workspace_file_content(
+        repo_ctx.name,
+        "xcode_tools_repository",
+    ))
+
+def _find_developer_roots(repo_ctx, binary_names, sdk_path):
+    roots = []
+    for bin in binary_names:
+        result = run_command([
+            "xcrun",
+            "--sdk",
+            sdk_path,
+            "--find",
+            bin,
+        ], repo_ctx, environment = {"PATH": ":".join(_LIMITED_PATHS)})
+        bin_dir = result.stdout.strip()
+        if bin_dir in _LIMITED_PATHS:
+            continue
+        root = bin_dir.removesuffix("/usr/bin/{}".format(bin))
+        if not root.startswith(sdk_path) and root not in roots:
+            roots.append(root)
+    return roots
+
+def _find_macos_sdk(repo_ctx):
+    """Links the selected macOS SDK into the repo."""
     versions = repo_ctx.attr.sdk_versions if repo_ctx.attr.sdk_versions else [""]
     result = None
     for version in versions:
@@ -28,26 +90,21 @@ def _macos_sdk_repository_impl(repo_ctx):
             fail(
                 "None of the following macOS SDK versions are found:",
                 versions,
-                "Please check your selected xcode path (xcode-select -p).",
+                "Please check your selected xcode path (xcode-select -p or",
+                "$DEVELOPER_DIR).",
             )
         fail(
             "Cannot find any macOS SDK. Please check your selected xcode path",
-            "(xcode-select -p). If none is installed, install Xcode Command",
-            "Line Tools with 'xcode-select --install'.",
+            "(xcode-select -p or $DEVELOPER_DIR). If none is installed, install",
+            "Xcode Command Line Tools with 'xcode-select --install'.",
         )
     sdk_path = result.stdout.strip()
-    for entry in resolve_workspace_path(sdk_path, repo_ctx).readdir():
-        repo_ctx.symlink(entry, relative_path(str(entry), sdk_path))
-    create_build_file(repo_ctx.attr.build_file, repo_ctx)
-    create_workspace_file(None, repo_ctx, default_workspace_file_content(
-        repo_ctx.name,
-        "macos_sdk_repository",
-    ))
+    return sdk_path
 
-macos_sdk_repository = repository_rule(
-    implementation = _macos_sdk_repository_impl,
+xcode_tools_repository = repository_rule(
+    implementation = _xcode_tools_repository_impl,
     local = True,
-    doc = "Creates a local repository for macOS SDK from the currently " +
+    doc = "Creates a local repository for tools and macOS SDK from the currently " +
           "selected Xcode toolchain.",
     attrs = {
         "build_file": attr.label(

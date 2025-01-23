@@ -162,9 +162,9 @@ http_archive(
 # CC toolchains
 load(
     "//build/bazel/toolchains/cc:repository_rules.bzl",
-    "macos_sdk_repository",
     "msvc_tools_repository",
     "windows_sdk_repository",
+    "xcode_tools_repository",
 )
 
 json2bzl_repository(
@@ -203,9 +203,9 @@ new_local_repository(
     path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
 )
 
-macos_sdk_repository(
-    name = "macos_sdk",
-    build_file = "//build/bazel/toolchains/cc/mac_clang:sdk.BUILD",
+xcode_tools_repository(
+    name = "xcode_tools",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:xcode.BUILD",
 )
 
 msvc_tools_repository(
