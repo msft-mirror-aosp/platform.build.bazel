@@ -97,6 +97,7 @@ cc_toolchain_import(
     support_files = glob(
         [
             "lib/clang/*/include/**",
+            "lib/clang/*/share/**",
             "lib/clang/*/lib/x86_64-unknown-linux-gnu/*",
         ],
     ),
