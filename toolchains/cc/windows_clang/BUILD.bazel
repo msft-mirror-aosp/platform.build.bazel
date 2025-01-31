@@ -3,6 +3,7 @@ load(
     "cc_artifact_name",
     "cc_toolchain_config",
 )
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
@@ -19,37 +20,50 @@ _x64_imports_gnu = [
 
 cc_features(
     name = "x64_features",
-    archive_flags = [
-        "/ignore:4221",
+    archive_flags = ["/ignore:4221"],
+    assembler_flags = [
+        "/Zd",  # Add line number debug info
+        "/Zi",  # Add symbolic debug info
     ],
-    compile_flags = [
-        "--target=x86_64-pc-windows-msvc",
-        "/wd4117",
-        "-Wno-builtin-macro-redefined",
+    compile_flags =
+        [
+            "/wd4117",  # #pragma pragma should be at global scope
+            "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
+            "/wd4291",  # C++ exception specification used to terminate unexpected()
+            "/wd4250",  # base class '...' has virtual functions but is not virtual
+            "/wd4996",  # '...' is deprecated
+            "-Wno-builtin-macro-redefined",  # Ignore clang-cl defined warnings
+            "-Wno-macro-redefined",  # We force define a large set windows settings
+            "--target=x86_64-pc-windows-msvc",
+            # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
+            # the path absolute when generating a relative prefix.
+            "-no-canonical-prefixes",
+            # Use standard c++ exception handling
+            # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
+            "/EHsc",
+        ],
+    compiler_defines_flags = [
+        # Improves compatibility with older or embedded systems where atomics might not be supported or efficient.
         "/D__STDC_NO_ATOMICS__",
-        "-D__DATE__=\"redacted\"",
-        "-D__TIMESTAMP__=\"redacted\"",
-        "-D__TIME__=\"redacted\"",
-        "/DCOMPILER_MSVC",
-        "/DNOMINMAX",
-        "/D_WIN32_WINNT=0x0601",
-        "/D_CRT_SECURE_NO_DEPRECATE",
-        "/D_CRT_SECURE_NO_WARNINGS",
-        "/wd4351",
-        "/wd4291",
-        "/wd4250",
-        "/wd4996",
-        # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
-        # the path absolute when generating a relative prefix.
-        "-no-canonical-prefixes",
-        # Use standard c++ exception handling
-        # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
-        "/EHsc",
+        # This is often done for reproducible builds, as the date would otherwise change with each build.
+        "/D__DATE__=\"redacted\"",
+        "/D__TIMESTAMP__=\"redacted\"",
+        "/D__TIME__=\"redacted\"",
+        "/DCOMPILER_MSVC",  # Identify as MSVC cl
+        "/DNOMINMAX",  # Disables the min/max macros defined in <windows.h>.
+        "/DWIN32_LEAN_AND_MEAN",  # Excludes less frequently used headers from <windows.h>.
+        "/D_WIN32_WINNT=0x0A00",  # Sets the target Windows version to Windows 10.
+        "/DWINVER=0x0A00",
+        "/DNTDDI_VERSION=0x0A000006",  # NTDDI_WIN10_RS5 (EOL October 14, 2025)
+        "/DUNICODE",  # Enable WIN32 Unicode API
+        "/D_UNICODE",  # Enable Unicode CRT
+        "/D_CRT_SECURE_NO_DEPRECATE",  # Suppresses warnings about using deprecated CRT functions.
+        "/D_CRT_SECURE_NO_WARNINGS",  # Suppresses warnings related to potentially insecure CRT functions (e.g., strcpy).
+        # https://stackoverflow.com/questions/79195142/recent-msvc-versions-dont-treat-nan-as-constant-workaround
+        "/D_UCRT_NOISY_NAN",
     ],
-    cxx_flags = ["-std:c++17"],
-    link_flags_msvc = [
-        "/ignore:4070",
-    ],
+    cxx_flags = ["/std:c++17"],
+    link_flags_msvc = ["/ignore:4070"],
     toolchain_imports_gnu = _x64_imports_gnu,
     toolchain_imports_msvc = _x64_imports_msvc,
 )
@@ -105,6 +119,7 @@ cc_toolchain_config(
         "@clang_win_x64//:clang-cl",
         "@clang_win_x64//:link",
         "@clang_win_x64//:archiver",
+        "@vctools//:ml64",
     ],
     compiler_name = "clang-cl",
     identifier = "win_clangcl_x64",
@@ -116,7 +131,7 @@ cc_toolchain(
     name = "x64",
     all_files = ":x64_config",
     ar_files = "@clang_win_x64//:archiver",
-    as_files = "@clang_win_x64//:clang-cl",
+    as_files = "@vctools//:ml64",
     compiler_files = ":x64_config",
     dwp_files = "@//build/bazel/toolchains/cc:empty",
     linker_files = ":x64_config",

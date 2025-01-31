@@ -121,6 +121,14 @@ toolchain(
 
 cc_features(
     name = "arm64_features",
+    assembler_flags = [
+        "--target=arm64-apple-darwin-macho",
+        "-mmacos-version-min=11",
+        "-no-canonical-prefixes",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+    ],
     cc_only_link_flags = [
         "-undefined dynamic_lookup",
         "-fobjc-link-runtime",

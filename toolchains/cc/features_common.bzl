@@ -70,7 +70,35 @@ def get_toolchain_compile_flags_feature(flags):
         enabled = True,
         flag_sets = [
             flag_set(
-                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LTO_BACKEND_ACTIONS,
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(len, flag_group, flags = flags),
+                ]),
+            ),
+        ],
+    )
+
+def get_toolchain_compiler_default_defines_flags(flags):
+    return feature(
+        name = "toolchain_compiler_default_defines_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(len, flag_group, flags = flags),
+                ]),
+            ),
+        ],
+    )
+
+def get_toolchain_assembler_flags_feature(flags):
+    return feature(
+        name = "toolchain_assembler_flags",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = ASSEMBLE_ACTIONS,
                 flag_groups = filter_none([
                     check_args(len, flag_group, flags = flags),
                 ]),

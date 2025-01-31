@@ -2,10 +2,20 @@
 the corresponding DIA sdk.
 """
 
-load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import")
+load(
+    "@//build/bazel/toolchains/cc:actions.bzl",
+    "ASSEMBLE_ACTIONS",
+)
+load("@//build/bazel/toolchains/cc:rules.bzl", "cc_tool", "cc_toolchain_import")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
+
+cc_tool(
+    name = "ml64",
+    applied_actions = ASSEMBLE_ACTIONS,
+    tool = ":msvc/bin/Hostx64/x64/ml64.exe",
+)
 
 cc_toolchain_import(
     name = "msvc_runtimes_x64",

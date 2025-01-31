@@ -1,6 +1,5 @@
 load(
     "@//build/bazel/toolchains/cc:actions.bzl",
-    "ASSEMBLE_ACTIONS",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
@@ -29,7 +28,7 @@ filegroup(
 
 cc_tool(
     name = "clang-cl",
-    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
     runfiles = glob(
         ["bin/clang*"],
         exclude = [

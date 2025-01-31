@@ -13,7 +13,9 @@ load(
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
+    "get_toolchain_assembler_flags_feature",
     "get_toolchain_compile_flags_feature",
+    "get_toolchain_compiler_default_defines_flags",
     "get_toolchain_cxx_flags_feature",
     "linkstamps_feature",
     "no_legacy_features",
@@ -73,6 +75,30 @@ compiler_input_feature = feature(
                 flag_group(
                     expand_if_available = "source_file",
                     flags = ["/c", "%{source_file}"],
+                ),
+            ],
+        ),
+    ],
+)
+
+compiler_default_clang_cl_feature = feature(
+    name = "compiler_default_clang_cl_flags",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags =
+                        [
+                            "--target=x86_64-pc-windows-msvc",
+                            # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
+                            # the path absolute when generating a relative prefix.
+                            "-no-canonical-prefixes",
+                            # Use standard c++ exception handling
+                            # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
+                            "/EHsc",
+                        ],
                 ),
             ],
         ),
@@ -566,7 +592,7 @@ parse_showincludes_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [flag_group(flags = ["/showIncludes"])],
         ),
     ],
@@ -675,12 +701,15 @@ def _cc_features_impl(ctx):
         get_toolchain_link_flags_feature(ctx.attr.link_flags_msvc, ctx.attr.link_flags_gnu),
         user_link_flags_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
+        get_toolchain_compiler_default_defines_flags(ctx.attr.compiler_defines_flags),
+        get_toolchain_assembler_flags_feature(ctx.attr.assembler_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
+        compiler_default_clang_cl_feature,
         ### End flag ordering ##
         linker_param_file_feature,
-        compiler_input_feature,
         compiler_output_feature,
+        compiler_input_feature,
     ])
     return CcFeatureConfigInfo(features = all_features)
 
@@ -694,6 +723,14 @@ cc_features = rule(
         ),
         "compile_flags": attr.string_list(
             doc = "Flags always added to compile actions.",
+            default = [],
+        ),
+        "compiler_defines_flags": attr.string_list(
+            doc = "Flags of defines added to compile and assembler actions.",
+            default = [],
+        ),
+        "assembler_flags": attr.string_list(
+            doc = "Flags always added to assembler actions.",
             default = [],
         ),
         "cxx_flags": attr.string_list(

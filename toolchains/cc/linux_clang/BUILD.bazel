@@ -4,6 +4,7 @@ load(
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
@@ -27,6 +28,13 @@ config_setting(
 
 cc_features(
     name = "x64_features",
+    assembler_flags = [
+        "--target=x86_64-unknown-linux-gnu",
+        "-no-canonical-prefixes",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+    ],
     b_prefix = select({
         ":host_stdlibs": None,
         "//conditions:default": "@gcc_lib//:lib/gcc/x86_64-linux/4.8.3",
