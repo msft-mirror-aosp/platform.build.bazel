@@ -248,7 +248,7 @@ def _has_pruned_prefix(root, path_seg, pruned_prefixes):
             return True
     return False
 
-def merge_and_link_tree(repo_ctx, tree_roots, dest_path = "", prune_filter = None, conf_resolver = None):
+def merge_and_link_tree(repo_ctx, tree_roots, dest_path = "", *, prune_filter = None, conf_resolver = None):
     """Merges multiple file trees to a single symlink tree at dest path.
 
     An optional prune_filter can be used to prune certain paths. If multiple

@@ -24,7 +24,10 @@ def _xcode_tools_repository_impl(repo_ctx):
     """Creates a local repository for Xcode tools and macOS SDK from the currently selected Xcode toolchain."""
 
     # Watch the DEVELOPER_DIR environment variable
-    repo_ctx.getenv("DEVELOPER_DIR")
+    if not repo_ctx.getenv("DEVELOPER_DIR"):
+        # Also watch where xcode-select stores the path, if DEVELOPER_DIR is unset.
+        repo_ctx.watch("/usr/share/xcode-select/xcode_dir_path")
+        repo_ctx.watch("/private/var/db/xcode_select_link")
 
     sdk_path = _find_macos_sdk(repo_ctx)
 
@@ -44,8 +47,8 @@ def _xcode_tools_repository_impl(repo_ctx):
             repo_ctx,
             [r + "/usr" for r in roots],
             "usr",
-            lambda _, p: ("share",) if p[0] == "share" else False,
-            lambda r1, r2, _: r1 if "/Toolchains/" in r1 else r2 if "/Toolchains/" in r2 else None,
+            prune_filter = lambda _, p: ("share",) if p[0] == "share" else False,
+            conf_resolver = lambda r1, r2, _: r1 if "/Toolchains/" in r1 else r2 if "/Toolchains/" in r2 else None,
         )
     repo_ctx.symlink(resolve_workspace_path(sdk_path, repo_ctx), "SDKs/MacOSX.sdk")
     create_build_file(repo_ctx.attr.build_file, repo_ctx)
