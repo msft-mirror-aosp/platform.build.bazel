@@ -6,6 +6,7 @@ load(
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
     "OBJC_COMPILE_ACTIONS",
+    "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME",
 )
 load(
     "@//build/bazel/toolchains/cc:rules.bzl",
@@ -95,6 +96,12 @@ cc_tool(
     applied_actions = [ACTION_NAMES.strip],
     runfiles = [":bin/llvm-objcopy"],
     tool = ":bin/llvm-strip",
+)
+
+cc_tool(
+    name = "dsymutil",
+    applied_actions = [PACKAGE_DEBUG_SYMBOLS_ACTION_NAME],
+    tool = ":bin/dsymutil",
 )
 
 cc_toolchain_import(

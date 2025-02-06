@@ -64,6 +64,8 @@ LTO_INDEX_ACTIONS = [
     ACTION_NAMES.lto_index_for_nodeps_dynamic_library,
 ]
 
+PACKAGE_DEBUG_SYMBOLS_ACTION_NAME = "package-debug-symbols"
+
 def create_action_configs(tool_label_and_configs):
     """Creates a list of action configs to specify cc tools to each action.
 
