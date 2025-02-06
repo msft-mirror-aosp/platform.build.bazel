@@ -115,6 +115,7 @@ cc_toolchain_import(
         [
             "lib/clang/*/include/**",
             "lib/clang/*/lib/darwin/*",
+            "lib/clang/*/share/**",
         ],
     ),
 )
