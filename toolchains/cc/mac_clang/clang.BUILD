@@ -6,6 +6,8 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "LTO_BACKEND_ACTIONS",
+    "LTO_INDEX_ACTIONS",
     "OBJC_COMPILE_ACTIONS",
     "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME",
 )
@@ -32,7 +34,7 @@ filegroup(
 
 cc_tool(
     name = "clang",
-    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
+    applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS + LTO_BACKEND_ACTIONS + LTO_INDEX_ACTIONS,
     env = select({
         "@//build/bazel/toolchains/cc:is_bootstrap": {},
         "//conditions:default": {

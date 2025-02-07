@@ -1,5 +1,6 @@
 load(
     "@//build/bazel/toolchains/cc:actions.bzl",
+    "ARCHIVER_ACTIONS",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
@@ -10,7 +11,6 @@ load(
     "cc_tool",
     "cc_toolchain_import",
 )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
@@ -55,7 +55,7 @@ cc_tool(
 
 cc_tool(
     name = "archiver",
-    applied_actions = [ACTION_NAMES.cpp_link_static_library],
+    applied_actions = ARCHIVER_ACTIONS,
     runfiles = [
         ":bin/llvm-ar.exe",
         ":bin/libwinpthread-1.dll",

@@ -21,6 +21,7 @@ load(
     "linkstamps_feature",
     "no_legacy_features",
     "no_stripping_feature",
+    "rules_rust_unsupported_feature",
     "static_linking_mode_feature",
     "supports_dynamic_linker_feature",
     "toolchain_import_configs",
@@ -571,11 +572,6 @@ preprocessor_defines_feature = feature(
             ],
         ),
     ],
-)
-
-rules_rust_unsupported_feature = feature(
-    name = "rules_rust_unsupported_feature",
-    enabled = True,
 )
 
 shared_flag_feature = feature(

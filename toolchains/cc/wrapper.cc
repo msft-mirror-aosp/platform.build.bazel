@@ -22,6 +22,7 @@
 // An environment variable "WRAPPER_WRAP_BINARY" must be set when running the
 // wrapper, pointing to the compiler binary to run.
 
+#include <cstddef>
 #include <spawn.h>
 #include <string.h>
 #include <sys/wait.h>
@@ -38,6 +39,7 @@ using namespace std;
 
 static const char *kBinaryPathVarName = "WRAPPER_WRAP_BINARY";
 static const char *kDebugFlagVarName = "__WRAPPER_LOG_ONLY";
+static const char *kLtoObjPathFlag = "-Wl,--lto-obj-path=";
 
 namespace {
 
@@ -102,7 +104,7 @@ int RunSubProcess(const vector<string> &args) {
                            const_cast<char **>(exec_argv.data()), nullptr);
   if (status != 0) {
     cerr << "Error forking process '" << args[0] << "': " << strerror(status)
-         << "\n";
+         << endl;
     return status;
   }
   int wait_status;
@@ -111,16 +113,16 @@ int RunSubProcess(const vector<string> &args) {
   } while ((wait_status == -1) && (errno == EINTR));
   if (wait_status < 0) {
     cerr << "Error waiting on child process '" << args[0]
-         << "': " << strerror(errno) << "\n";
+         << "': " << strerror(errno) << endl;
     return wait_status;
   }
   if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
     cerr << "Error in child process '" << args[0]
-         << "': " << WEXITSTATUS(status) << "\n";
+         << "': " << WEXITSTATUS(status) << endl;
     return status;
   } else if (WIFSIGNALED(status)) {
     cerr << "Error in child process '" << args[0] << "': " << WTERMSIG(status)
-         << "\n";
+         << endl;
     return status;
   }
 
@@ -136,7 +138,7 @@ void FindAndReplace(const string &oldsub, const string &newsub, string *str) {
   }
 }
 
-// Returns the DEVELOPER_DIR environment variable in the current process
+// Returns an environment variable in the current process
 // environment. Aborts if this variable is unset.
 string GetMandatoryEnvVar(const string &var_name) {
   char *env_value = getenv(var_name.c_str());
@@ -164,7 +166,7 @@ public:
 
     if (mkstemp(path.get()) == -1) {
       cerr << "Failed to create temporary file '" << path.get()
-           << "': " << strerror(errno) << "\n";
+           << "': " << strerror(errno) << endl;
       return nullptr;
     }
     return unique_ptr<TempFile>(new TempFile(path.get()));
@@ -257,6 +259,15 @@ void ProcessArgument(const string arg, const string cwd,
   consumer(new_arg);
 }
 
+void CreateFile(const string path) {
+  ofstream file(path);
+  if (file.is_open()) {
+    file.close();
+  } else {
+    cerr << "Failed to create file: " << path << endl;
+  }
+}
+
 } // namespace
 
 int main(int argc, char *argv[]) {
@@ -273,11 +284,25 @@ int main(int argc, char *argv[]) {
     ProcessArgument(argv[i], cwd, consumer);
   }
 
+  // Create an empty LTO object file when linker flag -object_path_lto is
+  // detected. This is a special hack for lld64 to work with Bazel's LTO-index
+  // action, when targeting macOS. lld64 will then overwrite this file with the
+  // actual object. Without this file, lld64 will create a same-named directory
+  // instead. For details, see
+  // https://github.com/llvm/llvm-project/commit/2b2e858e9cbb1d459804f8e393ac6b90459ccb7a.
+  string prefix = kLtoObjPathFlag;
+  for (auto &arg : processed_args) {
+    if (arg.rfind(prefix, 0) == 0) {
+      CreateFile(arg.substr(prefix.length()));
+      arg.replace(0, prefix.length(), "-Wl,-object_path_lto,");
+    }
+  }
+
   auto response_file = WriteResponseFile(processed_args);
 
   // Special mode that only prints the command. Used for testing.
   if (debug) {
-    cout << tool_path << '\n';
+    cout << tool_path << endl;
     ifstream f(response_file->GetPath());
     if (f.is_open())
       cout << f.rdbuf();
