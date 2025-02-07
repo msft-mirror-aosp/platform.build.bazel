@@ -65,6 +65,7 @@ load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
     "feature",
+    "feature_set",
     "flag_group",
     "flag_set",
     "variable_with_value",
@@ -297,6 +298,12 @@ opt_feature = feature(
     ],
 )
 
+generate_dsym_file_feature = feature(
+    name = "generate_dsym_file",
+    enabled = False,
+    requires = [feature_set(features = ["generate_debug_symbols"])],
+)
+
 def _cc_features_impl(ctx):
     import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
@@ -326,6 +333,7 @@ def _cc_features_impl(ctx):
         archiver_flags_feature,
         strip_flags_feature,
         generate_debug_symbols_feature,
+        generate_dsym_file_feature,
         # Start flag ordering: the order of following features impacts how
         # flags override each other.
         opt_feature,
