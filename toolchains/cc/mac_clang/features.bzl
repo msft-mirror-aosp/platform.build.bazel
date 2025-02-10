@@ -268,11 +268,6 @@ opt_feature = feature(
                 flag_group(flags = [
                     # Let's go very aggressive
                     "-O3",
-                    # No debug symbols.
-                    "-g0",
-                    # Enables Link-Time Optimization
-                    "-flto=thin",
-                    "-fwhole-program-vtables",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
                     # Allow removal of unused sections at link time.
@@ -289,9 +284,6 @@ opt_feature = feature(
                 flag_group(flags = [
                     "-Wl,-dead_strip",
                     "-Wl,--icf=safe",
-                    # Enables Link-Time Optimization
-                    "-flto=thin",
-                    "-fwhole-program-vtables",
                 ]),
             ],
         ),
