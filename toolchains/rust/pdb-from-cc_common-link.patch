@@ -1,0 +1,105 @@
+From 72cf6ff33028d84fdecc432ce194a7ab9ccf9e4c Mon Sep 17 00:00:00 2001
+From: Zach Yu <zachyu@google.com>
+Date: Wed, 12 Feb 2025 12:59:46 -0800
+Subject: Declare pdb output when "generate_pdb_file" is enabled with
+ cc_common.link
+
+This replicates the behavior of the `cc_binary` rule.
+---
+ rust/private/rustc.bzl                        |  6 ++++
+ .../unit/cc_common_link_test.bzl              | 31 +++++++++++++++++--
+ 2 files changed, 35 insertions(+), 2 deletions(-)
+
+diff --git a/rust/private/rustc.bzl b/rust/private/rustc.bzl
+index 0691be5c..390cbe14 100644
+--- a/rust/private/rustc.bzl
++++ b/rust/private/rustc.bzl
+@@ -1463,6 +1463,11 @@ def rustc_compile_action(
+             # Append the name of the library
+             output_relative_to_package = output_relative_to_package + output_lib
+ 
++        additional_linker_outputs = []
++        if crate_info.type in ("cdylib", "bin") and cc_common.is_enabled(feature_configuration = feature_configuration, feature_name = "generate_pdb_file"):
++            pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
++            additional_linker_outputs.append(pdb_file)
++
+         cc_common.link(
+             actions = ctx.actions,
+             feature_configuration = feature_configuration,
+@@ -1472,6 +1477,7 @@ def rustc_compile_action(
+             name = output_relative_to_package,
+             stamp = ctx.attr.stamp,
+             output_type = "executable" if crate_info.type == "bin" else "dynamic_library",
++            additional_outputs = additional_linker_outputs,
+         )
+ 
+         outputs = [crate_info.output]
+diff --git a/test/cc_common_link/unit/cc_common_link_test.bzl b/test/cc_common_link/unit/cc_common_link_test.bzl
+index 0f397405..dbb0264b 100644
+--- a/test/cc_common_link/unit/cc_common_link_test.bzl
++++ b/test/cc_common_link/unit/cc_common_link_test.bzl
+@@ -65,11 +65,16 @@ def _use_cc_common_link_test(ctx):
+ 
+     output_groups = tut[OutputGroupInfo]
+     asserts.false(env, hasattr(output_groups, "dsym_folder"), "Expected no dsym_folder output group")
+-    asserts.false(env, hasattr(output_groups, "pdb_file"), "Expected no pdb_file output group")
++    asserts.equals(
++        env,
++        ctx.attr.expect_pdb,
++        hasattr(output_groups, "pdb_file"),
++        "Expected " + ("" if ctx.attr.expect_pdb else "no ") + "pdb_file output group",
++    )
+ 
+     return analysistest.end(env)
+ 
+-use_cc_common_link_test = analysistest.make(_use_cc_common_link_test)
++use_cc_common_link_test = analysistest.make(_use_cc_common_link_test, attrs = {"expect_pdb": attr.bool()})
+ 
+ def _custom_malloc_test(ctx):
+     env = analysistest.begin(ctx)
+@@ -106,6 +111,18 @@ def _cc_common_link_test_targets():
+         target = ":bin",
+     )
+ 
++    rust_binary(
++        name = "bin_with_pdb",
++        srcs = ["bin.rs"],
++        edition = "2018",
++        features = ["generate_pdb_file"],
++    )
++
++    use_cc_common_link_on_target(
++        name = "bin_with_cc_common_link_with_pdb",
++        target = ":bin_with_pdb",
++    )
++
+     rust_shared_library(
+         name = "cdylib",
+         srcs = ["lib.rs"],
+@@ -146,6 +163,15 @@ def _cc_common_link_test_targets():
+         target_under_test = ":bin_with_cc_common_link",
+     )
+ 
++    use_cc_common_link_test(
++        name = "use_cc_common_link_on_binary_with_pdb",
++        target_under_test = ":bin_with_cc_common_link_with_pdb",
++        expect_pdb = select({
++            "@platforms//os:windows": True,
++            "//conditions:default": False,
++        }),
++    )
++
+     use_cc_common_link_test(
+         name = "use_cc_common_link_on_test",
+         target_under_test = ":test_with_cc_common_link",
+@@ -178,6 +204,7 @@ def cc_common_link_test_suite(name):
+         name = name,
+         tests = [
+             "use_cc_common_link_on_binary",
++            "use_cc_common_link_on_binary_with_pdb",
+             "use_cc_common_link_on_test",
+             "use_cc_common_link_on_crate_test",
+             "use_cc_common_link_on_cdylib",
+-- 
+2.48.1.502.g6dc24dfdaf-goog
+

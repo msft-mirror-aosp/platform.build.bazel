@@ -1,0 +1,51 @@
+From 86c1d282461983c20266e7f72391b063ab5f9584 Mon Sep 17 00:00:00 2001
+From: Zach Yu <zachyu@google.com>
+Date: Tue, 11 Feb 2025 10:57:41 -0800
+Subject: Do not declare debug info packages when using `cc_common.link`
+
+Debug info packages (`dSYM`, `pdb`) are created by `rustc` only if you link with `rustc`. When linking with `cc_common`, they should be handled by the cc toolchain or a custom aspect. Declaring them prematurely can cause conflicts.
+---
+ rust/private/rustc.bzl                           | 2 +-
+ test/cc_common_link/unit/cc_common_link_test.bzl | 6 +++++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/rust/private/rustc.bzl b/rust/private/rustc.bzl
+index 2df648ba..0691be5c 100644
+--- a/rust/private/rustc.bzl
++++ b/rust/private/rustc.bzl
+@@ -1335,7 +1335,7 @@ def rustc_compile_action(
+     # types that benefit from having debug information in a separate file.
+     pdb_file = None
+     dsym_folder = None
+-    if crate_info.type in ("cdylib", "bin"):
++    if crate_info.type in ("cdylib", "bin") and not experimental_use_cc_common_link:
+         if toolchain.target_os == "windows" and compilation_mode.strip_level == "none":
+             pdb_file = ctx.actions.declare_file(crate_info.output.basename[:-len(crate_info.output.extension)] + "pdb", sibling = crate_info.output)
+             action_outputs.append(pdb_file)
+diff --git a/test/cc_common_link/unit/cc_common_link_test.bzl b/test/cc_common_link/unit/cc_common_link_test.bzl
+index 89b62bfc..0f397405 100644
+--- a/test/cc_common_link/unit/cc_common_link_test.bzl
++++ b/test/cc_common_link/unit/cc_common_link_test.bzl
+@@ -31,7 +31,7 @@ use_cc_common_link_transition = transition(
+ )
+ 
+ def _use_cc_common_link_on_target_impl(ctx):
+-    return [ctx.attr.target[0][DepActionsInfo]]
++    return [ctx.attr.target[0][DepActionsInfo], ctx.attr.target[0][OutputGroupInfo]]
+ 
+ use_cc_common_link_on_target = rule(
+     implementation = _use_cc_common_link_on_target_impl,
+@@ -63,6 +63,10 @@ def _use_cc_common_link_test(ctx):
+     has_cpp_link_action = len([action for action in registered_actions if action.mnemonic == "CppLink"]) > 0
+     asserts.true(env, has_cpp_link_action, "Expected that the target registers a CppLink action")
+ 
++    output_groups = tut[OutputGroupInfo]
++    asserts.false(env, hasattr(output_groups, "dsym_folder"), "Expected no dsym_folder output group")
++    asserts.false(env, hasattr(output_groups, "pdb_file"), "Expected no pdb_file output group")
++
+     return analysistest.end(env)
+ 
+ use_cc_common_link_test = analysistest.make(_use_cc_common_link_test)
+-- 
+2.48.1.502.g6dc24dfdaf-goog
+

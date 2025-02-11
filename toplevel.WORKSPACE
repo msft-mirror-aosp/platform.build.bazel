@@ -6,10 +6,14 @@ load(
 
 http_archive(
     name = "rules_rust",
-    integrity = "sha256-3QBrdyIdWeTRQSB8DnrfEbH7YNFEC4/KA7+SVheTKmA=",
+    integrity = "sha256-4qOr06EWg6BTBbv9M8xJTfebNkE9VMBXsa17RZD071I=",
     patch_args = ["-p1"],
-    patches = ["//build/bazel/toolchains/rust:fix-generated-file-with-sibling-layout.patch"],
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.49.3/rules_rust-v0.49.3.tar.gz"],
+    patches = [
+        "//build/bazel/toolchains/rust:fix-generated-file-with-sibling-layout.patch",  # https://github.com/bazelbuild/rules_rust/pull/2804
+        "//build/bazel/toolchains/rust:no-debuginfo-with-cc-common-link.patch",  # https://github.com/bazelbuild/rules_rust/pull/3257
+        "//build/bazel/toolchains/rust:pdb-from-cc_common-link.patch",
+    ],
+    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.57.1/rules_rust-0.57.1.tar.gz"],
 )
 
 load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies")

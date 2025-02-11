@@ -12,6 +12,17 @@ AppleDsymInfo = provider(
 )
 
 def _gen_dsym_aspect_impl(target, ctx):
+    executable_file = target.files_to_run.executable or target.files.to_list()[0]  # type: File
+    if hasattr(target.output_groups, "dsym_folder"):
+        return [AppleDsymInfo(
+            executable_file = executable_file,
+            dsym_bundle = target.output_groups.dsym_folder.to_list()[0],
+        )]
+    linker_action = [action for action in target.actions if action.mnemonic == CPP_LINK_MNEMONIC]  # type: list[Action]
+    if not linker_action:
+        return []
+    if len(linker_action) > 1:
+        fail("This aspect cannot be attached to target", target.label, "because it has multiple", CPP_LINK_MNEMONIC, "actions.")
     cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -48,10 +59,6 @@ def _gen_dsym_aspect_impl(target, ctx):
         action_name = PACKAGE_DEBUG_SYMBOLS_ACTION_NAME,
         variables = cc_variables,
     )
-    executable_file = target.files_to_run.executable  # type: File
-    linker_action = [action for action in target.actions if action.mnemonic == CPP_LINK_MNEMONIC]  # type: list[Action]
-    if not linker_action:
-        fail("This aspect cannot be attached to target", target.label, "because it misses the", CPP_LINK_MNEMONIC, "action.")
     linker_inputs = linker_action[0].inputs
     dsym_bundle_name = executable_file.basename + ".dSYM"
     output = ctx.actions.declare_directory(dsym_bundle_name, sibling = executable_file)
@@ -66,7 +73,7 @@ def _gen_dsym_aspect_impl(target, ctx):
     )
     return [
         AppleDsymInfo(executable_file = executable_file, dsym_bundle = output),
-        OutputGroupInfo(dsym = depset([output])),
+        OutputGroupInfo(dsym_folder = depset([output])),
     ]
 
 gen_dsym_aspect = aspect(
