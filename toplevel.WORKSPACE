@@ -315,7 +315,7 @@ host_platform_repository(
     new_local_repository(
         name = create,
         build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.{}".format(create),
-        path = "external/rust/crates/{}".format(create),
+        path = "external/rust/android-crates-io/crates/{}".format(create),
     )
     for create in [
         "bitflags",
