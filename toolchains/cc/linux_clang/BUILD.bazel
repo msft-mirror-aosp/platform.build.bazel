@@ -52,7 +52,7 @@ cc_features(
         "-fcolor-diagnostics",
     ],
     cxx_flags = [
-        "-std=c++17",
+        "-std=c++20",
         "-nostdinc++",
     ],
     link_flags = [
