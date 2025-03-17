@@ -14,7 +14,7 @@
 """The android emulator."""
 
 module(
-    name = "aemu",
+    name = "android_emulator",
     version = "0.0.1",
 )
 
