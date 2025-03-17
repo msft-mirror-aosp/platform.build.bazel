@@ -47,3 +47,33 @@ use_repo(
     buildifier_prebuilt,
     "buildifier_prebuilt_toolchains",
 )
+
+bazel_dep(name = "abseil-cpp", version = "20250127.0", repo_name = "com_google_absl")
+local_path_override(
+    module_name = "abseil-cpp",
+    path = "external/abseil-cpp",
+)
+
+bazel_dep(name = "aemu", version = "0.0.1")
+local_path_override(
+    module_name = "aemu",
+    path = "hardware/google/aemu",
+)
+
+bazel_dep(name = "gfxstream", version = "0.0.1")
+local_path_override(
+    module_name = "gfxstream",
+    path = "hardware/google/gfxstream",
+)
+
+bazel_dep(name = "lz4", version = "0.0.1")
+local_path_override(
+    module_name = "lz4",
+    path = "external/lz4",
+)
+
+bazel_dep(name = "googletest", version = "head", repo_name = "com_google_googletest")
+local_path_override(
+    module_name = "googletest",
+    path = "external/googletest",
+)
