@@ -1,10 +1,7 @@
 """Exports Windows SDK libraries and tools from the "Windows Kits\\<os major>" directory."""
 
+load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
 load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import")
-load(
-    "@//build/bazel/toolchains/cc/windows_clang:sdk_tools.bzl",
-    "windows_resource_compiler_toolchain",
-)
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
@@ -30,7 +27,9 @@ cc_toolchain_import(
     ),
 )
 
-windows_resource_compiler_toolchain(
+simple_toolchain(
     name = "resource_compiler_toolchain_x64",
-    rc_exe = ":bin/%{sdk_version}/x64/rc.exe",
+    args = ["/nologo"],
+    executable = ":bin/%{sdk_version}/x64/rc.exe",
+    runfiles = [":bin/%{sdk_version}/x64/rcdll.dll"],
 )

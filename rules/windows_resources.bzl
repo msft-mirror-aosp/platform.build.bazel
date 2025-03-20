@@ -15,6 +15,9 @@
 
 """Starlark rule to compile RC files on Windows."""
 
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
 TOOLCHAIN_TYPE = "@//build/bazel/toolchains/cc/windows_clang:resource_compiler_toolchain_type"
 
 def _replace_ext(n, e):
@@ -24,25 +27,28 @@ def _replace_ext(n, e):
     else:
         return n + e
 
-def _compile_rc(ctx, rc_exe, rc_file, extra_inputs):
+def _compile_rc(ctx, rc_toolchain, rc_file, extra_inputs):
     """Compiles a single RC file to RES."""
     out = ctx.actions.declare_file(_replace_ext(rc_file.basename, ".res"))
     ctx.actions.run(
         inputs = [rc_file] + extra_inputs,
         outputs = [out],
-        executable = rc_exe,
-        arguments = ["/nologo", "/fo%s" % out.path, rc_file.path],
+        executable = rc_toolchain.executable,
+        tools = rc_toolchain.runfiles,
+        environment = rc_toolchain.env,
+        arguments = rc_toolchain.args + ["/fo", out.path, rc_file.path],
         mnemonic = "WindowsRc",
+        toolchain = TOOLCHAIN_TYPE,
     )
     return out
 
 def _windows_resources_impl(ctx):
-    rc_toolchain = ctx.toolchains[TOOLCHAIN_TYPE].win_rc_info
-    if not rc_toolchain.rc_exe:
+    rc_toolchain = ctx.toolchains[TOOLCHAIN_TYPE].tool
+    if not rc_toolchain.executable:
         return [CcInfo()]
 
     compiled_resources = [
-        _compile_rc(ctx, rc_toolchain.rc_exe, rc_file, ctx.files.resources)
+        _compile_rc(ctx, rc_toolchain, rc_file, ctx.files.resources)
         for rc_file in ctx.files.rc_files
     ]
     link_flags = [res.path for res in compiled_resources]
