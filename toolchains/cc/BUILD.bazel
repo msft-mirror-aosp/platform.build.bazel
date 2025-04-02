@@ -1,4 +1,4 @@
-load("@bazel_skylib//rules:common_settings.bzl", "bool_setting")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "bool_setting")
 load(":bootstrap.bzl", "cc_bootstrap_binary")
 
 filegroup(
@@ -32,4 +32,9 @@ cc_bootstrap_binary(
 toolchain_type(
     name = "objcopy_toolchain_type",
     visibility = ["//visibility:public"],
+)
+
+bool_flag(
+    name = "allow_strip",
+    build_setting_default = False,
 )
