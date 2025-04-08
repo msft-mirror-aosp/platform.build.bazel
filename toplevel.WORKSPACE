@@ -336,6 +336,7 @@ host_platform_repository(
         "remain",
         "ryu",
         "serde_derive",
+        "serde_json",
         "serde",
         "syn",
         "thiserror-impl",
