@@ -28,3 +28,8 @@ cc_bootstrap_binary(
     srcs = ["wrapper.cc"],
     visibility = ["@clang_mac_all//:__subpackages__"],
 )
+
+toolchain_type(
+    name = "objcopy_toolchain_type",
+    visibility = ["//visibility:public"],
+)

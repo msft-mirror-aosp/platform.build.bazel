@@ -233,14 +233,6 @@ new_local_repository(
     path = "prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8",
 )
 
-register_toolchains(
-    "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
-    "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
-    "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",
-    "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
-    "//build/bazel/toolchains/cc/windows_clang:resource_compiler_x64",
-)
-
 # Repository that provides Python 3
 new_local_repository(
     name = "python",

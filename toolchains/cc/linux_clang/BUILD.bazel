@@ -4,6 +4,7 @@ load(
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
@@ -60,6 +61,7 @@ cc_features(
         "-fuse-ld=lld",
         "-rtlib=compiler-rt",
         "-Wno-unused-command-line-argument",
+        "-Wl,--build-id",
         "-Wl,--as-needed",
         "-lm",
         "-ldl",
@@ -134,4 +136,19 @@ toolchain(
     ],
     toolchain = ":x64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+toolchain(
+    name = "x64_objcopy_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+    toolchain = "@clang_linux_x64//:objcopy",
+    toolchain_type = "@//build/bazel/toolchains/cc:objcopy_toolchain_type",
+)
+
+bool_flag(
+    name = "generate_gnu_debug_file",
+    build_setting_default = False,
 )
