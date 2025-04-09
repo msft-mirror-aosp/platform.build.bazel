@@ -22,8 +22,7 @@ cc_features(
     name = "x64_features",
     archive_flags = ["/ignore:4221"],
     assembler_flags = [
-        "/Zd",  # Add line number debug info
-        "/Zi",  # Add symbolic debug info
+        "/nologo",
     ],
     compile_flags = [
         "/wd4117",  # #pragma pragma should be at global scope

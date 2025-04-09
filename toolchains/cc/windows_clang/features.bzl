@@ -209,8 +209,20 @@ generate_pdb_file_feature = feature(
     name = "generate_pdb_file",
     flag_sets = [
         flag_set(
+            actions = ASSEMBLE_ACTIONS,
+            flag_groups = [flag_group(flags = [
+                # Generate debug information for assembly files
+                "/Zd",
+                # Generate full debug information
+                "/Zi",
+            ])],
+        ),
+        flag_set(
             actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
-            flag_groups = [flag_group(flags = ["/Zi"])],
+            flag_groups = [flag_group(flags = [
+                # Generate full debug information
+                "/Zi",
+            ])],
         ),
         flag_set(
             actions = LINK_ACTIONS,
