@@ -31,12 +31,6 @@ filegroup(
 cc_tool(
     name = "clang",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS,
-    env = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": {},
-        "//conditions:default": {
-            "WRAPPER_WRAP_BINARY": "$(execpath bin/clang)",
-        },
-    }),
     runfiles = glob(
         ["bin/*"],
         exclude = [
@@ -50,21 +44,12 @@ cc_tool(
             "bin/llvm-cfi-verify",
         ],
     ),
-    tool = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": ":bin/clang",
-        "//conditions:default": "@//build/bazel/toolchains/cc:wrapper",
-    }),
+    tool = ":bin/clang",
 )
 
 cc_tool(
     name = "clang++",
     applied_actions = CPP_COMPILE_ACTIONS,
-    env = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": {},
-        "//conditions:default": {
-            "WRAPPER_WRAP_BINARY": "$(execpath bin/clang++)",
-        },
-    }),
     runfiles = glob(
         ["bin/*"],
         exclude = [
@@ -78,10 +63,7 @@ cc_tool(
             "bin/llvm-cfi-verify",
         ],
     ),
-    tool = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": ":bin/clang++",
-        "//conditions:default": "@//build/bazel/toolchains/cc:wrapper",
-    }),
+    tool = ":bin/clang++",
 )
 
 cc_tool(
