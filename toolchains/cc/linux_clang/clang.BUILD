@@ -1,3 +1,4 @@
+load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
 load(
     "@//build/bazel/toolchains/cc:actions.bzl",
     "ASSEMBLE_ACTIONS",
@@ -111,4 +112,9 @@ cc_toolchain_import(
     support_files = [
         ":lib/x86_64-unknown-linux-gnu/libunwind.a",
     ],
+)
+
+simple_toolchain(
+    name = "objcopy",
+    executable = ":bin/llvm-objcopy",
 )
