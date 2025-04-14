@@ -12,6 +12,12 @@ AppleDsymInfo = provider(
 )
 
 def _gen_dsym_aspect_impl(target, ctx):
+    """Creates a dSYM bundle using dsymutil.
+
+    It tries to look for a CppLink action in the current target, and searches upstream targets
+    if none is found. This propagation allows binary post-processing (e.g. signing) to happen
+    and we still can find the target where linking was done.
+    """
     executable_file = target.files_to_run.executable or target.files.to_list()[0]  # type: File
     if hasattr(target.output_groups, "dsym_folder"):
         return [AppleDsymInfo(
@@ -20,7 +26,7 @@ def _gen_dsym_aspect_impl(target, ctx):
         )]
     linker_action = [action for action in target.actions if action.mnemonic == CPP_LINK_MNEMONIC]  # type: list[Action]
     if not linker_action:
-        return []
+        return _dsym_from_upstream(ctx = ctx, attr_name = "srcs")
     if len(linker_action) > 1:
         fail("This aspect cannot be attached to target", target.label, "because it has multiple", CPP_LINK_MNEMONIC, "actions.")
     cc_toolchain = find_cc_toolchain(ctx)
@@ -76,9 +82,25 @@ def _gen_dsym_aspect_impl(target, ctx):
         OutputGroupInfo(dsym_folder = depset([output])),
     ]
 
+def _dsym_from_upstream(ctx, attr_name):
+    if not hasattr(ctx.rule.attr, attr_name):
+        return []
+    targets = getattr(ctx.rule.attr, attr_name)  # type: list[Target]
+    if type(targets) != "list":
+        targets = [targets]
+    for t in targets:
+        if AppleDsymInfo in t:
+            return [
+                t[AppleDsymInfo],
+                OutputGroupInfo(dsym_folder = depset([t[AppleDsymInfo].dsym_bundle])),
+            ]
+    return []
+
 gen_dsym_aspect = aspect(
     doc = "Create dSYM bundle for macOS cc binaries.",
     implementation = _gen_dsym_aspect_impl,
+    # Propagate the aspect along srcs attribute. This mostly accomondates genrule for binary post-processing.
+    attr_aspects = ["srcs"],
     fragments = ["cpp"],
     toolchains = use_cc_toolchain(),
 )
