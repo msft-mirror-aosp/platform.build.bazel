@@ -18,6 +18,7 @@ module(
     version = "0.0.1",
 )
 
+bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "apple_support", version = "1.21.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_cc", version = "0.0.17")
@@ -74,6 +75,66 @@ bazel_dep(name = "gfxstream", version = "0.0.1")
 local_path_override(
     module_name = "gfxstream",
     path = "hardware/google/gfxstream",
+)
+
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+# Rust crates, note that these follow the AOSP style of naming, where every crate
+# is basically @..crate..
+# Once the rust team has an automated bazel generation tool, we will no longer need these.
+# See b/335734830 for details
+[
+    new_local_repository(
+        name = create,
+        build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.{}".format(create),
+        path = "external/rust/android-crates-io/crates/{}".format(create),
+    )
+    for create in [
+        "bitflags",
+        "byteorder",
+        "cfg-if",
+        "equivalent",
+        "foldhash",
+        "hashbrown",
+        "itoa",
+        "libc",
+        "log",
+        "memchr",
+        "memoffset",
+        "nix",
+        "once_cell",
+        "proc-macro2",
+        "quote",
+        "remain",
+        "ryu",
+        "serde_derive",
+        "serde_json",
+        "serde",
+        "syn",
+        "thiserror-impl",
+        "thiserror",
+        "unicode-ident",
+        "zerocopy-derive",
+        "zerocopy",
+    ]
+]
+
+new_local_repository(
+    name = "winapi",
+    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi",
+    path = "hardware/generic/goldfish/third_party/rust/crates/winapi",
+)
+
+new_local_repository(
+    name = "winapi-x86_64-pc-windows-gnu",
+    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi-x86_64-pc-windows-gnu",
+    path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
+)
+
+new_local_repository(
+    name = "crosvm",
+    build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD",
+    path = "external/crosvm",
 )
 
 bazel_dep(name = "lz4", version = "0.0.1")
