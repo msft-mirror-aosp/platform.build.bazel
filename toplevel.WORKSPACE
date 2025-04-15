@@ -4,22 +4,6 @@ load(
     "json2bzl_repository",
 )
 
-http_archive(
-    name = "rules_rust",
-    integrity = "sha256-4qOr06EWg6BTBbv9M8xJTfebNkE9VMBXsa17RZD071I=",
-    patch_args = ["-p1"],
-    patches = [
-        "//build/bazel/toolchains/rust:fix-generated-file-with-sibling-layout.patch",  # https://github.com/bazelbuild/rules_rust/pull/2804
-        "//build/bazel/toolchains/rust:no-debuginfo-with-cc-common-link.patch",  # https://github.com/bazelbuild/rules_rust/pull/3257
-        "//build/bazel/toolchains/rust:pdb-from-cc_common-link.patch",
-    ],
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.57.1/rules_rust-0.57.1.tar.gz"],
-)
-
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies")
-
-rules_rust_dependencies()
-
 new_local_repository(
     name = "boringssl",
     build_file = "//external/boringssl/src:BUILD.bazel",
