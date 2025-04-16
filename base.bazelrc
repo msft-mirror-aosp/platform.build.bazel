@@ -52,6 +52,8 @@ build:rcache --noremote_upload_local_results
 build:rcache --remote_local_fallback
 
 # Configs for CI builds
+# When running CI, fail the build if the lockfile needs update
+common:ci --lockfile_mode=error
 build:ci --config=_remote_base
 build:ci --config=ants
 build:ci --google_default_credentials
