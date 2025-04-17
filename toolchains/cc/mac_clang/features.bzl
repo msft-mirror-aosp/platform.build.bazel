@@ -270,7 +270,6 @@ opt_feature = feature(
                     "-g0",
                     # Enables Link-Time Optimization
                     "-flto=thin",
-                    "-fwhole-program-vtables",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
                     # Allow removal of unused sections at link time.
@@ -289,7 +288,6 @@ opt_feature = feature(
                     "-Wl,--icf=safe",
                     # Enables Link-Time Optimization
                     "-flto=thin",
-                    "-fwhole-program-vtables",
                 ]),
             ],
         ),
