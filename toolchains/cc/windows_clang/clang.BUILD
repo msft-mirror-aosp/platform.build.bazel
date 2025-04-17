@@ -11,7 +11,7 @@ load(
     "cc_tool",
     "cc_toolchain_import",
 )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 
 package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 
