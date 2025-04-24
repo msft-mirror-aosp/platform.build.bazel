@@ -39,9 +39,9 @@ load(
     "@//build/bazel/toolchains/cc/linux_clang:features.bzl",
     "linker_param_file_feature",
 )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@rules_cc//cc:action_names.bzl", "ACTION_NAMES")
 load(
-    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "@rules_cc//cc:cc_toolchain_config_lib.bzl",
     "env_entry",
     "env_set",
     "feature",

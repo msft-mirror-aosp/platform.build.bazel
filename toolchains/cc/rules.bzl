@@ -1,7 +1,7 @@
 """Platform and tool independent toolchain rules."""
 
 load(
-    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "@rules_cc//cc:cc_toolchain_config_lib.bzl",
     "ArtifactNamePatternInfo",
     "artifact_name_pattern",
     "env_entry",
@@ -10,6 +10,7 @@ load(
     "flag_group",
     "flag_set",
 )
+load("@rules_cc//cc:defs.bzl", "cc_common")
 load(":actions.bzl", "create_action_configs")
 load(":utils.bzl", "filter_none")
 
