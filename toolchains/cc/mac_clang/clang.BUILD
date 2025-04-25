@@ -1,3 +1,4 @@
+load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
 load(
     "@//build/bazel/toolchains/cc:actions.bzl",
     "ARCHIVER_ACTIONS",
@@ -125,4 +126,9 @@ cc_toolchain_import(
             "lib/clang/*/share/**",
         ],
     ),
+)
+
+simple_toolchain(
+    name = "objcopy",
+    executable = ":bin/llvm-objcopy",
 )

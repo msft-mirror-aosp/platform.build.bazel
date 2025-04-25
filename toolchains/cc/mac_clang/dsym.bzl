@@ -103,4 +103,5 @@ gen_dsym_aspect = aspect(
     attr_aspects = ["srcs"],
     fragments = ["cpp"],
     toolchains = use_cc_toolchain(),
+    apply_to_generating_rules = True,
 )

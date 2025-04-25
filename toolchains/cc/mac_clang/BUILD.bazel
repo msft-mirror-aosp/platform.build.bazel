@@ -221,3 +221,12 @@ toolchain(
     toolchain = ":arm64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
+
+toolchain(
+    name = "objcopy_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:macos",
+    ],
+    toolchain = "@clang_mac_all//:objcopy",
+    toolchain_type = "@//build/bazel/toolchains/cc:objcopy_toolchain_type",
+)
