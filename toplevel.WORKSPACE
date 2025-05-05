@@ -283,58 +283,6 @@ host_platform_repository(
     },
 )
 
-# Rust crates, note that these follow the AOSP style of naming, where every crate
-# is basically @..crate..
-# Once the rust team has an automated bazel generation tool, we will no longer need these.
-# See b/335734830 for details
-[
-    new_local_repository(
-        name = create,
-        build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.{}".format(create),
-        path = "external/rust/android-crates-io/crates/{}".format(create),
-    )
-    for create in [
-        "bitflags",
-        "byteorder",
-        "cfg-if",
-        "equivalent",
-        "foldhash",
-        "hashbrown",
-        "itoa",
-        "libc",
-        "log",
-        "memchr",
-        "memoffset",
-        "nix",
-        "once_cell",
-        "proc-macro2",
-        "quote",
-        "remain",
-        "ryu",
-        "serde_derive",
-        "serde_json",
-        "serde",
-        "syn",
-        "thiserror-impl",
-        "thiserror",
-        "unicode-ident",
-        "zerocopy-derive",
-        "zerocopy",
-    ]
-]
-
-new_local_repository(
-    name = "winapi",
-    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi",
-    path = "hardware/generic/goldfish/third_party/rust/crates/winapi",
-)
-
-new_local_repository(
-    name = "winapi-x86_64-pc-windows-gnu",
-    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi-x86_64-pc-windows-gnu",
-    path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
-)
-
 local_repository(
     name = "com_github_grpc_grpc",
     path = "external/grpc",
