@@ -4,13 +4,6 @@ load(
     "json2bzl_repository",
 )
 
-new_local_repository(
-    name = "boringssl",
-    build_file = "//external/boringssl/src:BUILD.bazel",
-    path = "external/boringssl/src",
-    repo_mapping = {"@googletest": "@com_google_googletest"},
-)
-
 local_repository(
     name = "com_github_cares_cares",
     path = "external/cares",
@@ -32,37 +25,12 @@ local_repository(
 )
 
 local_repository(
-    name = "com_github_google_benchmark",
-    path = "external/google-benchmark",
-)
-
-local_repository(
-    name = "com_google_absl",
-    path = "external/abseil-cpp",
-)
-
-local_repository(
     name = "com_google_crashpad",
     path = "external/crashpad",
 )
 
 register_toolchains(
     "@com_google_crashpad//util:mig_toolchain",
-)
-
-local_repository(
-    name = "com_google_googletest",
-    path = "external/googletest",
-)
-
-local_repository(
-    name = "com_google_protobuf",
-    path = "external/protobuf",
-)
-
-local_repository(
-    name = "com_googlesource_code_re2",
-    path = "external/regex-re2",
 )
 
 local_repository(
@@ -73,11 +41,6 @@ local_repository(
 local_repository(
     name = "pffft",
     path = "external/pffft",
-)
-
-local_repository(
-    name = "pcre2",
-    path = "external/pcre2",
 )
 
 local_repository(
@@ -109,39 +72,6 @@ local_repository(
 local_repository(
     name = "pixman",
     path = "external/pixman",
-)
-
-local_repository(
-    name = "zlib",
-    path = "external/zlib",
-)
-
-local_repository(
-    name = "upb",
-    path = "external/grpc/third_party/upb",
-)
-
-local_repository(
-    name = "tink_cc",
-    path = "external/tink",
-)
-
-load("@tink_cc//:tink_cc_deps.bzl", "tink_cc_deps")
-
-tink_cc_deps()
-
-load("@tink_cc//:tink_cc_deps_init.bzl", "tink_cc_deps_init")
-
-tink_cc_deps_init()
-
-local_repository(
-    name = "com_github_google_flatbuffers",
-    path = "external/flatbuffers",
-)
-
-local_repository(
-    name = "webrtc",
-    path = "external/webrtc",
 )
 
 http_archive(
@@ -282,24 +212,6 @@ host_platform_repository(
         ): "//build/bazel/platforms:windows_x64",
     },
 )
-
-local_repository(
-    name = "com_github_grpc_grpc",
-    path = "external/grpc",
-)
-
-local_repository(
-    name = "utf8_range",
-    path = "external/protobuf/third_party/utf8_range",
-)
-
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
-grpc_deps()
-
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
 
 local_repository(
     name = "com_google_breakpad",
