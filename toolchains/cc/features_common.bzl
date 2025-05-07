@@ -203,6 +203,32 @@ def get_sanitizer_feature(name, compile_flags, link_flags):
         ],
     )
 
+def get_reproducible_build_feature(*, assembler_flags = None, compile_flags = None, link_flags = None):
+    return feature(
+        name = "reproducible_build",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = ASSEMBLE_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(bool, flag_group, flags = assembler_flags),
+                ]),
+            ),
+            flag_set(
+                actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(bool, flag_group, flags = compile_flags),
+                ]),
+            ),
+            flag_set(
+                actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
+                flag_groups = filter_none([
+                    check_args(bool, flag_group, flags = link_flags),
+                ]),
+            ),
+        ],
+    )
+
 no_legacy_features = feature(
     name = "no_legacy_features",
     enabled = True,
