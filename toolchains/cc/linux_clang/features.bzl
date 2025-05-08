@@ -17,6 +17,7 @@ load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
     "get_b_prefix_feature",
+    "get_reproducible_build_feature",
     "get_sanitizer_feature",
     "get_toolchain_assembler_flags_feature",
     "get_toolchain_cc_only_features",
@@ -776,6 +777,35 @@ msan_feature = get_sanitizer_feature(
     ],
 )
 
+reproducible_build_feature = get_reproducible_build_feature(
+    assembler_flags = [
+        # Force the timestamps to a fixed value.
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+        # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
+        # the path absolute when generating a relative prefix.
+        "-no-canonical-prefixes",
+    ],
+    compile_flags = [
+        # Force the timestamps to a fixed value.
+        "-Wno-builtin-macro-redefined",
+        "-D__DATE__=\"redacted\"",
+        "-D__TIMESTAMP__=\"redacted\"",
+        "-D__TIME__=\"redacted\"",
+        # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
+        # the path absolute when generating a relative prefix.
+        "-no-canonical-prefixes",
+        # Do not add standard inclusion paths for c++.
+        "-nostdinc++",
+    ],
+    link_flags = [
+        # Deterministic build id.
+        "-Wl,--build-id=sha1",
+    ],
+)
+
 def _cc_features_impl(ctx):
     import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
@@ -824,6 +854,7 @@ def _cc_features_impl(ctx):
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
+        reproducible_build_feature,
         ### End flag ordering ##
         sysroot_feature,
         get_b_prefix_feature(ctx.file.b_prefix),

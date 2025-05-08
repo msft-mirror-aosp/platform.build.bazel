@@ -13,6 +13,7 @@ load(
 load(
     "@//build/bazel/toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
+    "get_reproducible_build_feature",
     "get_toolchain_assembler_flags_feature",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_compiler_default_defines_flags",
@@ -75,30 +76,6 @@ compiler_input_feature = feature(
                 flag_group(
                     expand_if_available = "source_file",
                     flags = ["/c", "%{source_file}"],
-                ),
-            ],
-        ),
-    ],
-)
-
-compiler_default_clang_cl_feature = feature(
-    name = "compiler_default_clang_cl_flags",
-    enabled = True,
-    flag_sets = [
-        flag_set(
-            actions = C_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
-            flag_groups = [
-                flag_group(
-                    flags =
-                        [
-                            "--target=x86_64-pc-windows-msvc",
-                            # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
-                            # the path absolute when generating a relative prefix.
-                            "-no-canonical-prefixes",
-                            # Use standard c++ exception handling
-                            # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
-                            "/EHsc",
-                        ],
                 ),
             ],
         ),
@@ -665,6 +642,24 @@ targets_windows_feature = feature(
     enabled = True,
 )
 
+reproducible_build_feature = get_reproducible_build_feature(
+    compile_flags = [
+        # Force the timestamps to a fixed value.
+        "-Wno-builtin-macro-redefined",
+        "/D__DATE__=\"redacted\"",
+        "/D__TIMESTAMP__=\"redacted\"",
+        "/D__TIME__=\"redacted\"",
+        # Do not expand any symbolic links, resolve references to ‘/../’ or ‘/./’, or make
+        # the path absolute when generating a relative prefix.
+        "-no-canonical-prefixes",
+        # Do not add the builtin lib/clang/*/include directory. This directory is already
+        # added as a cc_toolchain_import using a relative path. Not setting this will
+        # make the directory prepended as an absolute path, and cause include checking
+        # errors when the action is cached remotely.
+        "-nobuiltininc",
+    ],
+)
+
 windows_export_all_symbols_feature = feature(
     name = "windows_export_all_symbols",
     enabled = True,
@@ -717,7 +712,7 @@ def _cc_features_impl(ctx):
         get_toolchain_assembler_flags_feature(ctx.attr.assembler_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
-        compiler_default_clang_cl_feature,
+        reproducible_build_feature,
         ### End flag ordering ##
         linker_param_file_feature,
         compiler_output_feature,
