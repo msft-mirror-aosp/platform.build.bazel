@@ -5,15 +5,80 @@ load(
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
 
+bool_flag(
+    name = "hermetic_xcode",
+    build_setting_default = True,
+)
+
+config_setting(
+    name = "is_hermetic_xcode",
+    flag_values = {
+        ":hermetic_xcode": "true",
+    },
+)
+
+alias(
+    name = "xcode_sdk",
+    actual = select({
+        ":is_hermetic_xcode": "@xcode_tools_hermetic//:sdk",
+        "//conditions:default": "@xcode_tools//:sdk",
+    }),
+)
+
+alias(
+    name = "xcode_libcxx",
+    actual = select({
+        ":is_hermetic_xcode": "@xcode_tools_hermetic//:libcxx",
+        "//conditions:default": "@xcode_tools//:libcxx",
+    }),
+)
+
+alias(
+    name = "xcode_frameworks",
+    actual = select({
+        ":is_hermetic_xcode": "@xcode_tools_hermetic//:frameworks",
+        "//conditions:default": "@xcode_tools//:frameworks",
+    }),
+)
+
+# TODO switch crashpad to use this.
+alias(
+    name = "xcode_mig",
+    actual = select({
+        ":is_hermetic_xcode": "@xcode_tools_hermetic//:mig",
+        "//conditions:default": "@xcode_tools_local//:mig",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+xcode_version(
+    name = "version16_2_0_16C5032a",
+    aliases = [
+        "16C5032a",
+        "16.2",
+    ],
+    default_macos_sdk_version = "16.2",
+    version = "16.2.0.16C5032a",
+)
+
+xcode_config(
+    name = "host_xcodes",
+    default = ":version16_2_0_16C5032a",
+    versions = [
+        ":version16_2_0_16C5032a",
+    ],
+)
+
 _imports = [
-    "@xcode_tools//:libcxx",
+    ":xcode_libcxx",
     "@clang_mac_all//:compiler_rt",
-    "@xcode_tools//:frameworks",
+    ":xcode_frameworks",
 ]
 
 cc_features(
@@ -73,7 +138,7 @@ cc_toolchain_config(
     ],
     compiler_name = "clang",
     identifier = "macos_clang_x64",
-    sysroot = "@xcode_tools//:sdk",
+    sysroot = ":xcode_sdk",
     target_cpu = "k8",
     toolchain_imports = _imports,
 )
@@ -177,7 +242,7 @@ cc_toolchain_config(
     ],
     compiler_name = "clang",
     identifier = "macos_clang_arm64",
-    sysroot = "@xcode_tools//:sdk",
+    sysroot = ":xcode_sdk",
     target_cpu = "arm64",
     toolchain_imports = _imports,
 )

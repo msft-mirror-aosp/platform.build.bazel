@@ -1,0 +1,26 @@
+From 5612226135a7c6343478e57ddcfefff0be083b15 Mon Sep 17 00:00:00 2001
+From: Will Hollins <whollins@google.com>
+Date: Mon, 12 May 2025 14:46:27 +0100
+Subject: [PATCH] Stop using universal binary as this requires lipo, which
+ makes apple_support search for a full xcode install.
+
+---
+ bazel/grpc_build_system.bzl | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
+index 0fc2e1d..c42ce81 100644
+--- a/bazel/grpc_build_system.bzl
++++ b/bazel/grpc_build_system.bzl
+@@ -201,7 +201,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
+     native.genrule(
+         name = name,
+         srcs = select({
+-            "@platforms//os:macos": [name + "_universal"],
++            #"@platforms//os:macos": [name + "_universal"],
+             "//conditions:default": [name + "_native"],
+         }),
+         outs = [name],
+-- 
+2.49.0.1015.ga840276032-goog
+

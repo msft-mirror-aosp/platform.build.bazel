@@ -19,7 +19,7 @@ module(
 )
 
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "apple_support", version = "1.21.1", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "apple_support", version = "1.22.0", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "rules_cc", version = "0.1.1")
 bazel_dep(name = "rules_license", version = "1.0.0")
@@ -34,6 +34,17 @@ single_version_override(
     ],
 )
 
+bazel_dep(name = "rules_gcs", version = "1.0.1")
+
+gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
+
+gcs_archive(
+    name = "xcode_tools_hermetic",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:xcode.BUILD",
+    sha256 = "e0380bcdf07e8d1f460eff318c48d75879b3ac03460c2fa2e67f0ed9edf33ec1",
+    url = "gs://emu-next-bazel-xcode/xcode-16.2_20250510.tar.xz",
+)
+
 bazel_dep(name = "lz4", version = "1.9.4")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 bazel_dep(name = "protobuf", version = "30.2", repo_name = "com_google_protobuf")
@@ -43,6 +54,14 @@ bazel_dep(name = "boringssl", version = "0.20241024.0")
 bazel_dep(name = "tink_cc", version = "2.3.0")
 bazel_dep(name = "grpc-java", version = "1.71.0")
 bazel_dep(name = "grpc", version = "1.72.0", repo_name = "com_github_grpc_grpc")
+single_version_override(
+    module_name = "grpc",
+    patch_strip = 1,
+    patches = [
+        "//build/bazel/patch:grpc-no-macos-universal-binary.patch",
+    ],
+)
+
 bazel_dep(name = "with_cfg.bzl", version = "0.10.1")
 bazel_dep(name = "abseil-cpp", version = "20250127.1", repo_name = "com_google_absl")
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
