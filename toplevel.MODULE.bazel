@@ -42,7 +42,7 @@ gcs_archive(
     name = "xcode_tools_hermetic",
     build_file = "//build/bazel/toolchains/cc/mac_clang:xcode.BUILD",
     sha256 = "e0380bcdf07e8d1f460eff318c48d75879b3ac03460c2fa2e67f0ed9edf33ec1",
-    url = "gs://emu-next-bazel-xcode/xcode-16.2_20250510.tar.xz",
+    url = "gs://emu-next-bazel/xcode-16.2_20250510.tar.xz",
 )
 
 bazel_dep(name = "lz4", version = "1.9.4")
