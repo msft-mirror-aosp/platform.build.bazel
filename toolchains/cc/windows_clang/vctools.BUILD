@@ -34,6 +34,7 @@ cc_toolchain_import(
             "msvc/atlmfc/include/**",
             "msvc/atlmfc/lib/x64/mfc*.lib",
         ],
+        allow_empty = True,
         exclude = [
             "msvc/include/cliext/**",
             "msvc/include/codeanalysis/**",

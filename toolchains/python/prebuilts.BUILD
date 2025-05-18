@@ -9,6 +9,7 @@ filegroup(
             "linux-x86/bin/**",
             "linux-x86/lib/**",
         ],
+        allow_empty = True,
         exclude = [
             "**/* *",
             "linux-x86/lib/pkgconfig/**",
@@ -16,11 +17,13 @@ filegroup(
             "**/__pycache__/**",
         ],
     ),
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 filegroup(
     name = "linux_x86_interpreter",
     srcs = ["linux-x86/bin/python3"],
+    target_compatible_with = ["@platforms//os:linux"],
 )
 
 filegroup(
@@ -33,10 +36,12 @@ filegroup(
             "windows-x86/libs/**",
             "**/__pycache__/**",
         ],
+        allow_empty = True,
         exclude = [
             "**/*.pyc",
         ],
     ),
+    target_compatible_with = ["@platforms//os:windows"],
 )
 
 filegroup(
@@ -51,6 +56,7 @@ filegroup(
             "darwin-x86/bin/**",
             "darwin-x86/lib/**",
         ],
+        allow_empty = True,
         exclude = [
             "**/* *",
             "darwin-x86/lib/pkgconfig/**",
@@ -58,11 +64,13 @@ filegroup(
             "**/__pycache__/**",
         ],
     ),
+    target_compatible_with = ["@platforms//os:macos"],
 )
 
 filegroup(
     name = "mac_all_interpreter",
     srcs = ["darwin-x86/bin/python3"],
+    target_compatible_with = ["@platforms//os:macos"],
 )
 
 py_runtime(
@@ -84,6 +92,7 @@ toolchain(
         "@platforms//cpu:x86_64",
         "@platforms//os:linux",
     ],
+    target_compatible_with = ["@platforms//os:linux"],
     toolchain = ":linux_x86_py_runtime_pair",
     toolchain_type = "@bazel_tools//tools/python:toolchain_type",
     visibility = ["//visibility:public"],
@@ -108,6 +117,7 @@ toolchain(
         "@platforms//cpu:x86_64",
         "@platforms//os:windows",
     ],
+    target_compatible_with = ["@platforms//os:windows"],
     toolchain = ":windows_x86_py_runtime_pair",
     toolchain_type = "@bazel_tools//tools/python:toolchain_type",
     visibility = ["//visibility:public"],
@@ -131,6 +141,7 @@ toolchain(
     exec_compatible_with = [
         "@platforms//os:macos",
     ],
+    target_compatible_with = ["@platforms//os:macos"],
     toolchain = ":mac_all_py_runtime_pair",
     toolchain_type = "@bazel_tools//tools/python:toolchain_type",
     visibility = ["//visibility:public"],

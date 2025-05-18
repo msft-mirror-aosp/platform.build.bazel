@@ -2,7 +2,6 @@
 
 load(
     "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
-    "ArtifactNamePatternInfo",
     "artifact_name_pattern",
     "env_entry",
     "env_set",
@@ -10,6 +9,8 @@ load(
     "flag_group",
     "flag_set",
 )
+load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "ArtifactNamePatternInfo")
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load(":actions.bzl", "create_action_configs")
 load(":utils.bzl", "filter_none")
 

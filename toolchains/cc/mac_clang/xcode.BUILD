@@ -81,10 +81,13 @@ ALL_FRAMEWORKS = [
 cc_toolchain_import(
     name = "frameworks",
     framework_paths = [":SDKs/MacOSX.sdk/System/Library/Frameworks"],
-    support_files = glob([
-        "SDKs/MacOSX.sdk/System/Library/Frameworks/{}.framework/**".format(f)
-        for f in ALL_FRAMEWORKS
-    ]),
+    support_files = glob(
+        [
+            "SDKs/MacOSX.sdk/System/Library/Frameworks/{}.framework/**".format(f)
+            for f in ALL_FRAMEWORKS
+        ],
+        allow_empty = True,
+    ),
 )
 
 exports_files(
