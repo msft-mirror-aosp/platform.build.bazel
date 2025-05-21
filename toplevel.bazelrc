@@ -1,9 +1,6 @@
 import %workspace%/build/bazel/base.bazelrc
 import %workspace%/build/bazel/tool.bazelrc
 
-#common --announce_rc
-common --credential_helper=storage.googleapis.com=%workspace%/build/bazel/utils/credential_helper.sh
-
 build --define grpc_no_xds=true
 
 build:macos --xcode_version_config //build/bazel/toolchains/cc/mac_clang:host_xcodes

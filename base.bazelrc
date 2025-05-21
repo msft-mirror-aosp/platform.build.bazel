@@ -21,6 +21,11 @@ build:linux --workspace_status_command="prebuilts/python/linux-x86/bin/python3 b
 build:macos --workspace_status_command="prebuilts/python/darwin-x86/bin/python3 build/bazel/utils/bazel_workspace.py"
 build:windows --workspace_status_command="build\\bazel\\utils\\bazel_workspace.cmd"
 
+# Credential helper for GCE access
+common:linux --credential_helper="%workspace%/build/bazel/utils/credential_helper.sh"
+common:macos --credential_helper="%workspace%/build/bazel/utils/credential_helper.sh"
+common:windows --credential_helper="%workspace%/build/bazel/utils/credential_helper.cmd"
+
 # Publish to the private BES backend.
 build:sponge --grpc_keepalive_time=30s
 build:sponge --bes_keywords=android-emulator
