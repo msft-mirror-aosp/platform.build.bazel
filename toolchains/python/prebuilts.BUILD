@@ -13,6 +13,7 @@ filegroup(
             "**/* *",
             "linux-x86/lib/pkgconfig/**",
             "**/*.pyc",
+            "**/__pycache__/**",
         ],
     ),
 )
@@ -30,6 +31,7 @@ filegroup(
             "windows-x86/DLLs/**",
             "windows-x86/Lib/**",
             "windows-x86/libs/**",
+            "**/__pycache__/**",
         ],
         exclude = [
             "**/*.pyc",
@@ -53,6 +55,7 @@ filegroup(
             "**/* *",
             "darwin-x86/lib/pkgconfig/**",
             "**/*.pyc",
+            "**/__pycache__/**",
         ],
     ),
 )

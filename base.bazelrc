@@ -61,6 +61,9 @@ build:rcache --remote_local_fallback
 common:ci --lockfile_mode=error
 build:ci --config=_remote_base
 build:ci --config=ants
-build:ci --google_default_credentials
 # When targets are all cached the BES upload may take a long time.
 build:ci --bes_timeout=600s
+# Enable disk cache with GC
+common:ci --disk_cache=~/.cache/bazel_disk_cache
+common:ci --experimental_disk_cache_gc_max_age=28d
+common:ci --experimental_disk_cache_gc_max_size=32G
