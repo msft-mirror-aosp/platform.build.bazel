@@ -161,28 +161,13 @@ register_toolchains(
 )
 
 new_local_repository(
-    name = "rust_mac",
-    build_file = "//build/bazel/toolchains/rust:mac.BUILD",
-    path = "prebuilts/rust/darwin-x86/{}".format(TOOL_VERSIONS["rust"]),
-)
-
-new_local_repository(
     name = "rust_linux",
     build_file = "//build/bazel/toolchains/rust:linux.BUILD",
     path = "prebuilts/rust/linux-x86/{}".format(TOOL_VERSIONS["rust"]),
 )
 
-new_local_repository(
-    name = "rust_windows",
-    build_file = "//build/bazel/toolchains/rust:windows.BUILD",
-    path = "prebuilts/rust/windows-x86/{}".format(TOOL_VERSIONS["rust"]),
-)
-
 register_toolchains(
-    "@rust_mac//:mac_arm64_toolchain",
-    "@rust_mac//:mac_x64_toolchain",
     "@rust_linux//:linux_x64_toolchain",
-    "@rust_windows//:windows_x64_toolchain",
 )
 
 load(
