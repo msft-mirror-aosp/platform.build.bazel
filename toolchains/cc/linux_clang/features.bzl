@@ -102,6 +102,14 @@ def get_toolchain_lib_search_paths_feature(import_config):
                         flag_group,
                         flags = ["-L" + p for p in import_config.lib_search_paths],
                     ),
+                    check_args(
+                        len,
+                        flag_group,
+                        flags = flatten([
+                            ("-F", path)
+                            for path in import_config.framework_paths
+                        ]),
+                    ),
                 ]),
             ),
         ],
