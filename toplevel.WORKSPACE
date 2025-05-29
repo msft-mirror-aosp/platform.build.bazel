@@ -6,12 +6,12 @@ load(
 
 local_repository(
     name = "com_github_cares_cares",
-    path = "external/cares",
+    path = "third_party/cares",
 )
 
 local_repository(
     name = "perfetto",
-    path = "external/perfetto",
+    path = "third_party/perfetto",
 )
 
 local_repository(
@@ -21,12 +21,12 @@ local_repository(
 
 local_repository(
     name = "rnnoise",
-    path = "external/rnnoise",
+    path = "third_party/rnnoise",
 )
 
 local_repository(
     name = "com_google_crashpad",
-    path = "external/crashpad",
+    path = "third_party/crashpad",
 )
 
 register_toolchains(
@@ -35,43 +35,43 @@ register_toolchains(
 
 local_repository(
     name = "meson",
-    path = "external/meson",
+    path = "third_party/meson",
 )
 
 local_repository(
     name = "pffft",
-    path = "external/pffft",
+    path = "third_party/pffft",
 )
 
 local_repository(
     name = "libvpx",
-    path = "external/libvpx",
+    path = "third_party/libvpx",
 )
 
 new_local_repository(
     name = "nasm",
-    build_file = "//external/nasm:BUILD",
-    path = "external/nasm",
+    build_file = "//third_party/nasm:BUILD",
+    path = "third_party/nasm",
 )
 
 local_repository(
     name = "libjpeg_turbo",
-    path = "external/libjpeg-turbo",
+    path = "third_party/libjpeg-turbo",
 )
 
 local_repository(
     name = "libyuv",
-    path = "external/libyuv",
+    path = "third_party/libyuv",
 )
 
 local_repository(
     name = "glib",
-    path = "external/glib",
+    path = "third_party/glib",
 )
 
 local_repository(
     name = "pixman",
-    path = "external/pixman",
+    path = "third_party/pixman",
 )
 
 http_archive(
@@ -194,5 +194,5 @@ host_platform_repository(
 
 local_repository(
     name = "com_google_breakpad",
-    path = "external/google-breakpad",
+    path = "third_party/google-breakpad",
 )

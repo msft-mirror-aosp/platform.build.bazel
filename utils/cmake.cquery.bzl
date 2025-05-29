@@ -63,8 +63,11 @@ def _uniq(hashables):
     return uniq.keys()
 
 def _normalize_execroot_path(path):
+    if path.startswith("external/"):
+        # Note we assume you are *NOT* using a sibling repository
+        return "${output_base}/" + path
     if path.startswith("../"):
-        # For paths to external repositories, use "<output-base>/external" instead.
+        # For paths to third_party repositories, use "<output-base>/external" instead.
         return "${output_base}/external/" + path.removeprefix("../")
     if path.startswith("bazel-out"):
         # Use bazel info bazel_out to see what you should replace this with.
