@@ -15,15 +15,11 @@ cc_toolchain_import(
     support_files = ["@aemu//windows:compat-includes"],
 )
 
-_x64_imports_msvc = [
+_x64_imports = [
     ":aemu_msvc_compat",
     "@clang_win_x64//:compiler_runtime",
     "@vctools//:msvc_runtimes_x64",
     "@windows_sdk//:sdk_libs_x64",
-]
-
-_x64_imports_gnu = [
-    "@mingw64//:mingw_libs_x64",
 ]
 
 cc_features(
@@ -61,9 +57,8 @@ cc_features(
         "/D_UCRT_NOISY_NAN",
     ],
     cxx_flags = ["/std:c++20"],
-    link_flags_msvc = ["/ignore:4070"],
-    toolchain_imports_gnu = _x64_imports_gnu,
-    toolchain_imports_msvc = _x64_imports_msvc,
+    link_flags = ["/ignore:4070"],
+    toolchain_imports = _x64_imports,
 )
 
 cc_artifact_name(
@@ -122,7 +117,7 @@ cc_toolchain_config(
     compiler_name = "clang-cl",
     identifier = "win_clangcl_x64",
     target_cpu = "k8",
-    toolchain_imports = _x64_imports_msvc + _x64_imports_gnu,
+    toolchain_imports = _x64_imports,
 )
 
 cc_toolchain(

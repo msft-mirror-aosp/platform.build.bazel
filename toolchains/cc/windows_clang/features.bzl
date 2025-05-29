@@ -48,18 +48,11 @@ load(
     "env_entry",
     "env_set",
     "feature",
-    "feature_set",
     "flag_group",
     "flag_set",
     "variable_with_value",
     "with_feature_set",
 )
-
-# A feature set that is satisfied when the driving mode should be MSVC.
-# rules_rust would disable this mode because we link rust with mingw instead.
-MODE_MSVC = feature_set(features = ["rules_rust_unsupported_feature"])
-WITH_MODE_MSVC = with_feature_set(features = MODE_MSVC.features)
-WITH_MODE_GNU = with_feature_set(not_features = MODE_MSVC.features)
 
 archive_param_file_feature = feature(
     name = "archive_param_file",
@@ -281,7 +274,7 @@ def get_toolchain_include_paths_feature(import_config):
         ],
     )
 
-def get_toolchain_lib_search_paths_feature(import_config_msvc, import_config_gnu):
+def get_toolchain_lib_search_paths_feature(import_config):
     return feature(
         name = "toolchain_library_search_directories",
         enabled = True,
@@ -291,28 +284,14 @@ def get_toolchain_lib_search_paths_feature(import_config_msvc, import_config_gnu
                 env_entries = [
                     env_entry(
                         key = "LIB",
-                        value = ";".join(import_config_msvc.lib_search_paths),
+                        value = ";".join(import_config.lib_search_paths),
                     ),
                 ],
-                with_features = [WITH_MODE_MSVC],
-            ),
-        ],
-        flag_sets = [
-            flag_set(
-                actions = LINK_ACTIONS,
-                flag_groups = filter_none([
-                    check_args(
-                        len,
-                        flag_group,
-                        flags = ["-L" + p for p in import_config_gnu.lib_search_paths],
-                    ),
-                ]),
-                with_features = [WITH_MODE_GNU],
             ),
         ],
     )
 
-def get_toolchain_link_flags_feature(flags_msvc, flags_gnu):
+def get_toolchain_link_flags_feature(flags):
     return feature(
         name = "toolchain_link_flags",
         enabled = True,
@@ -320,16 +299,8 @@ def get_toolchain_link_flags_feature(flags_msvc, flags_gnu):
             flag_set(
                 actions = LINK_ACTIONS,
                 flag_groups = filter_none([
-                    check_args(len, flag_group, flags = flags_msvc),
+                    check_args(len, flag_group, flags = flags),
                 ]),
-                with_features = [WITH_MODE_MSVC],
-            ),
-            flag_set(
-                actions = LINK_ACTIONS,
-                flag_groups = filter_none([
-                    check_args(len, flag_group, flags = flags_gnu),
-                ]),
-                with_features = [WITH_MODE_GNU],
             ),
         ],
     )
@@ -523,7 +494,6 @@ msvc_runtimes_feature = feature(
             ],
         ),
     ],
-    requires = [MODE_MSVC],
 )
 
 no_windows_export_all_symbols_feature = feature(name = "no_windows_export_all_symbols")
@@ -619,14 +589,6 @@ shared_flag_feature = feature(
             ],
             flag_groups = [flag_group(flags = ["/DLL"])],
         ),
-        flag_set(
-            actions = [
-                ACTION_NAMES.cpp_link_dynamic_library,
-                ACTION_NAMES.cpp_link_nodeps_dynamic_library,
-            ],
-            flag_groups = [flag_group(flags = ["-entry=DllMainCRTStartup"])],
-            with_features = [WITH_MODE_GNU],
-        ),
     ],
 )
 
@@ -666,8 +628,7 @@ windows_export_all_symbols_feature = feature(
 )
 
 def _cc_features_impl(ctx):
-    import_config_msvc = toolchain_import_configs(ctx.attr.toolchain_imports_msvc)
-    import_config_gnu = toolchain_import_configs(ctx.attr.toolchain_imports_gnu)
+    import_config = toolchain_import_configs(ctx.attr.toolchain_imports)
     all_features = flatten([
         # features set / consumed by bazel
         no_legacy_features,
@@ -689,7 +650,7 @@ def _cc_features_impl(ctx):
         parse_showincludes_feature,
         include_paths_feature,
         external_include_paths_feature,
-        get_toolchain_include_paths_feature(import_config_msvc),
+        get_toolchain_include_paths_feature(import_config),
         shared_flag_feature,
         linkstamps_feature,
         output_execpath_feature,
@@ -698,14 +659,14 @@ def _cc_features_impl(ctx):
         static_link_msvcrt_feature,
         msvc_runtimes_feature,
         generate_pdb_file_feature,
-        get_toolchain_lib_search_paths_feature(import_config_msvc, import_config_gnu),
+        get_toolchain_lib_search_paths_feature(import_config),
         get_archiver_flags_feature(ctx.attr.archive_flags),
         # Start flag ordering: the order of following features impacts how
         # flags override each other.
         opt_feature,
         dbg_feature,
         libraries_to_link_feature,
-        get_toolchain_link_flags_feature(ctx.attr.link_flags_msvc, ctx.attr.link_flags_gnu),
+        get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
         get_toolchain_compiler_default_defines_flags(ctx.attr.compiler_defines_flags),
@@ -744,21 +705,12 @@ cc_features = rule(
             doc = "Flags always added to c++ compile actions.",
             default = [],
         ),
-        "link_flags_msvc": attr.string_list(
+        "link_flags": attr.string_list(
             doc = "Flags always added to link actions in MSVC driving mode.",
             default = [],
         ),
-        "link_flags_gnu": attr.string_list(
-            doc = "Flags always added to link actions in GNU driving mode.",
-            default = [],
-        ),
-        "toolchain_imports_msvc": attr.label_list(
+        "toolchain_imports": attr.label_list(
             doc = "A list of cc_toolchain_import targets in MSVC driving mode.",
-            providers = [CcToolchainImportInfo],
-            default = [],
-        ),
-        "toolchain_imports_gnu": attr.label_list(
-            doc = "A list of cc_toolchain_import targets in GNU driving mode, for linking only",
             providers = [CcToolchainImportInfo],
             default = [],
         ),

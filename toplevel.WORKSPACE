@@ -141,12 +141,6 @@ windows_sdk_repository(
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 
-new_local_repository(
-    name = "mingw64",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:mingw64.BUILD",
-    path = "prebuilts/gcc/linux-x86/host/x86_64-w64-mingw32-4.8",
-)
-
 # Repository that provides Python 3
 new_local_repository(
     name = "python",
