@@ -9,6 +9,11 @@ common --enable_workspace
 build --incompatible_strict_action_env
 build --nolegacy_external_runfiles
 
+# Hardened sandboxes
+build --nosandbox_default_allow_network
+build --sandbox_fake_hostname
+build --sandbox_fake_username
+
 # Enable windows symlink and runfiles
 startup --windows_enable_symlinks
 build:windows --enable_runfiles
