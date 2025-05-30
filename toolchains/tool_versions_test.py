@@ -7,7 +7,7 @@ from typing import Dict
 from python.runfiles import Runfiles
 
 _JSON_FILE = "android_emulator/build/bazel/toolchains/tool_versions.json"
-_MODULE_FILE = "android_emulator/build/bazel/toplevel.MODULE.bazel"
+_MODULE_FILE = "android_emulator/build/bazel/toolchains/toolchain.MODULE.bazel"
 
 _runfiles: Runfiles = Runfiles.Create()
 

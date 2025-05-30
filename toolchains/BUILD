@@ -5,7 +5,7 @@ py_test(
     srcs = ["tool_versions_test.py"],
     data = [
         ":tool_versions.json",
-        "//build/bazel:toplevel.MODULE.bazel",
+        ":toolchain.MODULE.bazel",
     ],
     deps = ["@rules_python//python/runfiles"],
 )

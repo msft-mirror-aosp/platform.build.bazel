@@ -1,0 +1,61 @@
+"""Toolchain dependencies and repos."""
+
+TOOL_VERSIONS = {
+    "clang": "clang-r530567",
+    "rust": "1.82.0",
+}
+
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_gcs", version = "1.0.1")
+bazel_dep(name = "apple_support", version = "1.22.0", repo_name = "build_bazel_apple_support")
+bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_python", version = "1.4.0")
+
+## Make sure we do not accidentally pick up a python version
+## From the system.
+python = use_extension("@rules_python//python/extensions:python.bzl", "python")
+python.toolchain(
+    is_default = True,
+    python_version = "3.10",
+)
+
+bazel_dep(name = "with_cfg.bzl", version = "0.10.1")
+bazel_dep(name = "rules_rust", version = "0.60.0")
+single_version_override(
+    module_name = "rules_rust",
+    patch_strip = 1,
+    patches = [
+        "//build/bazel/toolchains/rust:fix-generated-file-with-sibling-layout.patch",  # https://github.com/bazelbuild/rules_rust/pull/2804
+    ],
+)
+
+rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+rust.toolchain(
+    versions = [TOOL_VERSIONS["rust"]],
+)
+
+bazel_dep(name = "rules_proto", version = "7.0.2")
+
+gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
+
+gcs_archive(
+    name = "xcode_tools_hermetic",
+    build_file = "//build/bazel/toolchains/cc/mac_clang:xcode.BUILD",
+    sha256 = "e1fca4bee5f88bd6d3108e380235860a5a0cb5cec17d664e98ad0c3e58675f77",
+    url = "gs://emu-next-bazel/hermetic-xcode/xcode_command_line_tools-16.2-202505191216.zip",
+)
+
+bazel_dep(name = "buildifier_prebuilt", version = "8.0.3", dev_dependency = True)
+
+register_toolchains(
+    "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
+    "//build/bazel/toolchains/cc/linux_clang:x64_objcopy_toolchain",
+    "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
+    "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",
+    "//build/bazel/toolchains/cc/mac_clang:objcopy_toolchain",
+    "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
+    "//build/bazel/toolchains/cc/windows_clang:resource_compiler_x64",
+)
