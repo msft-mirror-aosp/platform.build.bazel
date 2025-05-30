@@ -1,0 +1,11 @@
+exports_files(
+    srcs = ["toplevel.MODULE.bazel"],
+    visibility = ["//build/bazel/toolchains:__pkg__"],
+)
+
+test_suite(
+    name = "sanity_checks",
+    tests = [
+        "//build/bazel/toolchains:tool_versions_test",
+    ],
+)

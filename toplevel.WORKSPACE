@@ -141,19 +141,6 @@ windows_sdk_repository(
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 
-# Repository that provides Python 3
-new_local_repository(
-    name = "python",
-    build_file = "//build/bazel/toolchains/python:prebuilts.BUILD",
-    path = "prebuilts/python",
-)
-
-register_toolchains(
-    "@python//:linux_x86_toolchain",
-    "@python//:windows_x86_toolchain",
-    "@python//:mac_all_toolchain",
-)
-
 new_local_repository(
     name = "rust_linux",
     build_file = "//build/bazel/toolchains/rust:linux.BUILD",
