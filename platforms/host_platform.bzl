@@ -6,6 +6,8 @@ load(
     "default_workspace_file_content",
 )
 
+VALID_KEYS = ["os", "arch"]
+
 OS_MATCHER = {
     "windows": lambda os: os.startswith("windows"),
     "macos": lambda os: os.startswith("mac"),
@@ -26,30 +28,14 @@ alias(
 )
 """
 
-def host_conditions(os = None, arch = None):
-    """Returns a string that encodes the given conditions.
-
-    An item is checked only if not None, and the condition is considered a match
-    unless there is a mismatched item. Therefore `host_conditions()` is a
-    match-all condition.
-
-    Args:
-        os: The OS name ("windows", "macos", "linux")
-        arch: The host architecture ("x86", "x64", "arm64").
-
-    Returns:
-        A string to be consumed by the "select_host_platform" rule.
-    """
-    cond = {}
-    if os:
-        if os not in OS_MATCHER:
-            fail("os name", os, "is not valid - must be one of", OS_MATCHER.keys())
-        cond["os"] = os
-    if arch:
-        if arch not in ARCH_MATCHER:
-            fail("arch", arch, "is not valid - must be one of", ARCH_MATCHER.keys())
-        cond["arch"] = arch
-    return json.encode(cond)
+def _validate_condition(cond):
+    for k, v in cond.items():
+        if k not in VALID_KEYS:
+            fail("condition", k, "is not valid - must be one of", VALID_KEYS)
+        elif k == "os" and v not in OS_MATCHER:
+            fail("os name", v, "is not valid - must be one of", OS_MATCHER.keys())
+        elif k == "arch" and v not in ARCH_MATCHER:
+            fail("arch", v, "is not valid - must be one of", ARCH_MATCHER.keys())
 
 def _is_cond_met(cond, repo_ctx):
     if "os" in cond:
@@ -66,6 +52,7 @@ def _host_platform_repository_impl(repo_ctx):
     platform_target = None
     for cond, actual in repo_ctx.attr.host.items():
         cond = json.decode(cond)
+        _validate_condition(cond)
         if _is_cond_met(cond, repo_ctx):
             platform_target = actual
     if not platform_target:

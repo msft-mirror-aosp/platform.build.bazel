@@ -92,7 +92,7 @@ cc_toolchain_import(
 
 exports_files(
     glob(["SDKs/MacOSX.sdk/usr/include/mach/*.defs"]),
-    visibility = ["@@com_google_crashpad//:__subpackages__"],
+    visibility = ["@com_google_crashpad//:__subpackages__"],
 )
 
 simple_toolchain(
@@ -114,5 +114,5 @@ simple_toolchain(
     runfiles = [
         ":usr/libexec/migcom",
     ],
-    visibility = ["@@com_google_crashpad//:__subpackages__"],
+    visibility = ["@com_google_crashpad//:__subpackages__"],
 )

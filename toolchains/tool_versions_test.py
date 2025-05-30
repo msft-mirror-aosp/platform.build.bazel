@@ -44,8 +44,8 @@ def _version_from_module(runfile_helper: Runfiles) -> Dict[str, str]:
                     state = TokenState.PENDING_CLOSE
                     version_declares.append(token[:2])
                 case (TokenState.PENDING_CLOSE, tokenize.OP, "}"):
-                    state = TokenState.PENDING_ANCHOR
                     version_declares.append(token[:2])
+                    break
                 case (TokenState.PENDING_CLOSE, _, _):
                     version_declares.append(token[:2])
     return eval(tokenize.untokenize(version_declares), {})

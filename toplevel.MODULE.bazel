@@ -67,7 +67,13 @@ local_path_override(
     path = "third_party/adt-infra/pytest/aemu_grpc",
 )
 
+# Non-module repositories
+
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Rust crates, note that these follow the AOSP style of naming, where every crate
 # is basically @..crate..
@@ -125,4 +131,75 @@ new_local_repository(
     name = "crosvm",
     build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD",
     path = "third_party/crosvm",
+)
+
+local_repository(
+    name = "com_github_cares_cares",
+    path = "third_party/cares",
+)
+
+local_repository(
+    name = "perfetto",
+    path = "third_party/perfetto",
+)
+
+local_repository(
+    name = "perfetto_cfg",
+    path = "build/bazel/perfetto_overrides",
+)
+
+local_repository(
+    name = "rnnoise",
+    path = "third_party/rnnoise",
+)
+
+local_repository(
+    name = "com_google_breakpad",
+    path = "third_party/google-breakpad",
+)
+
+local_repository(
+    name = "com_google_crashpad",
+    path = "third_party/crashpad",
+)
+
+register_toolchains(
+    "@com_google_crashpad//util:mig_toolchain",
+)
+
+local_repository(
+    name = "pffft",
+    path = "third_party/pffft",
+)
+
+local_repository(
+    name = "libvpx",
+    path = "third_party/libvpx",
+)
+
+local_repository(
+    name = "libjpeg_turbo",
+    path = "third_party/libjpeg-turbo",
+)
+
+local_repository(
+    name = "libyuv",
+    path = "third_party/libyuv",
+)
+
+local_repository(
+    name = "glib",
+    path = "third_party/glib",
+)
+
+local_repository(
+    name = "pixman",
+    path = "third_party/pixman",
+)
+
+http_archive(
+    name = "wycheproof",
+    sha256 = "eb1d558071acf1aa6d677d7f1cabec2328d1cf8381496c17185bd92b52ce7545",
+    strip_prefix = "wycheproof-d8ed1ba95ac4c551db67f410c06131c3bc00a97c",
+    url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
 )
