@@ -163,10 +163,6 @@ local_repository(
     path = "third_party/crashpad",
 )
 
-register_toolchains(
-    "@com_google_crashpad//util:mig_toolchain",
-)
-
 local_repository(
     name = "pffft",
     path = "third_party/pffft",

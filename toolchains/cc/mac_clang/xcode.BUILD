@@ -90,11 +90,6 @@ cc_toolchain_import(
     ),
 )
 
-exports_files(
-    glob(["SDKs/MacOSX.sdk/usr/include/mach/*.defs"]),
-    visibility = ["@com_google_crashpad//:__subpackages__"],
-)
-
 simple_toolchain(
     name = "mig",
     args = select({
@@ -111,8 +106,8 @@ simple_toolchain(
         "$(location :usr/libexec/migcom)",
     ],
     executable = ":usr/bin/mig",
+    libs = glob(["SDKs/MacOSX.sdk/usr/include/mach/*.defs"]),
     runfiles = [
         ":usr/libexec/migcom",
     ],
-    visibility = ["@com_google_crashpad//:__subpackages__"],
 )
