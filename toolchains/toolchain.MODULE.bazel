@@ -111,7 +111,7 @@ msvc_tools_repository(
 
 windows_sdk_repository(
     name = "windows_sdk",
-    build_file_template = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD.tpl",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD",
     sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
 )
 

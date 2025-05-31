@@ -8,21 +8,21 @@ package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
 cc_toolchain_import(
     name = "sdk_libs_x64",
     include_paths = [
-        ":include/%{sdk_version}/ucrt",
-        ":include/%{sdk_version}/shared",
-        ":include/%{sdk_version}/um",
-        ":include/%{sdk_version}/winrt",
-        ":include/%{sdk_version}/cppwinrt",
+        ":include/ucrt",
+        ":include/shared",
+        ":include/um",
+        ":include/winrt",
+        ":include/cppwinrt",
     ],
     lib_search_paths = [
-        ":lib/%{sdk_version}/ucrt/x64",
-        ":lib/%{sdk_version}/um/x64",
+        ":lib/ucrt/x64",
+        ":lib/um/x64",
     ],
     support_files = glob(
         [
-            "include/%{sdk_version}/**",
-            "lib/%{sdk_version}/ucrt/x64/**",
-            "lib/%{sdk_version}/um/x64/**",
+            "include/**",
+            "lib/ucrt/x64/**",
+            "lib/um/x64/**",
         ],
     ),
 )
@@ -30,6 +30,6 @@ cc_toolchain_import(
 simple_toolchain(
     name = "resource_compiler_toolchain_x64",
     args = ["/nologo"],
-    executable = ":bin/%{sdk_version}/x64/rc.exe",
-    runfiles = [":bin/%{sdk_version}/x64/rcdll.dll"],
+    executable = ":bin/x64/rc.exe",
+    runfiles = [":bin/x64/rcdll.dll"],
 )

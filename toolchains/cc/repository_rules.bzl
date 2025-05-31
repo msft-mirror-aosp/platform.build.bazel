@@ -240,12 +240,12 @@ def _windows_sdk_repository_impl(repo_ctx):
             all_versions.keys(),
         )
     for entry in sdk_path.readdir():
-        repo_ctx.symlink(entry, relative_path(str(entry), str(sdk_path)))
-    create_build_file(
-        repo_ctx.attr.build_file_template,
-        repo_ctx,
-        substitutions = {"%{sdk_version}": selected_version},
-    )
+        versioned = entry.get_child(selected_version)
+        if versioned.exists:
+            repo_ctx.symlink(versioned, relative_path(str(entry), str(sdk_path)))
+        else:
+            repo_ctx.symlink(entry, relative_path(str(entry), str(sdk_path)))
+    create_build_file(repo_ctx.attr.build_file, repo_ctx)
     create_workspace_file(None, repo_ctx, default_workspace_file_content(
         repo_ctx.name,
         "windows_sdk_repository",
@@ -256,10 +256,8 @@ windows_sdk_repository = repository_rule(
     local = True,
     doc = "Creates a local repository for host installed Windows SDK.",
     attrs = {
-        "build_file_template": attr.label(
-            doc = "A file to be expanded as a BUILD file for this directory." +
-                  "The template can contain '%{sdk_version}' tags that will " +
-                  "be replaced with exact SDK version.",
+        "build_file": attr.label(
+            doc = "A file to use as a BUILD file for this directory.",
             allow_single_file = True,
             mandatory = True,
         ),
