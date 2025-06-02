@@ -203,3 +203,20 @@ http_archive(
     strip_prefix = "wycheproof-d8ed1ba95ac4c551db67f410c06131c3bc00a97c",
     url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
 )
+
+system_image_ext = use_extension("//hardware/generic/goldfish/emulator/sdk/system_images:sysimage.bzl", "system_image_extension")
+system_image_ext.image(
+    name = "android_36_playstore_x64",
+    abi = "x86_64",
+    api = "36",
+    rev = "6",
+    tag = "google_apis_playstore",
+)
+system_image_ext.image(
+    name = "android_36_playstore_arm64",
+    abi = "arm64-v8a",
+    api = "36",
+    rev = "6",
+    tag = "google_apis_playstore",
+)
+use_repo(system_image_ext, "android_36_playstore_arm64", "android_36_playstore_x64")

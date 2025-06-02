@@ -361,6 +361,36 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//hardware/generic/goldfish/emulator/sdk/system_images:sysimage.bzl%system_image_extension": {
+      "general": {
+        "bzlTransitiveDigest": "2AGOzwDYPmHOgzBAhT05sDaqTYoUNaT4t8c29lAwydM=",
+        "usagesDigest": "yS90qyJLB3upZlSQekYGRJuqjerXlLLlMHQjaqpt3Nc=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "android_36_playstore_x64": {
+            "repoRuleId": "@@//hardware/generic/goldfish/emulator/sdk/system_images:sysimage.bzl%system_image_repository",
+            "attributes": {
+              "api": "36",
+              "tag": "google_apis_playstore",
+              "abi": "x86_64",
+              "rev": "6"
+            }
+          },
+          "android_36_playstore_arm64": {
+            "repoRuleId": "@@//hardware/generic/goldfish/emulator/sdk/system_images:sysimage.bzl%system_image_repository",
+            "attributes": {
+              "api": "36",
+              "tag": "google_apis_playstore",
+              "abi": "arm64-v8a",
+              "rev": "6"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": []
+      }
+    },
     "@@apple_support+//crosstool:setup.bzl%apple_cc_configure_extension": {
       "general": {
         "bzlTransitiveDigest": "gv4nokEMGNye4Jvoh7Tw0Lzs63zfklj+n4t0UegI7Ms=",
