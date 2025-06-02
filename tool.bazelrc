@@ -23,8 +23,10 @@ build:macos --force_pic
 build:windows --features='generate_pdb_file'
 
 ## Rust
-# Link using clang rather than rustc - otherwise dsym generation doesn't work
-build --@rules_rust//rust/settings:experimental_use_cc_common_link
+# Link using cc_common_link rather than rustc - otherwise dsym generation doesn't work
+# Doesn't currently work on Windows - causes issues like wrapper.exe.exe
+build:macos --@rules_rust//rust/settings:experimental_use_cc_common_link
+build:linux --@rules_rust//rust/settings:experimental_use_cc_common_link
 
 ## Python
 # On windows cleaning up python zips can fail and leak disk (see b/277781554)
