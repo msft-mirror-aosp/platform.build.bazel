@@ -5,6 +5,8 @@ load(
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
+    "LTO_BACKEND_ACTIONS",
+    "LTO_INDEX_ACTIONS",
     "OBJC_COMPILE_ACTIONS",
 )
 load(
@@ -46,6 +48,7 @@ load(
     "dbg_feature",
     "dependency_file_feature",
     "fastbuild_feature",
+    "force_pic_feature",
     "generate_debug_symbols_feature",
     "get_toolchain_include_paths_feature",
     "get_toolchain_lib_search_paths_feature",
@@ -60,6 +63,7 @@ load(
     "shared_flag_feature",
     "strip_debug_symbols_feature",
     "sysroot_feature",
+    "thinlto_feature",
     "tsan_feature",
 )
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
@@ -78,7 +82,7 @@ rpath_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     iterate_over = "runtime_library_search_directories",
@@ -105,6 +109,8 @@ set_install_name_feature = feature(
             actions = [
                 ACTION_NAMES.cpp_link_dynamic_library,
                 ACTION_NAMES.cpp_link_nodeps_dynamic_library,
+                ACTION_NAMES.lto_index_for_dynamic_library,
+                ACTION_NAMES.lto_index_for_nodeps_dynamic_library,
                 ACTION_NAMES.objc_executable,
             ],
             flag_groups = [
@@ -126,7 +132,7 @@ libraries_to_link_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(
                     expand_if_true = "thinlto_param_file",
@@ -240,31 +246,11 @@ libraries_to_link_feature = feature(
     ],
 )
 
-# https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;drc=feea781b30788997c0b97ad9103a13fdc3f627c8;l=831
-force_pic_feature = feature(
-    name = "force_pic_flags",
-    enabled = True,
-    flag_sets = [
-        flag_set(
-            actions = [
-                ACTION_NAMES.cpp_link_executable,
-                ACTION_NAMES.objc_executable,
-            ],
-            flag_groups = [
-                flag_group(
-                    expand_if_available = "force_pic",
-                    flags = ["-Wl,-pie"],
-                ),
-            ],
-        ),
-    ],
-)
-
 opt_feature = feature(
     name = "opt",
     flag_sets = [
         flag_set(
-            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
                     # Let's go very aggressive
@@ -280,7 +266,7 @@ opt_feature = feature(
             ],
         ),
         flag_set(
-            actions = LINK_ACTIONS,
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(flags = [
                     "-Wl,-dead_strip",
@@ -341,6 +327,7 @@ def _cc_features_impl(ctx):
         includes_feature,
         include_paths_feature,
         get_toolchain_include_paths_feature(import_config),
+        thinlto_feature,
         shared_flag_feature,
         linkstamps_feature,
         output_execpath_feature,

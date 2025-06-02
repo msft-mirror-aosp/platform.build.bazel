@@ -1,6 +1,7 @@
 load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
 load(
     "@//build/bazel/toolchains/cc:actions.bzl",
+    "ARCHIVER_ACTIONS",
     "ASSEMBLE_ACTIONS",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
@@ -50,7 +51,7 @@ cc_tool(
 
 cc_tool(
     name = "archiver",
-    applied_actions = [ACTION_NAMES.cpp_link_static_library],
+    applied_actions = ARCHIVER_ACTIONS,
     tool = ":bin/llvm-ar",
 )
 

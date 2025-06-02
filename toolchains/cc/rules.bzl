@@ -364,7 +364,7 @@ def _cc_tools_env_args_feature(tool_configs):
     flag_sets = [
         flag_set(
             actions = t.applied_actions,
-            flag_groups = flag_group(flags = t.args),
+            flag_groups = [flag_group(flags = t.args)],
         )
         for t in tool_configs
         if t.args

@@ -7,4 +7,7 @@ cc_bootstrap_binary, _cc_bootstrap_binary_internal = with_cfg(
 ).set(
     Label("@//build/bazel/toolchains/cc:bootstrap"),
     True,
+).extend(
+    "features",
+    ["-thin_lto"],
 ).build()

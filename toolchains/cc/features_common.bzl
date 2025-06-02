@@ -350,3 +350,8 @@ user_compile_flags_feature = feature(
         ),
     ],
 )
+
+rules_rust_unsupported_feature = feature(
+    name = "rules_rust_unsupported_feature",
+    enabled = True,
+)

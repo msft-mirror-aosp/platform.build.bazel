@@ -495,8 +495,7 @@ force_pic_feature = feature(
             flag_groups = [
                 flag_group(
                     expand_if_available = "force_pic",
-                    iterate_over = "user_link_flags",
-                    flags = ["-pie"],
+                    flags = ["-Wl,-pie"],
                 ),
             ],
         ),
@@ -617,9 +616,7 @@ thinlto_feature = feature(
         flag_set(
             actions = [
                 ACTION_NAMES.c_compile,
-                ACTION_NAMES.objc_compile,
                 ACTION_NAMES.cpp_compile,
-                ACTION_NAMES.objcpp_compile,
             ] + LINK_ACTIONS + LTO_INDEX_ACTIONS,
             flag_groups = [
                 flag_group(flags = ["-flto=thin", "-fwhole-program-vtables"]),
@@ -680,6 +677,7 @@ thinlto_feature = feature(
                     "ir",
                     "%{thinlto_input_bitcode_file}",
                 ]),
+                flag_group(flags = ["-Wno-unused-command-line-argument"]),
             ],
         ),
     ],
