@@ -64,6 +64,8 @@ def _simple_toolchain_impl(ctx):
             executable = ctx.file.executable,
             runfiles = ctx.files.runfiles,
         ),
+        libs = ctx.files.libs,
+        settings = ctx.attr.settings,
     )
     return [toolchain_info]
 
@@ -73,6 +75,7 @@ simple_toolchain = rule(
     attrs = {
         "args": attr.string_list(doc = "Toolchain level arguments, subject to location expansion."),
         "env": attr.string_dict(doc = "Toolchain level environment variables, where values are subject to location expansion."),
+        "settings": attr.string_dict(doc = "Toolchain settings for the build rule."),
         "executable": attr.label(
             doc = "The tool to run",
             executable = True,
@@ -81,9 +84,13 @@ simple_toolchain = rule(
             cfg = "exec",
         ),
         "runfiles": attr.label_list(
-            doc = "Files required at runtime of the tool.",
+            doc = "Runtime deps of the tool (exec configuration).",
             allow_files = True,
             cfg = "exec",
+        ),
+        "libs": attr.label_list(
+            doc = "Build time deps of the target (target configuration).",
+            allow_files = True,
         ),
     },
 )

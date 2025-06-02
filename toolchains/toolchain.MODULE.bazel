@@ -116,6 +116,7 @@ register_toolchains(
     "//build/bazel/toolchains/cc/mac_clang:objcopy_toolchain",
     "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
     "//build/bazel/toolchains/cc/windows_clang:resource_compiler_x64",
+    "//build/bazel/toolchains/cc/mac_clang:mig_toolchain",
 )
 
 new_local_repository(
