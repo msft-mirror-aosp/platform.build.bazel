@@ -49,6 +49,9 @@ build:_remote_base --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build:_remote_base --remote_instance_name=projects/emulator-builds/instances/default_instance
 build:_remote_base --jobs=96
 
+# Config to use hermetic SDKs
+build:hermetic --//build/bazel/toolchains/cc/mac_clang:hermetic_xcode
+
 # Configs for local builds with remote cache in read-only.
 # This avoids re-running cached actions.
 build:rcache --config=_remote_base
@@ -57,10 +60,16 @@ build:rcache --noremote_upload_local_results
 # network connectivity failures (e.g., offline)
 build:rcache --remote_local_fallback
 
+# Configs for local builds with all online features
+build:connected --config=rcache
+build:connected --config=hermetic
+build:connected --config=sponge
+
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
 common:ci --lockfile_mode=error
 build:ci --config=_remote_base
 build:ci --config=ants
+build:ci --config=hermetic
 # When targets are all cached the BES upload may take a long time.
 build:ci --bes_timeout=600s

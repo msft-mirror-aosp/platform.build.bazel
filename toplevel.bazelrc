@@ -6,8 +6,6 @@ build --define grpc_no_xds=true
 build:macos --xcode_version_config //build/bazel/toolchains/cc/mac_clang:host_xcodes
 build:macos --xcode_version=16.2
 
-#build --//build/bazel/toolchains/cc/mac_clang:hermetic_xcode=false
-
 build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
 build:release --compilation_mode=opt
 build:release-assert --config=release --copt=-UNDEBUG
@@ -17,3 +15,6 @@ build:asan --features='asan'
 build:asan --dynamic_mode=off
 build:msan --features='msan'
 build:tsan --features='tsan'
+
+# User overrides must come last
+try-import %workspace%/user.bazelrc
