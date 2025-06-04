@@ -40,6 +40,7 @@ bazel_dep(name = "abseil-cpp", version = "20250127.1", repo_name = "com_google_a
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "google_benchmark", version = "1.9.2", repo_name = "com_github_google_benchmark")
 bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")
+bazel_dep(name = "libjpeg_turbo", version = "2.1.91")
 
 # pcre2 needed by glib.
 bazel_dep(name = "pcre2", version = "10.46-DEV")
@@ -134,11 +135,6 @@ new_local_repository(
 )
 
 local_repository(
-    name = "com_github_cares_cares",
-    path = "third_party/cares",
-)
-
-local_repository(
     name = "perfetto",
     path = "third_party/perfetto",
 )
@@ -171,11 +167,6 @@ local_repository(
 local_repository(
     name = "libvpx",
     path = "third_party/libvpx",
-)
-
-local_repository(
-    name = "libjpeg_turbo",
-    path = "third_party/libjpeg-turbo",
 )
 
 local_repository(
