@@ -129,7 +129,7 @@ new_local_repository(
 
 new_local_repository(
     name = "crosvm",
-    build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD",
+    build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD.crosvm",
     path = "third_party/crosvm",
 )
 
