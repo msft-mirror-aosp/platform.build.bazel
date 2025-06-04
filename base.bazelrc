@@ -37,7 +37,6 @@ build:sponge --build_event_publish_all_actions
 # Enable go/antswatcher to process test results.
 # This config must be used with the sponge config as it relies on the same bes_backend.
 # NOTE: Bazel invocations must still supply --build_metadata values for test_definition_name
-build:ants --config=sponge
 build:ants --bes_keywords="android-test-storage"
 build:ants --bes_keywords="antswatcher:skip_tests_if_timeout"
 build:ants --build_metadata="generate_test_uri=fusion"
@@ -69,7 +68,7 @@ build:connected --config=sponge
 # When running CI, fail the build if the lockfile needs update
 common:ci --lockfile_mode=error
 build:ci --config=_remote_base
-build:ci --config=ants
+build:ci --config=sponge
 build:ci --config=hermetic
 # When targets are all cached the BES upload may take a long time.
 build:ci --bes_timeout=600s
