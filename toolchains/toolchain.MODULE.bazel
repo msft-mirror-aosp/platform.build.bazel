@@ -41,6 +41,20 @@ gcs_archive(
     url = "gs://emu-next-bazel/hermetic-xcode/xcode_command_line_tools-16.2-202505191216.zip",
 )
 
+gcs_archive(
+    name = "vctools_hermetic",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
+    sha256 = "55153dc62b445d89d5cd3afe7adde75ecbe387277b07a6248f906795d1a17ffd",
+    url = "gs://emu-next-bazel/hermetic-msvc/msvc_tools_v143_202506021735.zip",
+)
+
+gcs_archive(
+    name = "windows_sdk_hermetic",
+    build_file = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD",
+    sha256 = "44451a7b5d9c8785f0bf19e747ab25c21b1717d73aa9e636eb5be57049f33841",
+    url = "gs://emu-next-bazel/hermetic-msvc/windows_11_sdk_10.0.22621.0_202506021733.zip",
+)
+
 bazel_dep(name = "buildifier_prebuilt", version = "8.0.3", dev_dependency = True)
 
 # Non-module repositories
