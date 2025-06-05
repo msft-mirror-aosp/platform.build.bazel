@@ -63,6 +63,5 @@ cc_import(
 cc_library(
     name = "msdia",
     includes = ["ms_dia_sdk/include"],
-    visibility = ["//visibility:public"],
     deps = [":msdia_internal"],
 )
