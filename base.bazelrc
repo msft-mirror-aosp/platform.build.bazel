@@ -31,7 +31,7 @@ build:sponge --bes_keywords=android-emulator
 build:sponge --bes_backend=buildeventservice-pa.googleapis.com
 build:sponge --bes_results_url=https://fusion2.corp.google.com/invocations/
 build:sponge --bes_timeout=240s
-build:sponge --experimental_build_event_upload_max_retries=5
+build:sponge --build_event_upload_max_retries=5
 build:sponge --build_event_publish_all_actions
 
 # Enable go/antswatcher to process test results.
