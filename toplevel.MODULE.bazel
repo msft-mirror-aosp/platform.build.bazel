@@ -26,6 +26,7 @@ bazel_dep(name = "protobuf", version = "31.0", repo_name = "com_google_protobuf"
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")
 bazel_dep(name = "boringssl", version = "0.20241024.0")
 bazel_dep(name = "tink_cc", version = "2.3.0")
+bazel_dep(name = "rules_shell", version = "0.4.1")
 bazel_dep(name = "grpc-java", version = "1.71.0")
 bazel_dep(name = "grpc", version = "1.72.0", repo_name = "com_github_grpc_grpc")
 single_version_override(
@@ -207,3 +208,19 @@ system_image_ext.image(
     tag = "google_apis_playstore",
 )
 use_repo(system_image_ext, "android_36_playstore_arm64", "android_36_playstore_x64")
+
+gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
+
+gcs_archive(
+    name = "android_minigbm-x86_64",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
+    sha256 = "815498cb6ccecf13bcb73f2818c4e3a82d77d4ada914ee468338b82cf5cb07a4",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-13585903.zip",
+)
+
+gcs_archive(
+    name = "android_minigbm-arm64-v8a",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
+    sha256 = "020e867aa29487554b43df52af8625b31f0081d7ac8aafb8b1efdb8558c50a42",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64_minigbm-userdebug/sdk-repo-linux-system-images-13585903.zip",
+)
