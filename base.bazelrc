@@ -46,7 +46,7 @@ build:ants --build_metadata="run_type=critical"
 build:_remote_base --grpc_keepalive_time=30s
 build:_remote_base --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build:_remote_base --remote_instance_name=projects/emulator-builds/instances/default_instance
-build:_remote_base --jobs=96
+build:_remote_base --jobs=100
 
 # Config to use hermetic SDKs
 build:hermetic --//build/bazel/toolchains/cc/mac_clang:hermetic_xcode
@@ -64,6 +64,16 @@ build:rcache --remote_local_fallback
 build:connected --config=rcache
 build:connected --config=hermetic
 build:connected --config=sponge
+
+# Configs for remote builds with RBE
+build:remote --config=connected
+build:remote --remote_executor=grpcs://remotebuildexecution.googleapis.com
+# This currently uses the studio pool - so the remote cache is not populated.
+# TODO(zachyu): migrate to RBE pool in the emulator-builds project.
+build:remote --remote_instance_name=projects/google.com:android-studio-alphasource/instances/default_instance
+build:remote --remote_timeout=3600
+build:remote --show_timestamps
+build:remote --jobs=200
 
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update

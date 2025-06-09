@@ -154,3 +154,12 @@ host_platform_repository(
         '{"os": "windows", "arch": "x64"}': "//build/bazel/platforms:windows_x64",
     },
 )
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "bazel_toolchains",
+    sha256 = "907ad3a40dc6065b30d95f8444f4f0a45de011faa8ef4739006f002d7a0e6ed5",
+    strip_prefix = "bazel-toolchains-cb0929a385a058d1839db410e0aca4d23e3543df",
+    url = "https://github.com/bazelbuild/bazel-toolchains/archive/cb0929a385a058d1839db410e0aca4d23e3543df.tar.gz",
+)

@@ -1,3 +1,9 @@
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load(
+    "@bazel_toolchains//rules/exec_properties:exec_properties.bzl",
+    "create_rbe_exec_properties_dict",
+)
+
 package(default_visibility = ["//visibility:public"])
 
 # cache-silo-key: this is essentially a "salt" added to the remote cache key.
@@ -11,7 +17,21 @@ platform(
         "@platforms//os:linux",
         "@bazel_tools//tools/cpp:clang",
     ],
-    exec_properties = EXEC_PROPERTIES,
+    exec_properties = dicts.add(
+        EXEC_PROPERTIES,
+        create_rbe_exec_properties_dict(
+            container_image = "docker://gcr.io/google.com/android-studio-alphasource/rbe-ubuntu22-as@sha256:94c34b28c82ab30d353bd5e2a5c326683d837c671541e0a1a41200351b5ede77",
+            docker_add_capabilities = "SYS_NICE",
+            docker_network = "off",
+            docker_privileged = True,  # This is required to support emulators/nested KVM.
+            docker_use_urandom = True,
+            labels = {
+                "machine-size": "default",
+                "image-family": "default",
+            },
+            os_family = "Linux",
+        ),
+    ),
 )
 
 platform(
@@ -41,5 +61,16 @@ platform(
         "@platforms//os:windows",
         "@bazel_tools//tools/cpp:clang-cl",
     ],
-    exec_properties = EXEC_PROPERTIES,
+    exec_properties = dicts.add(
+        EXEC_PROPERTIES,
+        create_rbe_exec_properties_dict(
+            container_image = "docker://us-central1-docker.pkg.dev/google.com/android-studio-alphasource/rbe/windows-2022-test@sha256:eaa19f67a1b92739a3d87e64bfa005bbedcbd217869efdd8c08d4070ac0ab52a",
+            docker_network = "off",
+            labels = {
+                "machine-size": "default",
+                "image-family": "2022",
+            },
+            os_family = "Windows",
+        ),
+    ),
 )
