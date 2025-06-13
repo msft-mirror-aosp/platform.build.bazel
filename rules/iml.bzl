@@ -11,12 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides implementations for the shared rules."""
-
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
-
-def kotlin_library(**kwargs):
-    kt_jvm_library(**kwargs)
+"""Provides emulator implmentations for iml rules (empty)."""
 
 def iml_module(**_):
     # Building iml_modules is not supported in the emulator repo

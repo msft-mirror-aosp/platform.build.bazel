@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A module that implements the rules shared between studio and the emulator."""
+"""Provides implementations for the emulator kotlin rules for shared studio targets ."""
 
-module(name = "rules_adt")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+
+def kotlin_library(**kwargs):
+    kt_jvm_library(**kwargs)

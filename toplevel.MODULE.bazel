@@ -72,14 +72,9 @@ local_path_override(
 bazel_dep(name = "rules_java", version = "8.6.3")
 bazel_dep(name = "rules_kotlin", version = "2.1.6")
 
-local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
-
-local_repository(
-    name = "rules_adt",
-    path = "build/bazel/rules_adt",
-)
-
 # Non-module repositories
+
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
 
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
