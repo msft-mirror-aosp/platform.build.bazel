@@ -52,6 +52,10 @@ build:_remote_base --jobs=100
 build:hermetic --//build/bazel/toolchains/cc/mac_clang:hermetic_xcode
 build:hermetic --//build/bazel/toolchains/cc/windows_clang:hermetic_msvc
 
+# Java config
+build --java_language_version=17
+build --java_runtime_version=jdk17
+
 # Configs for local builds with remote cache in read-only.
 # This avoids re-running cached actions.
 build:rcache --config=_remote_base

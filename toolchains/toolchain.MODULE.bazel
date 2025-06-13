@@ -163,3 +163,10 @@ http_archive(
     strip_prefix = "bazel-toolchains-cb0929a385a058d1839db410e0aca4d23e3543df",
     url = "https://github.com/bazelbuild/bazel-toolchains/archive/cb0929a385a058d1839db410e0aca4d23e3543df.tar.gz",
 )
+
+# Java toolchains
+register_toolchains(
+    "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
+    "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
+    "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_type",
+)
