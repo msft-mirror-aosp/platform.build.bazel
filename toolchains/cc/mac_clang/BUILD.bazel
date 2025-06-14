@@ -51,7 +51,7 @@ alias(
     name = "xcode_mig",
     actual = select({
         ":is_hermetic_xcode": "@xcode_tools_hermetic//:mig",
-        "//conditions:default": "@xcode_tools_local//:mig",
+        "//conditions:default": "@xcode_tools//:mig",
     }),
     visibility = ["//visibility:public"],
 )
