@@ -10,11 +10,14 @@ package(
 py_library(
     name = "example_lib",
     srcs = ["example.py"],
+    data = [
+        "//prebuilts/r8:d8",
+        "@intellij//:intellij-sdk",
+    ],
 )
 
 write_package_metadata(
-    name = "package-metadata",
-    out = "example_metadata.json",
+    name = "example-metadata",
     deps = [
         ":example_lib",
     ],
