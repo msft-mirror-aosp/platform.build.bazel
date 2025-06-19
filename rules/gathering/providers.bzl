@@ -7,3 +7,10 @@ PrebuiltPackageInfo = provider(
         "spdx_json": "A file containing the SPDX JSON for the package.",
     },
 )
+
+TransitivePrebuiltPackageInfo = provider(
+    doc = "A provider for transitive prebuilt package info.",
+    fields = {
+        "deps": "depset(PrebuiltPackageInfo)",
+    },
+)
