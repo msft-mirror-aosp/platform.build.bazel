@@ -37,7 +37,6 @@ def format(target):
         combined_includes = _uniq([
             _normalize_execroot_path(i)
             for i in quote_includes + system_includes + external_includes + includes
-            if not i.startswith("bazel-out/")
         ])
 
         defines = compilation_context.defines.to_list()
