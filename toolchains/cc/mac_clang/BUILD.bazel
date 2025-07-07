@@ -102,7 +102,7 @@ cc_features(
         "-mmacos-version-min=10.15",
     ],
     cc_only_link_flags = [
-        "-undefined dynamic_lookup",
+        "-undefined error",  # This is the default.
         "-fobjc-link-runtime",
         "-lc++",
         "-lc++abi",
@@ -208,7 +208,7 @@ cc_features(
         "-D__TIME__=\"redacted\"",
     ],
     cc_only_link_flags = [
-        "-undefined dynamic_lookup",
+        "-undefined error",  # This is the default.
         "-fobjc-link-runtime",
         "-lc++",
         "-lc++abi",
