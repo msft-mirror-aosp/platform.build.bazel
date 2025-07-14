@@ -30,7 +30,7 @@ rust.toolchain(
     versions = [TOOL_VERSIONS["rust"]],
 )
 
-bazel_dep(name = "rules_proto", version = "7.0.2")
+bazel_dep(name = "rules_proto", version = "7.1.0")
 
 gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
 
