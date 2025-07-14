@@ -92,6 +92,7 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
         path = "third_party/rust/android-crates-io/crates/{}".format(create),
     )
     for create in [
+        "anyhow",
         "bitflags",
         "byteorder",
         "cfg-if",
