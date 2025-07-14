@@ -134,6 +134,29 @@ new_local_repository(
     path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
 )
 
+# Cuttlefish modem simulator
+bazel_dep(name = "tinyxml2", version = "10.0.0")
+bazel_dep(name = "jsoncpp", version = "1.9.6")
+bazel_dep(name = "gflags", version = "2.2.2")
+
+new_local_repository(
+    name = "modem_simulator",
+    build_file = "//hardware/generic/goldfish/emulator/modem_simulator:BUILD.cuttlefish_modem_simulator",
+    path = "device/google/cuttlefish/host/commands/modem_simulator",
+)
+
+new_local_repository(
+    name = "modem_simulator_common",
+    build_file = "//hardware/generic/goldfish/emulator/modem_simulator/common/libs:BUILD.bazel",
+    path = "hardware/generic/goldfish/emulator/modem_simulator/common/libs",
+)
+
+new_local_repository(
+    name = "modem_simulator_android_base",
+    build_file = "//hardware/generic/goldfish/emulator/modem_simulator/android-base:BUILD.bazel",
+    path = "hardware/generic/goldfish/emulator/modem_simulator/android-base",
+)
+
 new_local_repository(
     name = "crosvm",
     build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD.crosvm",
