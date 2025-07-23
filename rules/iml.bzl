@@ -16,3 +16,7 @@
 def iml_module(**_):
     # Building iml_modules is not supported in the emulator repo
     pass
+
+def iml_test(**_):
+    # No iml_test either
+    pass
