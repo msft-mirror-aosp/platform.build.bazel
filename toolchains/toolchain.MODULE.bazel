@@ -167,6 +167,6 @@ http_archive(
 # Java toolchains
 register_toolchains(
     "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
-    "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
+    "//prebuilts/studio/jdk/jdk17:java_runtime_toolchain",
     "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_type",
 )
