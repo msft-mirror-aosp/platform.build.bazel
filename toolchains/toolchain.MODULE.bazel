@@ -2,7 +2,7 @@
 
 TOOL_VERSIONS = {
     "clang": "clang-r530567",
-    "rust": "1.82.0",
+    "rust": "1.85.1",
 }
 
 bazel_dep(name = "platforms", version = "0.0.11")
