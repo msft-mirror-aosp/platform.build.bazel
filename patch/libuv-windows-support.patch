@@ -1,0 +1,117 @@
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,26 +1,51 @@
+ _LOCAL_DEFINES = [
+-    "_FILE_OFFSET_BITS=64",
+-    "_LARGEFILE_SOURCE",
+ ] + select({
+     "@platforms//os:macos": [
++        "_FILE_OFFSET_BITS=64",
++        "_LARGEFILE_SOURCE",
+         "_DARWIN_UNLIMITED_SELECT=1",
+         "_DARWIN_USE_64_BIT_INODE=1",
+     ],
+     "@platforms//os:linux": [
++        "_FILE_OFFSET_BITS=64",
++        "_LARGEFILE_SOURCE",
+         "_GNU_SOURCE",
+         "_POSIX_C_SOURCE=200112",
+     ],
++    "@platforms//os:windows": [
++        "WIN32_LEAN_AND_MEAN",
++        "_WIN32_WINNT=0x0A00",
++        "_CRT_DECLARE_NONSTDC_NAMES=0",
++    ],
+     "//conditions:default": [],
+ })
+
+-_COPTS = [
+-    "-fno-strict-aliasing",
+-    "-fvisibility=hidden",
+-    "-Wall",
+-    "-Wextra",
+-    "-Wno-unused-parameter",
+-    "-Wstrict-prototypes",
+-]
++_COPTS = select({
++    "@platforms//os:windows": [
++        "/W4",
++        "/wd4100",
++        "/wd4127",
++        "/wd4201",
++        "/wd4206",
++        "/wd4210",
++        "/wd4232",
++        "/wd4456",
++        "/wd4457",
++        "/wd4459",
++        "/wd4706",
++        "/wd4996",
++        "/utf-8",
++        "/we4013",
++    ],
++    "//conditions:default": [
++        "-fno-strict-aliasing",
++        "-fvisibility=hidden",
++        "-Wall",
++        "-Wextra",
++        "-Wno-unused-parameter",
++        "-Wstrict-prototypes",
++    ],
++})
+
+ cc_library(
+     name = "src_headers",
+@@ -44,7 +69,33 @@
+         "src/uv-data-getter-setters.c",
+         "src/version.c",
+     ] + select({
+-        "@platforms//os:windows": [],
++        "@platforms//os:windows": [
++            "src/win/async.c",
++            "src/win/core.c",
++            "src/win/detect-wakeup.c",
++            "src/win/dl.c",
++            "src/win/error.c",
++            "src/win/fs.c",
++            "src/win/fs-event.c",
++            "src/win/getaddrinfo.c",
++            "src/win/getnameinfo.c",
++            "src/win/handle.c",
++            "src/win/loop-watcher.c",
++            "src/win/pipe.c",
++            "src/win/poll.c",
++            "src/win/process.c",
++            "src/win/process-stdio.c",
++            "src/win/signal.c",
++            "src/win/snprintf.c",
++            "src/win/stream.c",
++            "src/win/tcp.c",
++            "src/win/thread.c",
++            "src/win/tty.c",
++            "src/win/udp.c",
++            "src/win/util.c",
++            "src/win/winapi.c",
++            "src/win/winsock.c",
++        ],
+         "//conditions:default": [
+             "src/unix/async.c",
+             "src/unix/core.c",
+@@ -92,6 +143,17 @@
+             "-ldl",
+             "-lrt",
+         ],
++        "@platforms//os:windows": [
++            "-DEFAULTLIB:psapi.lib",
++            "-DEFAULTLIB:user32.lib",
++            "-DEFAULTLIB:advapi32.lib",
++            "-DEFAULTLIB:iphlpapi.lib",
++            "-DEFAULTLIB:userenv.lib",
++            "-DEFAULTLIB:ws2_32.lib",
++            "-DEFAULTLIB:dbghelp.lib",
++            "-DEFAULTLIB:ole32.lib",
++            "-DEFAULTLIB:shell32.lib",
++        ],
+         "//conditions:default": [],
+     }),
+     local_defines = _LOCAL_DEFINES,
