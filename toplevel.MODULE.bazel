@@ -46,16 +46,32 @@ bazel_dep(name = "tinyobjloader", version = "2.0.0-rc1.bcr.1")
 
 # pcre2 needed by glib.
 bazel_dep(name = "pcre2", version = "10.46-DEV")
+
+# Needed by Qemu
+bazel_dep(name = "glib", version = "2.77.2")
+local_path_override(
+    module_name = "glib",
+    path = "third_party/glib",
+)
+
 bazel_dep(name = "aemu", version = "0.0.1")
 local_path_override(
     module_name = "aemu",
     path = "hardware/google/aemu",
 )
 
+# Needed by CrosVM
 bazel_dep(name = "gfxstream", version = "0.0.1")
 local_path_override(
     module_name = "gfxstream",
     path = "hardware/google/gfxstream",
+)
+
+# Needed by Qemu
+bazel_dep(name = "dtc", version = "0.0.1")
+local_path_override(
+    module_name = "dtc",
+    path = "third_party/dtc",
 )
 
 bazel_dep(name = "webrtc", version = "0.0.1")
@@ -141,11 +157,7 @@ new_local_repository(
     path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
 )
 
-# Cuttlefish modem simulator
-bazel_dep(name = "tinyxml2", version = "10.0.0")
-bazel_dep(name = "jsoncpp", version = "1.9.6")
-bazel_dep(name = "gflags", version = "2.2.2")
-
+# Needed by Qemu
 new_local_repository(
     name = "crosvm",
     build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD.crosvm",
@@ -192,11 +204,7 @@ local_repository(
     path = "third_party/libyuv",
 )
 
-local_repository(
-    name = "glib",
-    path = "third_party/glib",
-)
-
+# Needed by Qemu
 local_repository(
     name = "pixman",
     path = "third_party/pixman",
