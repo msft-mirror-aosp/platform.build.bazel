@@ -66,7 +66,7 @@ cc_tool(
 cc_toolchain_import(
     name = "compiler_runtime",
     include_paths = [
-        ":lib/clang/19/include",
+        ":lib/clang/21/include",
     ],
-    support_files = glob(["lib/clang/19/include/**"]),
+    support_files = glob(["lib/clang/21/include/**"]),
 )
