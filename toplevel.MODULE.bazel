@@ -43,15 +43,14 @@ bazel_dep(name = "google_benchmark", version = "1.9.2", repo_name = "com_github_
 bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")
 bazel_dep(name = "libjpeg_turbo", version = "2.1.91")
 bazel_dep(name = "tinyobjloader", version = "2.0.0-rc1.bcr.1")
-
-# pcre2 needed by glib.
 bazel_dep(name = "pcre2", version = "10.46-DEV")
-
-# Needed by Qemu
-bazel_dep(name = "glib", version = "2.77.2")
-local_path_override(
+bazel_dep(name = "glib", version = "2.82.2.bcr.5")
+single_version_override(
     module_name = "glib",
-    path = "third_party/glib",
+    patch_strip = 1,
+    patches = [
+        "//build/bazel/patch:glib-patches-for-AEMU.patch",
+    ],
 )
 
 bazel_dep(name = "aemu", version = "0.0.1")
