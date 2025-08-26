@@ -32,5 +32,5 @@ build:linux --@rules_rust//rust/settings:experimental_use_cc_common_link
 build:windows --nobuild_python_zip
 
 ## Protobuf
-build --proto_compiler=@com_google_protobuf//:protoc
-build --proto_toolchain_for_cc=@com_google_protobuf//:cc_toolchain
+build --proto_compiler=@protobuf//:protoc
+build --proto_toolchain_for_cc=@protobuf//:cc_toolchain
