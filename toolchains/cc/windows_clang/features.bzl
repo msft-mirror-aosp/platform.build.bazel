@@ -437,6 +437,7 @@ libraries_to_link_feature = feature(
 
 msvc_runtimes_feature = feature(
     name = "msvc_runtimes",
+    enabled = True,
     flag_sets = [
         flag_set(
             actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
