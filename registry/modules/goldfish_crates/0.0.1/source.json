@@ -1,0 +1,4 @@
+{
+  "type": "local_path",
+  "path": "hardware/generic/goldfish/third_party/rust/crates"
+}

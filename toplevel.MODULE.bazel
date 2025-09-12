@@ -103,6 +103,11 @@ single_version_override(
         "//build/bazel/patch:libuv-windows-support.patch",
     ],
 )
+bazel_dep(name = "goldfish_crates", version = "0.0.1")
+
+local_rust_crates = use_extension("@goldfish_crates//:local_rust_crates.bzl", "local_rust_crates")
+use_repo(local_rust_crates, "aead", "aes", "aho-corasick", "android_log-sys", "anstyle", "anyhow", "argh", "argh_derive", "argh_shared", "arrayvec", "base64", "bitflags", "byteorder", "bytes", "ccm", "cfg-if", "chrono", "cipher", "clap", "clap_builder", "clap_derive", "clap_lex", "codespan-reporting", "cpufeatures", "crc32fast", "crossbeam-utils", "crypto-common", "ctr", "data-encoding", "env_logger", "equivalent", "etherparse", "flate2", "fnv", "foldhash", "futures", "futures-channel", "futures-core", "futures-executor", "futures-io", "futures-macro", "futures-sink", "futures-task", "futures-util", "generic-array", "getrandom", "glam", "grpcio", "grpcio-sys", "hashbrown", "heck", "hex", "http", "httparse", "inout", "itoa", "libc", "libz-rs-sys", "libz-sys", "lock_api", "log", "memchr", "memoffset", "mio", "nix", "num-bigint", "num-derive", "num-integer", "num-traits", "num_cpus", "once_cell", "parking_lot", "parking_lot_core", "pdl-compiler", "pdl-runtime", "pest", "pest_derive", "pest_generator", "pest_meta", "pica", "pin-project-lite", "pin-utils", "ppv-lite86", "prettyplease", "proc-macro2", "protobuf-json-mapping", "protobuf-rust", "protobuf-support", "quote", "rand", "rand_chacha", "rand_core", "regex", "regex-automata", "regex-syntax", "remain", "ryu", "scopeguard", "serde", "serde_derive", "serde_json", "signal-hook-registry", "slab", "smallvec", "socket2", "strsim", "subtle", "syn", "termcolor", "thiserror", "thiserror-impl", "tokio", "tokio-macros", "tokio-stream", "tokio-util", "tungstenite", "typenum", "ucd-trie", "unicode-ident", "unicode-width", "utf-8", "winapi", "winapi-x86_64-pc-windows-gnu", "windows-sys", "windows-targets", "windows_aarch64_gnullvm", "windows_i686_gnullvm", "windows_x86_64_gnullvm", "zerocopy", "zerocopy-derive", "zip", "zlib-rs")
+
 # Non-module repositories
 
 local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
@@ -110,59 +115,6 @@ local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl"
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# Rust crates, note that these follow the AOSP style of naming, where every crate
-# is basically @..crate..
-# Once the rust team has an automated bazel generation tool, we will no longer need these.
-# See b/335734830 for details
-[
-    new_local_repository(
-        name = create,
-        build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.{}".format(create),
-        path = "third_party/rust/android-crates-io/crates/{}".format(create),
-    )
-    for create in [
-        "anyhow",
-        "bitflags",
-        "byteorder",
-        "cfg-if",
-        "equivalent",
-        "foldhash",
-        "hashbrown",
-        "itoa",
-        "libc",
-        "log",
-        "memchr",
-        "memoffset",
-        "nix",
-        "once_cell",
-        "proc-macro2",
-        "quote",
-        "remain",
-        "ryu",
-        "serde_derive",
-        "serde_json",
-        "serde",
-        "syn",
-        "thiserror-impl",
-        "thiserror",
-        "unicode-ident",
-        "zerocopy-derive",
-        "zerocopy",
-    ]
-]
-
-new_local_repository(
-    name = "winapi",
-    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi",
-    path = "hardware/generic/goldfish/third_party/rust/crates/winapi",
-)
-
-new_local_repository(
-    name = "winapi-x86_64-pc-windows-gnu",
-    build_file = "//hardware/generic/goldfish/third_party/rust/crates:BUILD.winapi-x86_64-pc-windows-gnu",
-    path = "hardware/generic/goldfish/third_party/rust/crates/winapi-x86_64-pc-windows-gnu",
-)
 
 # Needed by Qemu
 new_local_repository(

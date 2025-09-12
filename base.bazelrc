@@ -1,6 +1,10 @@
 # Bazel-wide general configs
 common --enable_platform_specific_config
 
+# Note that file:/// needs 3 / to work with %workspace% on Windows.
+common --registry=file:///%workspace%/build/bazel/registry
+common --registry=https://bcr.bazel.build
+
 # See https://docs.aspect.build/guides/bazelrc/
 # Docs: https://bazel.build/reference/command-line-reference#flag--incompatible_strict_action_env
 build --incompatible_strict_action_env
