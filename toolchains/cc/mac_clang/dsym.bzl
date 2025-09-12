@@ -1,8 +1,8 @@
 """dSYM support for macOS binaries."""
 
-load("@//build/bazel/toolchains/cc:actions.bzl", "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("//toolchains/cc:actions.bzl", "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME")
 
 CPP_LINK_MNEMONIC = "CppLink"
 

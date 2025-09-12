@@ -1,7 +1,7 @@
 """A repository rule that sets up aliases depending on host conditions."""
 
 load(
-    "//build/bazel/rules:repository_utils.bzl",
+    "//rules:repository_utils.bzl",
     "create_workspace_file",
     "default_workspace_file_content",
 )

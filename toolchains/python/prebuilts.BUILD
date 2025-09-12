@@ -1,6 +1,6 @@
 load("@rules_python//python:defs.bzl", "py_runtime", "py_runtime_pair")
 
-package(default_visibility = ["@//build/bazel/toolchains/python:__subpackages__"])
+package(default_visibility = ["@goldfish_build//toolchains/python:__subpackages__"])
 
 filegroup(
     name = "linux_x86_files",

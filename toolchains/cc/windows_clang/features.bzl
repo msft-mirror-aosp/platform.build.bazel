@@ -1,7 +1,18 @@
 """Cc toolchain features that works with clang-cl."""
 
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
-    "@//build/bazel/toolchains/cc:actions.bzl",
+    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
+    "env_entry",
+    "env_set",
+    "feature",
+    "flag_group",
+    "flag_set",
+    "variable_with_value",
+    "with_feature_set",
+)
+load(
+    "//toolchains/cc:actions.bzl",
     "ARCHIVER_ACTIONS",
     "ASSEMBLE_ACTIONS",
     "CPP_COMPILE_ACTIONS",
@@ -11,7 +22,7 @@ load(
     "OBJC_COMPILE_ACTIONS",
 )
 load(
-    "@//build/bazel/toolchains/cc:features_common.bzl",
+    "//toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
     "get_reproducible_build_feature",
     "get_toolchain_assembler_flags_feature",
@@ -29,30 +40,19 @@ load(
     "user_link_flags_feature",
 )
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
+    "//toolchains/cc:rules.bzl",
     "CcFeatureConfigInfo",
     "CcToolchainImportInfo",
 )
 load(
-    "@//build/bazel/toolchains/cc:utils.bzl",
+    "//toolchains/cc:utils.bzl",
     "check_args",
     "filter_none",
     "flatten",
 )
 load(
-    "@//build/bazel/toolchains/cc/linux_clang:features.bzl",
+    "//toolchains/cc/linux_clang:features.bzl",
     "linker_param_file_feature",
-)
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
-load(
-    "@bazel_tools//tools/cpp:cc_toolchain_config_lib.bzl",
-    "env_entry",
-    "env_set",
-    "feature",
-    "flag_group",
-    "flag_set",
-    "variable_with_value",
-    "with_feature_set",
 )
 
 archive_param_file_feature = feature(

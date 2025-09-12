@@ -1,4 +1,5 @@
-load("//build/bazel/rules:windows_resources.bzl", "windows_resources")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("//rules:windows_resources.bzl", "windows_resources")
 
 cc_library(
     name = "hello-greet",
@@ -11,7 +12,7 @@ cc_binary(
     srcs = ["hello-world.cc"],
     deps = [
         ":hello-greet",
-        "//build/bazel/toolchains/cc/example/lib:hello-time",
+        "//toolchains/cc/example/lib:hello-time",
     ] + select({
         "@platforms//os:windows": [":resources"],
         "//conditions:default": [],
@@ -30,6 +31,6 @@ cc_test(
     srcs = ["hello-world.cc"],
     deps = [
         ":hello-greet",
-        "//build/bazel/toolchains/cc/example/lib:hello-time",
+        "//toolchains/cc/example/lib:hello-time",
     ],
 )

@@ -19,11 +19,11 @@
 #    make sure all released artifacts receives the same treatment.
 # 2. It integrates with other aspects to add debug link if applicable.
 
-load("@//build/bazel/toolchains/cc/linux_clang:debug.bzl", "GnuDebugInfo", "gen_gnu_debug_aspect")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("//toolchains/cc/linux_clang:debug.bzl", "GnuDebugInfo", "gen_gnu_debug_aspect")
 
-_OBJCOPY_TOOLCHAIN_TYPE = "@//build/bazel/toolchains/cc:objcopy_toolchain_type"
-_SWITCH_FLAG = "@//build/bazel/toolchains/cc:allow_strip"
+_OBJCOPY_TOOLCHAIN_TYPE = "//toolchains/cc:objcopy_toolchain_type"
+_SWITCH_FLAG = "//toolchains/cc:allow_strip"
 
 def _strip_aspect_impl(target, ctx):
     executable_file = target.files_to_run.executable or target.files.to_list()[0]  # type: File

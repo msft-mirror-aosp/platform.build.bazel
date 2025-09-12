@@ -1,5 +1,5 @@
 load(
-    "@//build/bazel/toolchains/cc:actions.bzl",
+    "@goldfish_build//toolchains/cc:actions.bzl",
     "ARCHIVER_ACTIONS",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
@@ -7,12 +7,12 @@ load(
     "OBJC_COMPILE_ACTIONS",
 )
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
+    "@goldfish_build//toolchains/cc:rules.bzl",
     "cc_tool",
     "cc_toolchain_import",
 )
 
-package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
+package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
 
 filegroup(
     name = "llvm_cov",

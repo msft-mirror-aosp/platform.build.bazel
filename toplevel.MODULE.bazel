@@ -18,6 +18,8 @@ module(
     version = "0.0.1",
 )
 
+bazel_dep(name = "goldfish_build", version = "0.0.1")
+
 include("//build/bazel/toolchains:toolchain.MODULE.bazel")
 
 bazel_dep(name = "lz4", version = "1.9.4")
@@ -119,6 +121,13 @@ local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl"
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# For Qemu
+new_local_repository(
+    name = "gcc_lib",
+    build_file = "@goldfish_build//toolchains/cc/linux_clang:gcc_lib.BUILD",
+    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
+)
 
 new_local_repository(
     name = "rootcanal",

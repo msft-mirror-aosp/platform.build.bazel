@@ -4,7 +4,7 @@ load(":bootstrap.bzl", "cc_bootstrap_binary")
 filegroup(
     name = "empty",
     srcs = [],
-    visibility = ["//build/bazel/toolchains/cc:__subpackages__"],
+    visibility = ["//toolchains/cc:__subpackages__"],
 )
 
 bool_setting(
@@ -18,7 +18,7 @@ config_setting(
         ":bootstrap": "true",
     },
     visibility = [
-        "//build/bazel/toolchains/cc:__subpackages__",
+        "//toolchains/cc:__subpackages__",
         "@clang_mac_all//:__subpackages__",
     ],
 )

@@ -1,11 +1,11 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
+    "//toolchains/cc:rules.bzl",
     "cc_artifact_name",
     "cc_toolchain_config",
     "cc_toolchain_import",
 )
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
@@ -179,10 +179,10 @@ cc_toolchain(
     ar_files = "@clang_win_x64//:archiver",
     as_files = ":ml64",
     compiler_files = ":x64_config",
-    dwp_files = "@//build/bazel/toolchains/cc:empty",
+    dwp_files = "//toolchains/cc:empty",
     linker_files = ":x64_config",
-    objcopy_files = "@//build/bazel/toolchains/cc:empty",
-    strip_files = "@//build/bazel/toolchains/cc:empty",
+    objcopy_files = "//toolchains/cc:empty",
+    strip_files = "//toolchains/cc:empty",
     supports_param_files = 1,
     toolchain_config = ":x64_config",
 )

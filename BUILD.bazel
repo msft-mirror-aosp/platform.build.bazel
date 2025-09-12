@@ -1,6 +1,10 @@
+exports_files([
+    "registry/modules/goldfish_build/0.0.1/MODULE.bazel",
+])
+
 test_suite(
     name = "sanity_checks",
     tests = [
-        "//build/bazel/toolchains:tool_versions_test",
+        "//toolchains:tool_versions_test",
     ],
 )

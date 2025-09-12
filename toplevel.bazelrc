@@ -3,7 +3,7 @@ import %workspace%/build/bazel/tool.bazelrc
 
 build --define grpc_no_xds=true
 
-build:macos --xcode_version_config //build/bazel/toolchains/cc/mac_clang:host_xcodes
+build:macos --xcode_version_config @goldfish_build//toolchains/cc/mac_clang:host_xcodes
 build:macos --xcode_version=16.2
 
 build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info

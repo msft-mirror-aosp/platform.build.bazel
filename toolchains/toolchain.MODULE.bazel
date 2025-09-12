@@ -1,7 +1,7 @@
 """Toolchain dependencies and repos."""
 
+# TODO This needs a better way to stay in sync with @goldfish_build
 TOOL_VERSIONS = {
-    "clang": "clang-r563880",
     "rust": "1.85.1",
 }
 
@@ -10,7 +10,6 @@ bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_gcs", version = "1.0.1")
-bazel_dep(name = "apple_support", version = "1.22.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "rules_cc", version = "0.2.3")
 bazel_dep(name = "rules_python", version = "1.6.3")
 bazel_dep(name = "rules_shell", version = "0.5.1")
@@ -21,8 +20,6 @@ bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "rules_rust", version = "0.64.0")
 bazel_dep(name = "with_cfg.bzl", version = "0.10.1")
 
-## Make sure we do not accidentally pick up a python version
-## From the system.
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
     is_default = True,
@@ -34,141 +31,61 @@ rust.toolchain(
     versions = [TOOL_VERSIONS["rust"]],
 )
 
-gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
-
-gcs_archive(
-    name = "xcode_tools_hermetic",
-    build_file = "//build/bazel/toolchains/cc/mac_clang:xcode.BUILD",
-    sha256 = "e1fca4bee5f88bd6d3108e380235860a5a0cb5cec17d664e98ad0c3e58675f77",
-    url = "gs://emu-next-bazel/hermetic-xcode/xcode_command_line_tools-16.2-202505191216.zip",
-)
-
-gcs_archive(
-    name = "vctools_hermetic",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
-    sha256 = "55153dc62b445d89d5cd3afe7adde75ecbe387277b07a6248f906795d1a17ffd",
-    url = "gs://emu-next-bazel/hermetic-msvc/msvc_tools_v143_202506021735.zip",
-)
-
-gcs_archive(
-    name = "windows_sdk_hermetic",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD",
-    sha256 = "44451a7b5d9c8785f0bf19e747ab25c21b1717d73aa9e636eb5be57049f33841",
-    url = "gs://emu-next-bazel/hermetic-msvc/windows_11_sdk_10.0.22621.0_202506021733.zip",
-)
-
 bazel_dep(name = "buildifier_prebuilt", version = "8.0.3", dev_dependency = True)
 
-# Non-module repositories
-
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-
-local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
-
-new_local_repository(
-    name = "nasm",
-    build_file = "//third_party/nasm:BUILD",
-    path = "third_party/nasm",
-)
-
-local_repository(
-    name = "meson",
-    path = "third_party/meson",
-)
-
-msvc_tools_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "msvc_tools_repository")
-
-windows_sdk_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "windows_sdk_repository")
-
-xcode_tools_repository = use_repo_rule("//build/bazel/toolchains/cc:repository_rules.bzl", "xcode_tools_repository")
-
-# Repositories that provide the clang compilers
-new_local_repository(
-    name = "clang_linux_x64",
-    build_file = "//build/bazel/toolchains/cc/linux_clang:clang.BUILD",
-    path = "prebuilts/clang/host/linux-x86/{}".format(TOOL_VERSIONS["clang"]),
-)
-
-new_local_repository(
-    name = "clang_mac_all",
-    build_file = "//build/bazel/toolchains/cc/mac_clang:clang.BUILD",
-    path = "prebuilts/clang/host/darwin-x86/{}".format(TOOL_VERSIONS["clang"]),
-)
-
-new_local_repository(
-    name = "clang_win_x64",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:clang.BUILD",
-    path = "prebuilts/clang/host/windows-x86/{}".format(TOOL_VERSIONS["clang"]),
-)
-
-# Repository that provides include / libs from GCC
-new_local_repository(
-    name = "gcc_lib",
-    build_file = "//build/bazel/toolchains/cc/linux_clang:gcc_lib.BUILD",
-    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
-)
-
-xcode_tools_repository(
-    name = "xcode_tools",
-    build_file = "//build/bazel/toolchains/cc/mac_clang:xcode.BUILD",
-)
-
-msvc_tools_repository(
-    name = "vctools",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:vctools.BUILD",
-)
-
-windows_sdk_repository(
-    name = "windows_sdk",
-    build_file = "//build/bazel/toolchains/cc/windows_clang:sdk.BUILD",
-    sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
+register_toolchains(
+    "@goldfish_build//toolchains/cc/linux_clang:x64_toolchain",
+    "@goldfish_build//toolchains/cc/linux_clang:x64_objcopy_toolchain",
+    "@goldfish_build//toolchains/cc/mac_clang:x64_toolchain",
+    "@goldfish_build//toolchains/cc/mac_clang:arm64_toolchain",
+    "@goldfish_build//toolchains/cc/mac_clang:objcopy_toolchain",
+    "@goldfish_build//toolchains/cc/windows_clang:x64_toolchain",
+    "@goldfish_build//toolchains/cc/windows_clang:resource_compiler_x64",
+    "@goldfish_build//toolchains/cc/mac_clang:mig_toolchain",
 )
 
 register_toolchains(
-    "//build/bazel/toolchains/cc/linux_clang:x64_toolchain",
-    "//build/bazel/toolchains/cc/linux_clang:x64_objcopy_toolchain",
-    "//build/bazel/toolchains/cc/mac_clang:x64_toolchain",
-    "//build/bazel/toolchains/cc/mac_clang:arm64_toolchain",
-    "//build/bazel/toolchains/cc/mac_clang:objcopy_toolchain",
-    "//build/bazel/toolchains/cc/windows_clang:x64_toolchain",
-    "//build/bazel/toolchains/cc/windows_clang:resource_compiler_x64",
-    "//build/bazel/toolchains/cc/mac_clang:mig_toolchain",
+    "@goldfish_build//toolchains/rust:rust_linux_x64_toolchain",
 )
 
-new_local_repository(
-    name = "rust_linux",
-    build_file = "//build/bazel/toolchains/rust:linux.BUILD",
-    path = "prebuilts/rust/linux-x86/{}".format(TOOL_VERSIONS["rust"]),
-)
-
-register_toolchains(
-    "@rust_linux//:linux_x64_toolchain",
-)
-
-host_platform_repository = use_repo_rule("//build/bazel/platforms:host_platform.bzl", "host_platform_repository")
+host_platform_repository = use_repo_rule("@goldfish_build//platforms:host_platform.bzl", "host_platform_repository")
 
 host_platform_repository(
     name = "host_platform",
     host = {
-        '{"os": "linux", "arch": "x64"}': "//build/bazel/platforms:linux_x64",
-        '{"os": "macos", "arch": "x64"}': "//build/bazel/platforms:macos_x64",
-        '{"os": "macos", "arch": "arm64"}': "//build/bazel/platforms:macos_aarch64",
-        '{"os": "windows", "arch": "x64"}': "//build/bazel/platforms:windows_x64",
+        '{"os": "linux", "arch": "x64"}': "@goldfish_build//platforms:linux_x64",
+        '{"os": "macos", "arch": "x64"}': "@goldfish_build//platforms:macos_x64",
+        '{"os": "macos", "arch": "arm64"}': "@goldfish_build//platforms:macos_aarch64",
+        '{"os": "windows", "arch": "x64"}': "@goldfish_build//platforms:windows_x64",
     },
 )
 
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+# Unfortunately, java_test seems to assume that if the toolchain is not in root
+# repository then it is at the root of the dependency so we can't use
+# @goldfish_prebuilts directly.
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
-http_archive(
-    name = "bazel_toolchains",
-    sha256 = "907ad3a40dc6065b30d95f8444f4f0a45de011faa8ef4739006f002d7a0e6ed5",
-    strip_prefix = "bazel-toolchains-cb0929a385a058d1839db410e0aca4d23e3543df",
-    url = "https://github.com/bazelbuild/bazel-toolchains/archive/cb0929a385a058d1839db410e0aca4d23e3543df.tar.gz",
+new_local_repository(
+    name = "linux_jdk17",
+    build_file = "@goldfish_build//toolchains/java:linux_jdk.BUILD",
+    path = "prebuilts/studio/jdk/jdk17/linux",
+)
+
+new_local_repository(
+    name = "mac_jdk17",
+    build_file = "@goldfish_build//toolchains/java:mac_jdk.BUILD",
+    path = "prebuilts/studio/jdk/jdk17/mac-arm64/Contents/Home",
+)
+
+new_local_repository(
+    name = "windows_jdk17",
+    build_file = "@goldfish_build//toolchains/java:windows_jdk.BUILD",
+    path = "prebuilts/studio/jdk/jdk17/win",
 )
 
 # Java toolchains
 register_toolchains(
-    "//prebuilts/studio/jdk/jdk17:java17_compile_toolchain_definition",
-    "//prebuilts/studio/jdk/jdk17:java_runtime_toolchain",
-    "//prebuilts/studio/jdk/jdk17:bootstrap_runtime_toolchain_type",
+    "@linux_jdk17//:all",
+    "@mac_jdk17//:all",
+    "@windows_jdk17//:all",
 )

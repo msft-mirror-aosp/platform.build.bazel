@@ -1,9 +1,9 @@
-load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import", "sysroot")
+load("@goldfish_build//toolchains/cc:rules.bzl", "cc_toolchain_import", "sysroot")
 load("@rules_cc//cc:defs.bzl", "cc_import")
 
 package(default_visibility = [
-    "@//build/bazel/toolchains/cc:__subpackages__",
     "@clang_linux_x64//:__subpackages__",
+    "@goldfish_build//toolchains/cc:__subpackages__",
 ])
 
 cc_toolchain_import(

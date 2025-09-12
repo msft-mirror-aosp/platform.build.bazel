@@ -1,6 +1,7 @@
-load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
+load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
+load("@goldfish_build//rules:simple_toolchain.bzl", "simple_toolchain")
 load(
-    "@//build/bazel/toolchains/cc:actions.bzl",
+    "@goldfish_build//toolchains/cc:actions.bzl",
     "ARCHIVER_ACTIONS",
     "ASSEMBLE_ACTIONS",
     "CPP_COMPILE_ACTIONS",
@@ -12,13 +13,12 @@ load(
     "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME",
 )
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
+    "@goldfish_build//toolchains/cc:rules.bzl",
     "cc_tool",
     "cc_toolchain_import",
 )
-load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
-package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
+package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
 
 filegroup(
     name = "llvm_cov",
@@ -36,7 +36,7 @@ cc_tool(
     name = "clang",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS + LTO_BACKEND_ACTIONS + LTO_INDEX_ACTIONS,
     env = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": {},
+        "@goldfish_build//toolchains/cc:is_bootstrap": {},
         "//conditions:default": {
             "WRAPPER_WRAP_BINARY": "$(execpath bin/clang)",
         },
@@ -55,8 +55,8 @@ cc_tool(
         ],
     ),
     tool = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": ":bin/clang",
-        "//conditions:default": "@//build/bazel/toolchains/cc:wrapper",
+        "@goldfish_build//toolchains/cc:is_bootstrap": ":bin/clang",
+        "//conditions:default": "@goldfish_build//toolchains/cc:wrapper",
     }),
 )
 
@@ -64,7 +64,7 @@ cc_tool(
     name = "clang++",
     applied_actions = CPP_COMPILE_ACTIONS,
     env = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": {},
+        "@goldfish_build//toolchains/cc:is_bootstrap": {},
         "//conditions:default": {
             "WRAPPER_WRAP_BINARY": "$(execpath bin/clang++)",
         },
@@ -83,8 +83,8 @@ cc_tool(
         ],
     ),
     tool = select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": ":bin/clang++",
-        "//conditions:default": "@//build/bazel/toolchains/cc:wrapper",
+        "@goldfish_build//toolchains/cc:is_bootstrap": ":bin/clang++",
+        "//conditions:default": "@goldfish_build//toolchains/cc:wrapper",
     }),
 )
 

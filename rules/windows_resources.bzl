@@ -18,7 +18,7 @@
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
-TOOLCHAIN_TYPE = "@//build/bazel/toolchains/cc/windows_clang:resource_compiler_toolchain_type"
+TOOLCHAIN_TYPE = "//toolchains/cc/windows_clang:resource_compiler_toolchain_type"
 
 def _replace_ext(n, e):
     i = n.rfind(".")

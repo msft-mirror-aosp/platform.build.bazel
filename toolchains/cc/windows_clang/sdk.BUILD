@@ -1,9 +1,9 @@
 """Exports Windows SDK libraries and tools from the "Windows Kits\\<os major>" directory."""
 
-load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
-load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import")
+load("@goldfish_build//rules:simple_toolchain.bzl", "simple_toolchain")
+load("@goldfish_build//toolchains/cc:rules.bzl", "cc_toolchain_import")
 
-package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
+package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
 
 cc_toolchain_import(
     name = "sdk_libs_x64",

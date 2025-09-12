@@ -1,13 +1,13 @@
 # Exports macOS SDK from Xcode or Command Line Tools directory.
 
-load("@//build/bazel/rules:simple_toolchain.bzl", "simple_toolchain")
+load("@goldfish_build//rules:simple_toolchain.bzl", "simple_toolchain")
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
+    "@goldfish_build//toolchains/cc:rules.bzl",
     "cc_toolchain_import",
     "sysroot",
 )
 
-package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
+package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
 
 sysroot(
     name = "sdk",

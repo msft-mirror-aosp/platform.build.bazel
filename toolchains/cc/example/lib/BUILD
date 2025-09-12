@@ -1,6 +1,8 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 cc_library(
     name = "hello-time",
     srcs = ["hello-time.cc"],
     hdrs = ["hello-time.h"],
-    visibility = ["//build/bazel/toolchains/cc/example/main:__pkg__"],
+    visibility = ["//toolchains/cc/example/main:__pkg__"],
 )

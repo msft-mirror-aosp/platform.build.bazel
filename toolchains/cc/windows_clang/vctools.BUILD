@@ -3,13 +3,13 @@ the corresponding DIA sdk.
 """
 
 load(
-    "@//build/bazel/toolchains/cc:actions.bzl",
+    "@goldfish_build//toolchains/cc:actions.bzl",
     "ASSEMBLE_ACTIONS",
 )
-load("@//build/bazel/toolchains/cc:rules.bzl", "cc_tool", "cc_toolchain_import")
+load("@goldfish_build//toolchains/cc:rules.bzl", "cc_tool", "cc_toolchain_import")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 
-package(default_visibility = ["@//build/bazel/toolchains/cc:__subpackages__"])
+package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
 
 cc_tool(
     name = "ml64",

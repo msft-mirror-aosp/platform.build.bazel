@@ -1,7 +1,7 @@
 """Toolchain repository rules."""
 
 load(
-    "@//build/bazel/rules:repository_utils.bzl",
+    "//rules:repository_utils.bzl",
     "create_build_file",
     "create_workspace_file",
     "default_workspace_file_content",

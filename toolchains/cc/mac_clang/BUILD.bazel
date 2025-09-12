@@ -1,12 +1,12 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(
-    "@//build/bazel/toolchains/cc:rules.bzl",
+    "//toolchains/cc:rules.bzl",
     "cc_artifact_name",
     "cc_toolchain_config",
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
-load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
@@ -116,7 +116,7 @@ cc_features(
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ] + select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
     cxx_flags = ["-std=c++20"],
@@ -126,7 +126,7 @@ cc_features(
         "-fuse-ld=lld",
         "-rtlib=compiler-rt",
     ] + select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
     }),
     toolchain_imports = _imports,
@@ -173,10 +173,10 @@ cc_toolchain(
     ar_files = "@clang_mac_all//:archiver",
     as_files = "@clang_mac_all//:clang",
     compiler_files = ":x64_config",
-    dwp_files = "@//build/bazel/toolchains/cc:empty",
+    dwp_files = "//toolchains/cc:empty",
     dynamic_runtime_lib = ":dynamic_runtime",
     linker_files = ":x64_config",
-    objcopy_files = "@//build/bazel/toolchains/cc:empty",
+    objcopy_files = "//toolchains/cc:empty",
     static_runtime_lib = ":static_runtime",
     strip_files = "@clang_mac_all//:strip",
     supports_param_files = 1,
@@ -228,7 +228,7 @@ cc_features(
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ] + select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
     cxx_flags = ["-std=c++20"],
@@ -237,7 +237,7 @@ cc_features(
         "-mmacos-version-min=11",
         "-fuse-ld=lld",
     ] + select({
-        "@//build/bazel/toolchains/cc:is_bootstrap": [],
+        "//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
     }),
     toolchain_imports = _imports,
@@ -267,10 +267,10 @@ cc_toolchain(
     ar_files = "@clang_mac_all//:archiver",
     as_files = "@clang_mac_all//:clang",
     compiler_files = ":arm64_config",
-    dwp_files = "@//build/bazel/toolchains/cc:empty",
+    dwp_files = "//toolchains/cc:empty",
     dynamic_runtime_lib = ":dynamic_runtime",
     linker_files = ":arm64_config",
-    objcopy_files = "@//build/bazel/toolchains/cc:empty",
+    objcopy_files = "//toolchains/cc:empty",
     static_runtime_lib = ":static_runtime",
     strip_files = "@clang_mac_all//:strip",
     supports_param_files = 1,
@@ -297,5 +297,5 @@ toolchain(
         "@platforms//os:macos",
     ],
     toolchain = "@clang_mac_all//:objcopy",
-    toolchain_type = "@//build/bazel/toolchains/cc:objcopy_toolchain_type",
+    toolchain_type = "//toolchains/cc:objcopy_toolchain_type",
 )
