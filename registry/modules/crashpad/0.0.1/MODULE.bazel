@@ -1,0 +1,15 @@
+module(
+    name = "crashpad",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "goldfish_build", version = "0.0.2")
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.0.14")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_python", version = "1.4.0")
+bazel_dep(name = "abseil-cpp", version = "20250127.1")
+bazel_dep(name = "googletest", version = "1.17.0")
+bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+bazel_dep(name = "boringssl", version = "0.20250415.0")

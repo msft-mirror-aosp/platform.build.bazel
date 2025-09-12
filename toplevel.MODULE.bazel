@@ -70,112 +70,20 @@ local_path_override(
 )
 
 bazel_dep(name = "wayland", version = "1.22.0")
-
-# Needed by CrosVM
 bazel_dep(name = "gfxstream", version = "0.0.1")
-local_path_override(
-    module_name = "gfxstream",
-    path = "hardware/google/gfxstream",
-)
+bazel_dep(name = "crashpad", version = "0.0.1")
+bazel_dep(name = "breakpad", version = "0.0.1")
+bazel_dep(name = "libyuv", version = "0.0.1")
 
 # Needed by Qemu
+bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "dtc", version = "0.0.1")
-local_path_override(
-    module_name = "dtc",
-    path = "third_party/dtc",
-)
-
-bazel_dep(name = "webrtc", version = "0.0.1")
-local_path_override(
-    module_name = "webrtc",
-    path = "third_party/webrtc",
-)
-
-bazel_dep(name = "aemu-grpc", version = "0.0.1")
-local_path_override(
-    module_name = "aemu-grpc",
-    path = "third_party/adt-infra/pytest/aemu_grpc",
-)
-
+bazel_dep(name = "crosvm", version = "0.0.1")
 bazel_dep(name = "netsim", version = "0.0.1")
-
 bazel_dep(name = "goldfish_test", version = "0.0.1")
 local_path_override(
     module_name = "goldfish_test",
     path = "third_party/adt-infra/goldfish_test",
-)
-
-bazel_dep(name = "goldfish_crates", version = "0.0.1")
-
-lrc = use_extension("@goldfish_crates//:local_rust_crates.bzl", "lrc")
-use_repo(lrc, "aead", "aes", "aho-corasick", "android_log-sys", "anstyle", "anyhow", "argh", "argh_derive", "argh_shared", "arrayvec", "async-trait", "base64", "bitflags", "byteorder", "bytes", "ccm", "cfg-if", "chrono", "cipher", "clap", "clap_builder", "clap_derive", "clap_lex", "codespan-reporting", "cpufeatures", "crc32fast", "crossbeam-utils", "crypto-common", "ctr", "data-encoding", "env_logger", "equivalent", "etherparse", "flate2", "fnv", "foldhash", "futures", "futures-channel", "futures-core", "futures-executor", "futures-io", "futures-macro", "futures-sink", "futures-task", "futures-util", "generic-array", "getrandom", "glam", "grpcio", "grpcio-sys", "hashbrown", "heck", "hex", "http", "httparse", "inout", "itoa", "libc", "libz-rs-sys", "libz-sys", "lock_api", "log", "memchr", "memoffset", "minimal-lexical", "mio", "named-lock", "nix", "nom", "num-bigint", "num-derive", "num-integer", "num-traits", "num_cpus", "once_cell", "parking_lot", "parking_lot_core", "pdl-compiler", "pdl-runtime", "pest", "pest_derive", "pest_generator", "pest_meta", "pica", "pin-project-lite", "pin-utils", "ppv-lite86", "prettyplease", "proc-macro2", "protobuf-json-mapping", "protobuf-rust", "protobuf-support", "quote", "rand", "rand_chacha", "rand_core", "regex", "regex-automata", "regex-syntax", "remain", "rustix", "rustutils", "ryu", "scopeguard", "serde", "serde_derive", "serde_json", "signal-hook-registry", "slab", "smallvec", "socket2", "strsim", "subtle", "syn", "termcolor", "thiserror", "thiserror-impl", "tokio", "tokio-macros", "tokio-stream", "tokio-util", "tungstenite", "typenum", "ucd-trie", "unicode-ident", "unicode-width", "utf-8", "winapi", "winapi-util", "winapi-x86_64-pc-windows-gnu", "windows-link", "windows-sys", "windows-targets", "windows_aarch64_gnullvm", "windows_i686_gnullvm", "windows_x86_64_gnullvm", "zerocopy", "zerocopy-derive", "zip", "zlib-rs")
-
-# Non-module repositories
-
-local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
-
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-
-http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# Needed by Qemu
-new_local_repository(
-    name = "crosvm",
-    build_file = "//hardware/generic/goldfish/third_party/crosvm:BUILD.crosvm",
-    path = "third_party/crosvm",
-)
-
-local_repository(
-    name = "perfetto",
-    path = "third_party/perfetto",
-)
-
-local_repository(
-    name = "perfetto_cfg",
-    path = "build/bazel/perfetto_overrides",
-)
-
-local_repository(
-    name = "rnnoise",
-    path = "third_party/rnnoise",
-)
-
-local_repository(
-    name = "com_google_breakpad",
-    path = "third_party/google-breakpad",
-)
-
-local_repository(
-    name = "com_google_crashpad",
-    path = "third_party/crashpad",
-)
-
-local_repository(
-    name = "pffft",
-    path = "third_party/pffft",
-)
-
-local_repository(
-    name = "libvpx",
-    path = "third_party/libvpx",
-)
-
-local_repository(
-    name = "libyuv",
-    path = "third_party/libyuv",
-)
-
-# Needed by Qemu
-local_repository(
-    name = "pixman",
-    path = "third_party/pixman",
-)
-
-http_archive(
-    name = "wycheproof",
-    sha256 = "eb1d558071acf1aa6d677d7f1cabec2328d1cf8381496c17185bd92b52ce7545",
-    strip_prefix = "wycheproof-d8ed1ba95ac4c551db67f410c06131c3bc00a97c",
-    url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
 )
 
 # Enable Java gRPC compilation
@@ -183,6 +91,7 @@ bazel_dep(name = "rules_jvm_external", version = "6.0")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 use_repo(maven, "maven")
+
 maven.install(
     artifacts = [
         # Rerun REPIN=1 bazel run @maven//:pin, and update
