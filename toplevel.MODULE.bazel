@@ -61,6 +61,12 @@ local_path_override(
     path = "hardware/google/aemu",
 )
 
+bazel_dep(name = "qt_prebuilt", version = "6.5.3")
+local_path_override(
+    module_name = "qt_prebuilt",
+    path = "prebuilts/android-emulator-build/qt",
+)
+
 # Needed by CrosVM
 bazel_dep(name = "gfxstream", version = "0.0.1")
 local_path_override(
