@@ -29,6 +29,11 @@ bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "co
 bazel_dep(name = "boringssl", version = "0.20241024.0")
 bazel_dep(name = "tink_cc", version = "2.3.0")
 bazel_dep(name = "rules_shell", version = "0.4.1")
+
+# Dep of GRPC but override here
+# Use local registry version to address https://github.com/bazelbuild/bazel/issues/26922
+bazel_dep(name = "c-ares", version = "1.19.1.aemu")
+
 bazel_dep(name = "grpc-java", version = "1.71.0")
 bazel_dep(name = "grpc", version = "1.72.0")
 single_version_override(
@@ -36,6 +41,8 @@ single_version_override(
     patch_strip = 1,
     patches = [
         "//build/bazel/patch:grpc-no-macos-universal-binary.patch",
+        "//build/bazel/patch:grpc_strip_import_prefix.patch",
+        "//build/bazel/patch:grpc_remove_upb-gen.patch",
     ],
 )
 
@@ -103,6 +110,7 @@ single_version_override(
         "//build/bazel/patch:libuv-windows-support.patch",
     ],
 )
+
 bazel_dep(name = "goldfish_crates", version = "0.0.1")
 
 local_rust_crates = use_extension("@goldfish_crates//:local_rust_crates.bzl", "local_rust_crates")
