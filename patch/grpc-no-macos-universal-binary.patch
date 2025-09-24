@@ -12,15 +12,15 @@ diff --git a/bazel/grpc_build_system.bzl b/bazel/grpc_build_system.bzl
 index 0fc2e1d..c42ce81 100644
 --- a/bazel/grpc_build_system.bzl
 +++ b/bazel/grpc_build_system.bzl
-@@ -201,7 +201,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
+@@ -204,7 +204,7 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
      native.genrule(
          name = name,
          srcs = select({
 -            "@platforms//os:macos": [name + "_universal"],
-+            #"@platforms//os:macos": [name + "_universal"],
++            # "@platforms//os:macos": [name + "_universal"],
              "//conditions:default": [name + "_native"],
          }),
-         outs = [name],
+         outs = [name + "_binary"],
 -- 
 2.49.0.1015.ga840276032-goog
 
