@@ -1,4 +1,5 @@
 load("@//build/bazel/toolchains/cc:rules.bzl", "cc_toolchain_import", "sysroot")
+load("@rules_cc//cc:defs.bzl", "cc_import")
 
 package(default_visibility = [
     "@//build/bazel/toolchains/cc:__subpackages__",
@@ -63,6 +64,13 @@ cc_import(
     name = "libpulse",
     interface_library = ":sysroot/usr/lib/libpulse.so",
     shared_library = ":sysroot/usr/lib/libpulse.so.0.15.3",
+    visibility = ["//visibility:public"],
+)
+
+cc_import(
+    name = "libasound",
+    interface_library = ":sysroot/usr/lib/libasound.so",
+    shared_library = ":sysroot/usr/lib/libasound.so.2.0.0",
     visibility = ["//visibility:public"],
 )
 
