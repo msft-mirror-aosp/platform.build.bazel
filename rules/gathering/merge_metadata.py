@@ -13,6 +13,8 @@ class Package:
   version: str
   license_url: str
   license_name: str
+  # If present, the name of the prebuilt that includes this package/dependency.
+  origin_prebuilt_name: str = ''
 
 
 def read_sbom_json(sbom_json_path: str) -> list[Package]:
@@ -20,6 +22,7 @@ def read_sbom_json(sbom_json_path: str) -> list[Package]:
   with open(sbom_json_path, 'r') as f:
     json_data = json.load(f)
 
+  prebuilt_name = json_data['name']
   spdx_id = json_data['SPDXID']
   relationships = json_data['relationships']
   for relationship in relationships:
@@ -69,7 +72,8 @@ def read_sbom_json(sbom_json_path: str) -> list[Package]:
             name=pkg['name'],
             version=pkg['versionInfo'],
             license_url=license_url,
-            license_name=license_name
+            license_name=license_name,
+            origin_prebuilt_name=prebuilt_name,
         )
     )
   return packages
@@ -98,12 +102,16 @@ def write_packages(packages: list[Package], output_path: str) -> None:
   """Writes a list of packages as a JSON file."""
   json_data = []
   for pkg in packages:
-    json_data.append({
+    out = {
         'name': pkg.name,
         'version': pkg.version,
         'license_url': pkg.license_url,
         'license_name': pkg.license_name,
-    })
+    }
+    if pkg.origin_prebuilt_name:
+      out['origin_prebuilt_name'] = pkg.origin_prebuilt_name
+    json_data.append(out)
+
   with open(output_path, 'w') as f:
     f.write(json.dumps(json_data, indent=2))
 
