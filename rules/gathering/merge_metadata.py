@@ -56,7 +56,13 @@ def read_sbom_json(sbom_json_path: str) -> list[Package]:
       license_url = declared_license.get('seeAlsos', [''])[0]
       license_name = declared_license['name']
     else:
-      license_url = ''
+      # The license_id is available, but not in the declared license list.
+      # This means it should be in the SPDX license list, https://spdx.org/licenses/.
+      # See also https://spdx.org/rdf/spdx-terms-v2.0/objectproperties/licenseDeclared___-1064345176.html
+      if license_id != 'NOASSERTION':
+        license_url = f'https://spdx.org/licenses/{license_id}.html'
+      else:
+        license_url = ''
       license_name = license_id
     packages.append(
         Package(
