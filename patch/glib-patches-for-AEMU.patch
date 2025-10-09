@@ -387,8 +387,8 @@ index 4672823..f806cf3 100644
      "gwin32.c",
      "gspawn-win32-helper.c",
 +    "gspawn-win32.c",
-+    "gthread-win32.c",
  ]
++
  
  GLIB_INTERNAL_TEXTUAL_HDRS = [
 @@ -255,6 +257,359 @@ REPO_ROOT = package_relative_label(":BUILD.bazel").workspace_root
