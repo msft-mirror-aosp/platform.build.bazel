@@ -27,10 +27,6 @@ build:windows --features='generate_pdb_file'
 build:macos --@rules_rust//rust/settings:experimental_use_cc_common_link
 build:linux --@rules_rust//rust/settings:experimental_use_cc_common_link
 
-## Python
-# On windows cleaning up python zips can fail and leak disk (see b/277781554)
-build:windows --nobuild_python_zip
-
 ## Protobuf
 build --proto_compiler=@protobuf//:protoc
 build --proto_toolchain_for_cc=@protobuf//:cc_toolchain
