@@ -417,8 +417,8 @@
   "moduleExtensions": {
     "//hardware/generic/goldfish/emulator/sdk/system_images:sysimage.bzl%system_image_extension": {
       "general": {
-        "bzlTransitiveDigest": "hlPkldNn/FJJ6qOKq3xzLJ8AXsX/RzeP1mD48JwUdac=",
-        "usagesDigest": "yS90qyJLB3upZlSQekYGRJuqjerXlLLlMHQjaqpt3Nc=",
+        "bzlTransitiveDigest": "GtKLGhAxch4p6RIKVUAfHDJ/Jp1deLaRqe1LRTsTP8E=",
+        "usagesDigest": "0N9RlOQMAmhuaVVdNszJ4gH+nM9fTlWVny4lXqRkU8I=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -429,7 +429,7 @@
               "api": "36",
               "tag": "google_apis_playstore",
               "abi": "x86_64",
-              "rev": "6"
+              "rev": "7"
             }
           },
           "android_36_playstore_arm64": {
@@ -438,7 +438,7 @@
               "api": "36",
               "tag": "google_apis_playstore",
               "abi": "arm64-v8a",
-              "rev": "6"
+              "rev": "7"
             }
           }
         },
