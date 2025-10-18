@@ -3,7 +3,7 @@
 load("@goldfish_build//rules:simple_toolchain.bzl", "simple_toolchain")
 load("@goldfish_build//toolchains/cc:rules.bzl", "cc_toolchain_import")
 
-package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
+package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 cc_toolchain_import(
     name = "sdk_libs_x64",

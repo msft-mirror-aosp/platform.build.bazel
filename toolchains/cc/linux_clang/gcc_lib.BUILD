@@ -3,7 +3,7 @@ load("@rules_cc//cc:defs.bzl", "cc_import")
 
 package(default_visibility = [
     "@clang_linux_x64//:__subpackages__",
-    "@goldfish_build//toolchains/cc:__subpackages__",
+    "@toolchain_hub//:__subpackages__",
 ])
 
 cc_toolchain_import(

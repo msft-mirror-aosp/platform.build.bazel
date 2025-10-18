@@ -4,7 +4,7 @@ load(":bootstrap.bzl", "cc_bootstrap_binary")
 filegroup(
     name = "empty",
     srcs = [],
-    visibility = ["//toolchains/cc:__subpackages__"],
+    visibility = ["@toolchain_hub//:__subpackages__"],
 )
 
 bool_setting(
@@ -17,16 +17,13 @@ config_setting(
     flag_values = {
         ":bootstrap": "true",
     },
-    visibility = [
-        "//toolchains/cc:__subpackages__",
-        "@clang_mac_all//:__subpackages__",
-    ],
+    visibility = ["//visibility:public"],
 )
 
 cc_bootstrap_binary(
     name = "wrapper",
     srcs = ["wrapper.cc"],
-    visibility = ["@clang_mac_all//:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 toolchain_type(

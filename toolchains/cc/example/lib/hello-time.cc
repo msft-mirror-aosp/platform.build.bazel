@@ -1,4 +1,4 @@
-#include "build/bazel/toolchains/cc/example/lib/hello-time.h"
+#include "toolchains/cc/example/lib/hello-time.h"
 #include <ctime>
 #include <iostream>
 

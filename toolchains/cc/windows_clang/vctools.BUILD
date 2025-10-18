@@ -9,7 +9,7 @@ load(
 load("@goldfish_build//toolchains/cc:rules.bzl", "cc_tool", "cc_toolchain_import")
 load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 
-package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
+package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 cc_tool(
     name = "ml64",

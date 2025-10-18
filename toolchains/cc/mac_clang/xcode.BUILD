@@ -7,7 +7,7 @@ load(
     "sysroot",
 )
 
-package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
+package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 sysroot(
     name = "sdk",

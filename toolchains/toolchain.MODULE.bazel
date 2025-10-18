@@ -1,10 +1,12 @@
 """Toolchain dependencies and repos."""
 
-# TODO This needs a better way to stay in sync with @goldfish_build
+# Keep this version in sync with "tool_versions.json"
 TOOL_VERSIONS = {
+    "clang": "clang-r563880",
     "rust": "1.85.1",
 }
 
+bazel_dep(name = "goldfish_build", version = "0.0.2")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
 bazel_dep(name = "rules_license", version = "1.0.0")
@@ -31,22 +33,12 @@ rust.toolchain(
     versions = [TOOL_VERSIONS["rust"]],
 )
 
+custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
+custom_toolchains.version_file(
+    label = "@goldfish_build//toolchains:tool_versions.json",
+)
+
 bazel_dep(name = "buildifier_prebuilt", version = "8.0.3", dev_dependency = True)
-
-register_toolchains(
-    "@goldfish_build//toolchains/cc/linux_clang:x64_toolchain",
-    "@goldfish_build//toolchains/cc/linux_clang:x64_objcopy_toolchain",
-    "@goldfish_build//toolchains/cc/mac_clang:x64_toolchain",
-    "@goldfish_build//toolchains/cc/mac_clang:arm64_toolchain",
-    "@goldfish_build//toolchains/cc/mac_clang:objcopy_toolchain",
-    "@goldfish_build//toolchains/cc/windows_clang:x64_toolchain",
-    "@goldfish_build//toolchains/cc/windows_clang:resource_compiler_x64",
-    "@goldfish_build//toolchains/cc/mac_clang:mig_toolchain",
-)
-
-register_toolchains(
-    "@goldfish_build//toolchains/rust:rust_linux_x64_toolchain",
-)
 
 host_platform_repository = use_repo_rule("@goldfish_build//platforms:host_platform.bzl", "host_platform_repository")
 
@@ -58,34 +50,4 @@ host_platform_repository(
         '{"os": "macos", "arch": "arm64"}': "@goldfish_build//platforms:macos_aarch64",
         '{"os": "windows", "arch": "x64"}': "@goldfish_build//platforms:windows_x64",
     },
-)
-
-# Unfortunately, java_test seems to assume that if the toolchain is not in root
-# repository then it is at the root of the dependency so we can't use
-# @goldfish_prebuilts directly.
-new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
-
-new_local_repository(
-    name = "linux_jdk17",
-    build_file = "@goldfish_build//toolchains/java:linux_jdk.BUILD",
-    path = "prebuilts/studio/jdk/jdk17/linux",
-)
-
-new_local_repository(
-    name = "mac_jdk17",
-    build_file = "@goldfish_build//toolchains/java:mac_jdk.BUILD",
-    path = "prebuilts/studio/jdk/jdk17/mac-arm64/Contents/Home",
-)
-
-new_local_repository(
-    name = "windows_jdk17",
-    build_file = "@goldfish_build//toolchains/java:windows_jdk.BUILD",
-    path = "prebuilts/studio/jdk/jdk17/win",
-)
-
-# Java toolchains
-register_toolchains(
-    "@linux_jdk17//:all",
-    "@mac_jdk17//:all",
-    "@windows_jdk17//:all",
 )

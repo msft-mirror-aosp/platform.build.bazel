@@ -1,5 +1,5 @@
-#include "build/bazel/toolchains/cc/example/lib/hello-time.h"
-#include "build/bazel/toolchains/cc/example/main/hello-greet.h"
+#include "toolchains/cc/example/lib/hello-time.h"
+#include "toolchains/cc/example/main/hello-greet.h"
 #include <iostream>
 #include <string>
 

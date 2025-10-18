@@ -5,7 +5,7 @@ py_test(
     srcs = ["tool_versions_test.py"],
     data = [
         ":tool_versions.json",
-        "//:registry/modules/goldfish_build/0.0.1/MODULE.bazel",
+        ":toolchain.MODULE.bazel",
     ],
     deps = ["@rules_python//python/runfiles"],
 )

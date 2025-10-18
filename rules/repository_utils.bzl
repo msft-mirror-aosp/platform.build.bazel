@@ -96,6 +96,17 @@ def create_workspace_file(workspace_file, repo_ctx, default_content = None):
     else:
         fail("Cannot create repository", repo_ctx.name, ": no WORKSPACE file defined.")
 
+def create_repo_file(repo_ctx, overwrite = False):
+    """Create a REPO.bazel file at root of the repository.
+
+    Args:
+        repo_ctx: The repository context.
+        overwrite: Whether or not to overwrite an existing REPO.bazel file.
+    """
+    if overwrite:
+        repo_ctx.delete("REPO.bazel")
+    repo_ctx.file("REPO.bazel", "", executable = False)
+
 def _list_files_recursive(path, repo_ctx):
     """Lists all the files / symlinks under path, recursively.
 

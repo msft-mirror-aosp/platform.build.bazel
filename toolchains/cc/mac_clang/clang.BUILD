@@ -18,7 +18,7 @@ load(
     "cc_toolchain_import",
 )
 
-package(default_visibility = ["@goldfish_build//toolchains/cc:__subpackages__"])
+package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 filegroup(
     name = "llvm_cov",

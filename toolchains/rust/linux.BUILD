@@ -68,18 +68,3 @@ rust_toolchain(
     ],
     target_triple = "x86_64-unknown-linux-gnu",
 )
-
-toolchain(
-    name = "linux_x64_toolchain",
-    exec_compatible_with = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
-    target_compatible_with = [
-        "@platforms//cpu:x86_64",
-        "@platforms//os:linux",
-    ],
-    toolchain = ":linux_x64",
-    toolchain_type = "@rules_rust//rust:toolchain_type",
-    visibility = ["//visibility:public"],
-)

@@ -7,7 +7,7 @@ from typing import Dict
 from python.runfiles import Runfiles
 
 _JSON_FILE = "goldfish_build+/toolchains/tool_versions.json"
-_MODULE_FILE = "goldfish_build+/registry/modules/goldfish_build/0.0.1/MODULE.bazel"
+_MODULE_FILE = "goldfish_build+/toolchains/toolchain.MODULE.bazel"
 
 _runfiles: Runfiles = Runfiles.Create()
 

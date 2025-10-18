@@ -18,9 +18,16 @@ module(
     version = "0.0.1",
 )
 
-bazel_dep(name = "goldfish_build", version = "0.0.1")
-
 include("//build/bazel/toolchains:toolchain.MODULE.bazel")
+
+custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
+custom_toolchains.clang(root_path = "prebuilts/clang/host")
+custom_toolchains.rust(root_path = "prebuilts/rust")
+custom_toolchains.java(
+    root_path = "prebuilts/studio/jdk",
+    version = "jdk17",
+)
+use_repo(custom_toolchains, "gcc_lib")
 
 bazel_dep(name = "lz4", version = "1.9.4")
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
@@ -91,13 +98,6 @@ local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl"
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-# For Qemu
-new_local_repository(
-    name = "gcc_lib",
-    build_file = "@goldfish_build//toolchains/cc/linux_clang:gcc_lib.BUILD",
-    path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
-)
 
 new_local_repository(
     name = "rootcanal",

@@ -1,0 +1,36 @@
+module(
+    name = "goldfish_build",
+    version = "0.0.2",
+)
+
+bazel_dep(name = "platforms", version = "0.0.11")
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
+bazel_dep(name = "rules_cc", version = "0.0.14")
+bazel_dep(name = "rules_gcs", version = "1.0.1")
+bazel_dep(name = "rules_java", version = "8.11.0")
+bazel_dep(name = "rules_rust", version = "0.64.0")
+bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "with_cfg.bzl", version = "0.10.1")
+bazel_dep(name = "aemu", version = "0.0.1")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "bazel_toolchains",
+    sha256 = "907ad3a40dc6065b30d95f8444f4f0a45de011faa8ef4739006f002d7a0e6ed5",
+    strip_prefix = "bazel-toolchains-cb0929a385a058d1839db410e0aca4d23e3543df",
+    url = "https://github.com/bazelbuild/bazel-toolchains/archive/cb0929a385a058d1839db410e0aca4d23e3543df.tar.gz",
+)
+
+custom_toolchain = use_extension("//extensions:toolchain.bzl", "toolchain")
+use_repo(custom_toolchain, "toolchain_hub")
+
+register_toolchains(
+    "@toolchain_hub//cc/linux_clang:all",
+    "@toolchain_hub//cc/mac_clang:all",
+    "@toolchain_hub//cc/windows_clang:all",
+    "@toolchain_hub//rust/linux:all",
+    "@toolchain_hub//java/linux:all",
+    "@toolchain_hub//java/mac_arm64:all",
+    "@toolchain_hub//java/windows:all",
+)
