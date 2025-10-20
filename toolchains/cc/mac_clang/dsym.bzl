@@ -1,10 +1,12 @@
 """dSYM support for macOS binaries."""
 
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//toolchains/cc:actions.bzl", "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME")
 
 CPP_LINK_MNEMONIC = "CppLink"
+_SWITCH_FLAG = "//toolchains/cc/mac_clang:generate_apple_dsym"
 
 AppleDsymInfo = provider(
     doc = "Metadata for generated Apple debug symbol (dSYM) bundle.",
@@ -29,6 +31,8 @@ def _gen_dsym_aspect_impl(target, ctx):
         return _dsym_from_upstream(ctx = ctx, attr_name = "srcs")
     if len(linker_action) > 1:
         fail("This aspect cannot be attached to target", target.label, "because it has multiple", CPP_LINK_MNEMONIC, "actions.")
+    if not ctx.attr._switch_flag[BuildSettingInfo].value:
+        return []
     cc_toolchain = find_cc_toolchain(ctx)
     feature_configuration = cc_common.configure_features(
         ctx = ctx,
@@ -36,17 +40,13 @@ def _gen_dsym_aspect_impl(target, ctx):
         requested_features = ctx.features,
         unsupported_features = ctx.disabled_features,
     )
-    if not cc_common.is_enabled(
-        feature_configuration = feature_configuration,
-        feature_name = "generate_dsym_file",
-    ):
-        return []
     if not cc_common.action_is_enabled(
         feature_configuration = feature_configuration,
         action_name = PACKAGE_DEBUG_SYMBOLS_ACTION_NAME,
     ):
         fail(
-            "--apple_generate_dsym is turned on but no action config is enabled for",
+            _SWITCH_FLAG,
+            "is turned on but no action config is enabled for",
             PACKAGE_DEBUG_SYMBOLS_ACTION_NAME,
         )
 
@@ -99,6 +99,9 @@ def _dsym_from_upstream(ctx, attr_name):
 gen_dsym_aspect = aspect(
     doc = "Create dSYM bundle for macOS cc binaries.",
     implementation = _gen_dsym_aspect_impl,
+    attrs = {
+        "_switch_flag": attr.label(default = _SWITCH_FLAG),
+    },
     # Propagate the aspect along srcs attribute. This mostly accomondates genrule for binary post-processing.
     attr_aspects = ["srcs"],
     fragments = ["cpp"],
