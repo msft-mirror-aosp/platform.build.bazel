@@ -1,6 +1,6 @@
 module(
     name = "aemu",
-    version = "0.0.1",
+    version = "0.0.2",
 )
 
 bazel_dep(name = "abseil-cpp", version = "20250127.0")
