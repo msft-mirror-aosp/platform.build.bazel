@@ -13,7 +13,10 @@
 # limitations under the License.
 """Provides implementations for the emulator kotlin rules for shared studio targets ."""
 
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library")
+load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
 
 def kotlin_library(**kwargs):
     kt_jvm_library(**kwargs)
+
+def kotlin_test(**kwargs):
+    kt_jvm_test(**kwargs)
