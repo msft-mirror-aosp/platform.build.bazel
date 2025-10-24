@@ -258,3 +258,10 @@ gcs_archive(
     sha256 = "020e867aa29487554b43df52af8625b31f0081d7ac8aafb8b1efdb8558c50a42",
     url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64_minigbm-userdebug/sdk-repo-linux-system-images-13585903.zip",
 )
+
+gcs_archive(
+    name = "tradefed",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/tradefed:tradefed.BUILD",
+    sha256 = "fadc94b9cc902dbaed4bacce17030aba3bf0fc238b91a63dfc3bcaf94e8160b9",
+    url = "gs://emu-next-bazel/sys-img/tradefed/tradefed-14228187.zip",
+)
