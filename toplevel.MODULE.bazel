@@ -63,6 +63,8 @@ local_path_override(
     path = "prebuilts/android-emulator-build/qt",
 )
 
+bazel_dep(name = "wayland", version = "1.22.0")
+
 # Needed by CrosVM
 bazel_dep(name = "gfxstream", version = "0.0.1")
 local_path_override(
