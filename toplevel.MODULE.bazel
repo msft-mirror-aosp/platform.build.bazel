@@ -264,6 +264,6 @@ gcs_archive(
 gcs_archive(
     name = "tradefed",
     build_file = "//hardware/generic/goldfish/emulator/sdk/tradefed:tradefed.BUILD",
-    sha256 = "fadc94b9cc902dbaed4bacce17030aba3bf0fc238b91a63dfc3bcaf94e8160b9",
-    url = "gs://emu-next-bazel/sys-img/tradefed/tradefed-14228187.zip",
+    sha256 = "59d1f73d91ab1a12c93457db38d2d880bef3fcd042717fe3546b36b0150b7fa2",
+    url = "gs://emu-next-bazel/ab/tradefed/tradefed/14344819/tradefed.zip",
 )
