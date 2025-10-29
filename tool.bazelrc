@@ -30,3 +30,6 @@ build:linux --@rules_rust//rust/settings:experimental_use_cc_common_link
 ## Protobuf
 build --proto_compiler=@protobuf//:protoc
 build --proto_toolchain_for_cc=@protobuf//:cc_toolchain
+
+## Python
+build --@rules_python//python/config_settings:bootstrap_impl=script
