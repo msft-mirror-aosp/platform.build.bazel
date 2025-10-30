@@ -259,10 +259,24 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "android_minigbm16k-x86_64",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
+    sha256 = "329731eebdfd6c5e5782c38ab75f58503287462e5827ae1623100ed2994b0b7f",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14345414.zip",
+)
+
+gcs_archive(
     name = "android_minigbm-arm64-v8a",
     build_file = "//hardware/generic/goldfish/emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
     sha256 = "020e867aa29487554b43df52af8625b31f0081d7ac8aafb8b1efdb8558c50a42",
     url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64_minigbm-userdebug/sdk-repo-linux-system-images-13585903.zip",
+)
+
+gcs_archive(
+    name = "android_minigbm16k-arm64-v8a",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
+    sha256 = "ef1b37d9e6d6ee9f0021b2a55b3e86fb48a2e8a4005655382b87ab25fa5a0032",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14345414.zip",
 )
 
 gcs_archive(
