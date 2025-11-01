@@ -31,6 +31,11 @@ def _toolchain_impl(ctx):
             path = "{}/darwin-x86/{}".format(clang_tag.root_path, tool_versions["clang"]),
         )
         new_local_repository(
+            name = "clang_mac_aosp",
+            build_file = "//toolchains/cc/mac_clang:clang_aosp.BUILD",
+            path = "{}/darwin-x86/{}".format(clang_tag.root_path, tool_versions["clang"]),
+        )
+        new_local_repository(
             name = "clang_win_x64",
             build_file = "//toolchains/cc/windows_clang:clang.BUILD",
             path = "{}/windows-x86/{}".format(clang_tag.root_path, tool_versions["clang"]),
@@ -120,10 +125,12 @@ def _toolchain_impl(ctx):
         "cc/linux_clang/BUILD.bazel": "//toolchains/cc/linux_clang:toolchain.BUILD" if clang_tag else None,
         "cc/mac_clang/BUILD.bazel": "//toolchains/cc/mac_clang:toolchain.BUILD" if clang_tag else None,
         "cc/windows_clang/BUILD.bazel": "//toolchains/cc/windows_clang:toolchain.BUILD" if clang_tag else None,
+        "cc/linux_arm64_clang/BUILD.bazel": "//toolchains/cc/linux_arm64_clang:toolchain.BUILD" if clang_tag else None,
         "rust/linux/BUILD.bazel": "//toolchains/rust:linux_toolchain.BUILD" if rust_tag else None,
         "java/linux/BUILD.bazel": "//toolchains/java:linux_toolchain.BUILD" if java_tag else None,
         "java/mac_arm64/BUILD.bazel": "//toolchains/java:mac_arm64_toolchain.BUILD" if java_tag else None,
         "java/windows/BUILD.bazel": "//toolchains/java:windows_toolchain.BUILD" if java_tag else None,
+        "toolchains/cc/rules.bzl": "//toolchains/cc:rules.bzl",
     }
     overlay_repository(
         name = "toolchain_hub",

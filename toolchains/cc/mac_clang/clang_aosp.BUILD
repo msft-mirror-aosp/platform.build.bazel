@@ -1,3 +1,4 @@
+# Standalone clang for AOSP that can be used to cross compile from macos->linux arm
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@goldfish_build//rules:simple_toolchain.bzl", "simple_toolchain")
 load(
@@ -63,26 +64,6 @@ cc_tool(
 )
 
 cc_toolchain_import(
-    name = "libcxx",
-    dynamic_mode_libs = [
-        ":lib/x86_64-unknown-linux-gnu/libc++.so",
-        ":lib/x86_64-unknown-linux-gnu/libc++abi.so",
-    ],
-    include_paths = [
-        ":include/c++/v1",
-    ],
-    static_mode_libs = [
-        ":lib/x86_64-unknown-linux-gnu/libc++.a",
-        ":lib/x86_64-unknown-linux-gnu/libc++abi.a",
-    ],
-    support_files = glob(
-        [
-            "include/c++/v1/**",
-        ],
-    ),
-)
-
-cc_toolchain_import(
     name = "compiler_hdrs",
     include_paths = glob(
         [
@@ -96,32 +77,6 @@ cc_toolchain_import(
             "lib/clang/*/share/**",
         ],
     ),
-)
-
-cc_toolchain_import(
-    name = "compiler_rt",
-    lib_search_paths = glob(
-        [
-            "lib/clang/*/lib/x86_64-unknown-linux-gnu",
-        ],
-        exclude_directories = 0,
-    ),
-    support_files = glob(
-        [
-            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*",
-        ],
-    ),
-    deps = [":compiler_hdrs"],
-)
-
-cc_toolchain_import(
-    name = "libunwind",
-    lib_search_paths = [
-        ":lib/x86_64-unknown-linux-gnu",
-    ],
-    support_files = [
-        ":lib/x86_64-unknown-linux-gnu/libunwind.a",
-    ],
 )
 
 simple_toolchain(

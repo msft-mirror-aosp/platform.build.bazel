@@ -1,0 +1,12 @@
+{
+    "integrity": "sha256-EvzfE6dDBlUimyBDiknoVm4mVRugh1mSLNr0aVsNTiM=",
+    "strip_prefix": "arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu",
+    "url": "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz?rev=22c39fc25e5541818967b4ff5a09ef3e&hash=B9FEDC2947EB21151985C2DC534ECCEC",
+    "overlay": {
+        "BUILD.bazel": ""
+    },
+    "patch_strip": 1,
+    "patches": {
+        "Resolve-libc-relative-to-sysroot-aarch64_none_linux_gnu.patch": "sha256-vrHfIEv8dvLACGJ8liAeIGM5XGVJxFkcZp1ramQw/PY="
+    }
+}

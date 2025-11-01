@@ -1,0 +1,9 @@
+# BUILD file for the Linux ARM64 Clang toolchain
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
+package(default_visibility = ["//visibility:public"])
+
+bool_flag(
+    name = "generate_gnu_debug_file",
+    build_setting_default = False,
+)
