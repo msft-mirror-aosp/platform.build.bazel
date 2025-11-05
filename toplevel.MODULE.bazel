@@ -261,6 +261,13 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "mac-arm64-platform-tools",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/platform-tools/mac-arm64-platform-tools:platform-tools.BUILD",
+    sha256 = "45f3fdc096a584aa83440d0437ba5673fc693d17784293416cdb99213afe07cd",
+    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-platform-tools-13278306.zip",
+)
+
+gcs_archive(
     name = "linux-platform-tools",
     build_file = "//hardware/generic/goldfish/emulator/sdk/platform-tools/linux-platform-tools:platform-tools.BUILD",
     sha256 = "5c377d32e7ba0c1f982417ec588c33d8e379141e806c46c2de26cf42fe6ed51e",
@@ -275,6 +282,13 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "mac-arm64-build-tools",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/build-tools/mac-arm64-build-tools:build-tools.BUILD",
+    sha256 = "40f143dda6d1d4b7028e45e96c5c5fe18227252880679465218881bd947c44f9",
+    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-build-tools-13278306.zip",
+)
+
+gcs_archive(
     name = "test_seq_linux",
     build_file = "//hardware/generic/goldfish/emulator/tests:test_seq_linux.BUILD",
     sha256 = "3a2a5dbdbad9ce9a7141f97585bb25cfbf1def842361b9355d1f7086428c8994",
@@ -282,10 +296,24 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "test_seq_mac_arm64",
+    build_file = "//hardware/generic/goldfish/emulator/tests:test_seq_mac_arm64.BUILD",
+    sha256 = "1776ffd030cf73b91427b953d83fb4b0f92bde54c6af72e1cba0cf75947c3282",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20251029_1236_RC00/test_seq_darwin_arm64.zip",
+)
+
+gcs_archive(
     name = "cts-x86-64",
     build_file = "//hardware/generic/goldfish/emulator/sdk/xts/cts-x86-64:cts.BUILD",
     sha256 = "e16721554b8e46d3138350670d83c11709dcf8bb12f50517f62ef40f0055235f",
     url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_x86_64/14236881/android-cts.zip",
+)
+
+gcs_archive(
+    name = "cts-arm64",
+    build_file = "//hardware/generic/goldfish/emulator/sdk/xts/cts-arm64:cts.BUILD",
+    sha256 = "eb6b31ea8b61038ad4f21f4b0189c1092b3a3133161329bd71c7e6d48e41d83a",
+    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_arm64/14236881/android-cts.zip",
 )
 
 # List of system images, these are updated by running the script
@@ -327,5 +355,4 @@ gcs_archive(
     sha256 = "3a8884d665b018a604fb2752364c883e531faec1fc315814f762490ada4e46c1",
     url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
 )
-
 # END android_minigbm16-arm64-v8a
