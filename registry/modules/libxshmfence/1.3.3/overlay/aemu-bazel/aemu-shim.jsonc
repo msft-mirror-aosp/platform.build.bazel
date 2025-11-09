@@ -10,6 +10,16 @@
           "-Wno-implicit-function-declaration"
         ]
       }
+    },
+    {
+      "target": "xshmfence",
+      "shims": {
+        "_bzl_type": "cc_library",
+        "hdrs": ["src/xshmfence.h"],
+        "strip_include_prefix": "src",
+        "include_prefix": "X11",
+        "-linkshared": 1 // TODO: this line doesn't work yet
+      }
     }
   ],
   // These are the bazel mappings we are going to use for

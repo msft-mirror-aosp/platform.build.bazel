@@ -4,14 +4,16 @@
 # It targets linux-x86_64
 
 
-cc_binary(
+cc_library(
    copts = ['-Wno-implicit-function-declaration'],
    defines = ['HAVE_CONFIG_H', '_FILE_OFFSET_BITS=64'],
    deps = ['@xorgproto//:xorgproto'],
+   hdrs = ['src/xshmfence.h'],
+   include_prefix = 'X11',
    # buildifier: leave-alone
    includes = ['src', '.', 'platform/linux-x86_64'],
-   linkshared = True,
    name = 'xshmfence',
    srcs = ['platform/linux-x86_64/config.h', 'src/xshmfence.h', 'src/xshmfence_alloc.c', 'src/xshmfence_futex.c', 'src/xshmfence_futex.h', 'src/xshmfenceint.h'],
+   strip_include_prefix = 'src',
 )
 
