@@ -242,10 +242,21 @@ use_repo(maven, "maven")
 
 maven.install(
     artifacts = [
+        # Rerun REPIN=1 bazel run @maven//:pin, and update
+        # the lock_file if you change this list.
         "com.google.api.grpc:grpc-google-cloud-pubsub-v1:1.125.0",
         "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
+        "com.squareup.okhttp:okhttp:2.7.5",
+        "com.squareup.okio:okio:2.10.0",
+        "io.grpc:grpc-core:1.75.0",
+        "io.grpc:grpc-android:1.75.0",
+        "io.grpc:grpc-stub:1.75.0",
     ],
-    repositories = ["https://repo.maven.apache.org/maven2/"],
+    lock_file = "@goldfish_build//:maven_install.json",
+    repositories = [
+        "https://repo.maven.apache.org/maven2/",
+        "https://maven.google.com",
+    ],
     strict_visibility = True,
 )
 
