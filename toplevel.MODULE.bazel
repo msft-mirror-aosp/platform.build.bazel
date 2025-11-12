@@ -234,6 +234,21 @@ http_archive(
     url = "https://github.com/google/wycheproof/archive/d8ed1ba95ac4c551db67f410c06131c3bc00a97c.zip",
 )
 
+# Enable Java gRPC compilation
+bazel_dep(name = "rules_jvm_external", version = "6.0")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+use_repo(maven, "maven")
+
+maven.install(
+    artifacts = [
+        "com.google.api.grpc:grpc-google-cloud-pubsub-v1:1.125.0",
+        "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
+    ],
+    repositories = ["https://repo.maven.apache.org/maven2/"],
+    strict_visibility = True,
+)
+
 system_image_ext = use_extension("//hardware/generic/goldfish/emulator/sdk/system_images:sysimage.bzl", "system_image_extension")
 system_image_ext.image(
     name = "android_36_playstore_x64",
