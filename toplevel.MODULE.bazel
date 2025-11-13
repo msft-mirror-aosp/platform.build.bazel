@@ -98,6 +98,13 @@ local_path_override(
 )
 
 bazel_dep(name = "netsim", version = "0.0.1")
+
+bazel_dep(name = "goldfish_test", version = "0.0.1")
+local_path_override(
+    module_name = "goldfish_test",
+    path = "third_party/adt-infra/goldfish_test",
+)
+
 bazel_dep(name = "goldfish_crates", version = "0.0.1")
 
 lrc = use_extension("@goldfish_crates//:local_rust_crates.bzl", "lrc")
@@ -215,13 +222,6 @@ system_image_ext.image(
 use_repo(system_image_ext, "android_36_playstore_arm64", "android_36_playstore_x64")
 
 gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
-
-gcs_archive(
-    name = "tradefed",
-    build_file = "//hardware/generic/goldfish/emulator/sdk/tradefed:tradefed.BUILD",
-    sha256 = "59d1f73d91ab1a12c93457db38d2d880bef3fcd042717fe3546b36b0150b7fa2",
-    url = "gs://emu-next-bazel/ab/tradefed/tradefed/14344819/tradefed.zip",
-)
 
 gcs_archive(
     name = "mac-arm64-platform-tools",
