@@ -183,7 +183,6 @@ bazel_dep(name = "rules_jvm_external", version = "6.0")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 use_repo(maven, "maven")
-
 maven.install(
     artifacts = [
         # Rerun REPIN=1 bazel run @maven//:pin, and update
@@ -254,15 +253,15 @@ gcs_archive(
 gcs_archive(
     name = "test_seq_linux",
     build_file = "//hardware/generic/goldfish/emulator/tests:test_seq_linux.BUILD",
-    sha256 = "9300b171440f51c9de52513402c59fa04efca60f9fc016ef4821076cc72ea957",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251106_1111_RC00/test_seq_linux.zip",
+    sha256 = "8e4102db241d55233451956fc4f6ecff653fb18ea6ff05a8ae11945f59f484f4",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20251114_1107_RC00/test_seq_linux.zip",
 )
 
 gcs_archive(
     name = "test_seq_mac_arm64",
     build_file = "//hardware/generic/goldfish/emulator/tests:test_seq_mac_arm64.BUILD",
-    sha256 = "45eca554f946d90be7e8d972625c9aa60fa427f7383a4e9467164b1c9a318889",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251106_1111_RC00/test_seq_darwin_arm64.zip",
+    sha256 = "626648f8c18956c3692699580c3bf7061951f06d1411d55f42326307dd1e57d3",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20251114_1107_RC00/test_seq_darwin_arm64.zip",
 )
 
 gcs_archive(
