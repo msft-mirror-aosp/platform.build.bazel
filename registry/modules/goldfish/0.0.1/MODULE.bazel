@@ -1,0 +1,98 @@
+# Copyright 2024 - The Android Open Source Project
+#
+# Licensed under the Apache License, Version 2.0 (the',  help='License');
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an',  help='AS IS' BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+module(
+    name = "goldfish",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "goldfish_build", version = "0.0.2")
+bazel_dep(name = "goldfish_prebuilts_common", version = "0.0.1")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.3")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "rules_gcs", version = "1.0.1")
+bazel_dep(name = "rules_java", version = "8.11.0")
+bazel_dep(name = "rules_shell", version = "0.5.1")
+bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+bazel_dep(name = "protobuf", version = "32.1")
+bazel_dep(name = "boringssl", version = "0.20250415.0")
+bazel_dep(name = "tink_cc", version = "2.4.0")
+bazel_dep(name = "c-ares", version = "1.19.1.aemu")
+bazel_dep(name = "grpc-java", version = "1.75.0")
+bazel_dep(name = "grpc", version = "1.74.1.aemu")
+bazel_dep(name = "glib", version = "2.82.2.bcr.5.aemu")
+bazel_dep(name = "libuv", version = "1.48.0.aemu")
+bazel_dep(name = "aemu", version = "0.0.2")
+bazel_dep(name = "abseil-cpp", version = "20250512.1")
+bazel_dep(name = "googletest", version = "1.17.0")
+bazel_dep(name = "google_benchmark", version = "1.9.4")
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1")
+bazel_dep(name = "nlohmann_json", version = "3.12.0")
+bazel_dep(name = "tinyobjloader", version = "2.0.0-rc1.bcr.1")
+bazel_dep(name = "vulkan-headers", version = "0.0.1")
+bazel_dep(name = "crashpad", version = "0.0.1")
+bazel_dep(name = "breakpad", version = "0.0.1")
+bazel_dep(name = "libyuv", version = "0.0.1")
+bazel_dep(name = "crosvm", version = "0.0.1")
+bazel_dep(name = "gfxstream", version = "0.0.1")
+bazel_dep(name = "netsim", version = "0.0.1")
+bazel_dep(name = "pixman", version = "0.0.1")
+bazel_dep(name = "qemu", version = "0.0.1")
+
+# List of system images, these are updated by running the script
+# ./util/update_mingbm_image.sh -b <bid>
+# Please run that script if you wish to update the default system image used
+# Do not remove the BEGIN/END markers, as that will break the fragile script.
+
+gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
+
+# BEGIN android_minigbm-x86_64
+gcs_archive(
+    name = "android_minigbm-x86_64",
+    build_file = "@goldfish//emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
+    sha256 = "3777c65e2bc80d924b1fe329d3adad60d1f3f1954cd3ea73445e2f0778c969ab",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
+)
+# END android_minigbm-x86_64
+
+# BEGIN android_minigbm16k-x86_64
+gcs_archive(
+    name = "android_minigbm16k-x86_64",
+    build_file = "@goldfish//emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
+    sha256 = "2f98e9fdc3c1e51f302eff758de57a531911d725b86bfd0b608f364603992010",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
+)
+# END android_minigbm16-x86_64
+
+# BEGIN android_minigbm-arm64-v8a
+gcs_archive(
+    name = "android_minigbm-arm64-v8a",
+    build_file = "@goldfish//emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
+    sha256 = "5327811f7714f43527bc2723ca95647fc549a867307f0988d2eb0eaa0accf524",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
+)
+# END android_minigbm-arm64-v8a
+
+# BEGIN android_minigbm16k-arm64-v8a
+gcs_archive(
+    name = "android_minigbm16k-arm64-v8a",
+    build_file = "@goldfish//emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
+    sha256 = "3a8884d665b018a604fb2752364c883e531faec1fc315814f762490ada4e46c1",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
+)
+# END android_minigbm16-arm64-v8a
