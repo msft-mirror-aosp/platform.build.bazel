@@ -53,6 +53,7 @@ bazel_dep(name = "gfxstream", version = "0.0.1")
 bazel_dep(name = "netsim", version = "0.0.1")
 bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "qemu", version = "0.0.1")
+bazel_dep(name = "tools_emulator", version = "0.0.1")
 
 # List of system images, these are updated by running the script
 # ./util/update_mingbm_image.sh -b <bid>
