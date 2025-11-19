@@ -35,7 +35,7 @@ def _compile_rc(ctx, rc_toolchain, rc_file, extra_inputs):
         outputs = [out],
         executable = rc_toolchain.executable,
         tools = rc_toolchain.runfiles,
-        environment = rc_toolchain.env,
+        env = rc_toolchain.env,
         arguments = rc_toolchain.args + ["/fo", out.path, rc_file.path],
         mnemonic = "WindowsRc",
         toolchain = TOOLCHAIN_TYPE,
