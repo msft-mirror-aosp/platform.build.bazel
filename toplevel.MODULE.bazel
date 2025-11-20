@@ -79,6 +79,13 @@ local_path_override(
     path = "third_party/adt-infra/goldfish_test",
 )
 
+run_suite = use_extension("@goldfish_test//tests:suite_runner.bzl", "run_suite")
+run_suite.ets(
+    name = "ets",
+    goldfish_zip = "@goldfish//emulator:release",
+)
+use_repo(run_suite, "ets")
+
 # Enable Java gRPC compilation
 bazel_dep(name = "rules_jvm_external", version = "6.0")
 
