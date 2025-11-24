@@ -1,3 +1,5 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
 exports_files([
     "registry/modules/goldfish_build/0.0.1/MODULE.bazel",
 ])
@@ -7,4 +9,11 @@ test_suite(
     tests = [
         "//toolchains:tool_versions_test",
     ],
+)
+
+py_binary(
+    name = "gen-cc-snippet",
+    srcs = ["utils/gen_cc_snippet.py"],
+    main = "gen_cc_snippet.py",
+    visibility = ["//visibility:public"],
 )
