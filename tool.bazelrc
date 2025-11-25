@@ -27,6 +27,16 @@ build:windows --features='generate_pdb_file'
 build:macos --@rules_rust//rust/settings:experimental_use_cc_common_link
 build:linux --@rules_rust//rust/settings:experimental_use_cc_common_link
 
+# See https://bazelbuild.github.io/rules_rust/rust_settings.html#experimental_use_allocator_libraries_with_mangled_symbols
+# Used to handle new allocator symbol mangling
+build  --@rules_rust//rust/settings:experimental_use_allocator_libraries_with_mangled_symbols
+
+# Allow unstable features for target code
+build --@rules_rust//rust/settings:extra_rustc_env=RUSTC_BOOTSTRAP=1
+
+# Allow unstable features for build tools (e.g. allocator libraries, etc)
+build --@rules_rust//rust/settings:extra_exec_rustc_env=RUSTC_BOOTSTRAP=1
+
 ## Protobuf
 build --proto_compiler=@protobuf//:protoc
 build --proto_toolchain_for_cc=@protobuf//:cc_toolchain
