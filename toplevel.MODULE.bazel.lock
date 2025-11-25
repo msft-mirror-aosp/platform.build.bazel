@@ -940,29 +940,32 @@
     },
     "@@goldfish_test+//tests:suite_runner.bzl%run_suite": {
       "general": {
-        "bzlTransitiveDigest": "4RIi9NdrYMJltUiHodXs9gfVkY1OpxxfuVICDx0FVCE=",
+        "bzlTransitiveDigest": "n4ze6DL7SmuToy0ZVYO0fB11r9/CHlqpO0hDGcFvRFQ=",
         "usagesDigest": "ijBP9kGU7Wzd9edY6nBsyn1WJMGtuLbWcW6dnOgKaRQ=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
         "generatedRepoSpecs": {
           "build-tools-linux": {
-            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
             "attributes": {
+              "build_file_content": "package(default_visibility = [\"//visibility:public\"])\nfilegroup(\n  name = \"all_files\",\n  srcs = glob([\"**/*\"]),\n)\n",
               "sha256": "321e687caa570210bf4acd80e8cfbe901d17368d83f51976ccbba3656093fe2b",
               "url": "gs://emu-next-bazel/ab/aosp-sdk-release/sdk/13278306/sdk-repo-linux-build-tools-13278306.zip"
             }
           },
           "platform-tools-linux": {
-            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
             "attributes": {
+              "build_file_content": "package(default_visibility = [\"//visibility:public\"])\nfilegroup(\n  name = \"all_files\",\n  srcs = glob([\"**/*\"]),\n)\n",
               "sha256": "5c377d32e7ba0c1f982417ec588c33d8e379141e806c46c2de26cf42fe6ed51e",
               "url": "gs://emu-next-bazel/ab/aosp-sdk-release/sdk/13278306/sdk-repo-linux-platform-tools-13278306.zip"
             }
           },
           "android_minigbm16k-x86_64": {
-            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
             "attributes": {
+              "build_file_content": "package(default_visibility = [\"//visibility:public\"])\nfilegroup(\n  name = \"all_files\",\n  srcs = glob([\"**/*\"]),\n)\n",
               "sha256": "2f98e9fdc3c1e51f302eff758de57a531911d725b86bfd0b608f364603992010",
               "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip"
             }
