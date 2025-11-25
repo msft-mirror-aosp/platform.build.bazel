@@ -8,6 +8,7 @@ build:linux --@goldfish_build//toolchains/cc:allow_strip
 ## C++
 common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
 build --incompatible_enable_cc_toolchain_resolution
+build --host_features='-thin_lto'
 
 build:linux --features='generate_debug_symbols'
 build:linux --force_pic
