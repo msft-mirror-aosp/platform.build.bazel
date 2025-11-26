@@ -3,7 +3,7 @@ module(
     version = "0.0.1",
 )
 
-bazel_dep(name = "goldfish_build", version = "0.0.2")
+bazel_dep(name = "goldfish_build", version = "0.0.3")
 
 custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
 use_repo(custom_toolchains, "gcc_lib")

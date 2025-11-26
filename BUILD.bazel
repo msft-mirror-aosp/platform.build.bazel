@@ -1,4 +1,6 @@
+load("@goldfish-build-pypi//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("//rules:clang_tidy.bzl", "tidy_regex_flag", "tidy_source_flag")
 
 test_suite(
@@ -45,4 +47,12 @@ py_binary(
     srcs = ["utils/run_clang_tidy.py"],
     main = "run_clang_tidy.py",
     visibility = ["//visibility:public"],
+    deps = [requirement("PyYAML")],
+)
+
+# This rule adds a convenient way to update the requirements file.
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.in",
+    requirements_txt = "requirements_lock.txt",
 )

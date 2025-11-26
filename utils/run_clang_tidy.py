@@ -17,10 +17,386 @@ This script supports three main modes of operation:
 import argparse
 import logging
 import subprocess
-from typing import List, Dict, Any
+import json
+import math
+from dataclasses import dataclass
+from typing import List, Dict, Any, Tuple
 from pathlib import Path
+from concurrent.futures import ProcessPoolExecutor
+
+import yaml
+
+try:
+    from yaml import CSafeLoader as Loader, CSafeDumper as Dumper
+except ImportError:
+    from yaml import SafeLoader as Loader, SafeDumper as Dumper
+import os
+from collections import namedtuple, OrderedDict
+
 import re
 import sys
+
+Replacement = namedtuple(
+    "Replacement", ["FilePath", "Offset", "Length", "ReplacementText"]
+)
+
+# The maximum number of files to keep in the cache.
+MAX_CACHE_ENTRIES = 5000
+
+
+@dataclass
+class TidyConfig:
+    """A data class holding the clang-tidy configuration settings."""
+
+    header_file_extensions: List[str]
+    header_filter_re: re.Pattern
+    exclude_header_filter_re: re.Pattern
+
+
+def load_config_from_file(tidy_file: Path) -> TidyConfig:
+    """
+    Loads clang-tidy configuration from a YAML file.
+
+    Args:
+        tidy_file: The path to the .clang-tidy file.
+
+    Returns:
+        A TidyConfig object with the loaded settings.
+    """
+    with open(tidy_file, "r") as f:
+        config_yaml = yaml.load(f, Loader=Loader)
+
+    header_extensions = [
+        f".{h}"
+        for h in config_yaml.get("HeaderFileExtensions", ["h", "hh", "hpp", "hxx"])
+    ]
+    header_filter_re = re.compile(config_yaml.get("HeaderFilterRegex", ".*"))
+    exclude_header_filter_re = re.compile(
+        config_yaml.get("ExcludeHeaderFilterRegex", "$^")
+    )
+
+    return TidyConfig(
+        header_file_extensions=header_extensions,
+        header_filter_re=header_filter_re,
+        exclude_header_filter_re=exclude_header_filter_re,
+    )
+
+
+
+
+class ReportRewriter:
+    """
+    Normalizes and filters clang-tidy YAML fix reports for portability and clarity.
+
+    This class addresses issues with clang-tidy's `-export-fixes` output, which
+    often contains absolute, non-portable paths and irrelevant suggestions.
+    It processes the YAML report to:
+
+    1.  **Normalize File Paths**: Replaces absolute build environment paths with
+        relative paths and strips Bazel external repository prefixes, ensuring
+        reports are cache-friendly and environment-agnostic.
+    2.  **Filter Header Fixes**: Excludes replacement suggestions for files outside
+        the target source tree (e.g., system or third-party headers), based on
+        `.clang-tidy` configuration's `HeaderFilterRegex` and `ExcludeHeaderFilterRegex`.
+    3.  **Transform Replacement Text**: Optionally applies a user-defined
+        sed-style regular expression to `ReplacementText` values for systematic
+        modification of suggested fixes.
+
+    The output is a clean, portable YAML file suitable for consistent application
+    of fixes across diverse build environments.
+    """
+
+    # Regex that matches external repos (i.e. those with a +/ in it)
+    # like abseil-cpp+/ or grpc+/
+    PATH_CLEANER: re.Pattern = re.compile(r".*\+[\/]")
+    root: str
+    tidy_config: TidyConfig
+    replacement: str
+    user_pattern: re.Pattern
+    file_cache: OrderedDict[Path, List[str]]
+
+    def __init__(self, root: Path, tidy_config: TidyConfig, rewrite_rules: str):
+        """
+        Initializes the ReportRewriter with the execution context and configuration.
+
+        Args:
+            root: The root directory of the build, used for normalizing paths.
+            tidy_config: A TidyConfig object with the loaded settings.
+            rewrite_rules: An optional sed-style regex string (e,g., 's/old/new/g')
+                           to apply to ReplacementText in the YAML fixes.
+        """
+        self.root = str(root)
+        self.tidy_config = tidy_config
+
+        if rewrite_rules:
+            pattern, self.replacement, count = self._extract_regex(rewrite_rules)
+            self.user_pattern = re.compile(pattern)
+            logging.debug(
+                "Applying user regex: pattern=`%s`, replacement=`%s`, count=`%d`",
+                pattern,
+                self.replacement,
+                count,
+            )
+        else:
+            self.replacement = ""
+            self.user_pattern = re.compile("$^")  # A regex that never matches
+
+        self.file_cache = OrderedDict()
+
+
+    def _get_file_lines(self, filepath: Path) -> List[str]:
+        """
+        Retrieves the lines of a file, using a bounded LRU cache.
+
+        If the file is already in the cache, it is marked as recently used.
+        If not, the file is read from disk and added to the cache. If the cache
+        is full, the least recently used entry is evicted.
+
+        Args:
+            filepath: The path to the file.
+
+        Returns:
+            A list of strings, where each string is a line from the file.
+        """
+        if filepath in self.file_cache:
+            self.file_cache.move_to_end(filepath)
+            return self.file_cache[filepath]
+
+        with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+
+        if len(self.file_cache) >= MAX_CACHE_ENTRIES:
+            self.file_cache.popitem(last=False)  # Evict the oldest entry
+
+        self.file_cache[filepath] = lines
+        return lines
+
+    def _offset_to_line_col(self, filepath: Path, offset: int) -> Tuple[int, int]:
+        """
+        Converts a byte offset within a file to a 1-based line and column number.
+        Caches file contents for performance.
+
+        Args:
+            filepath: The path to the file.
+            offset: The byte offset within the file.
+
+        Returns:
+            A tuple containing the 1-based line number and column number.
+        """
+        lines = self._get_file_lines(filepath)
+        current_offset = 0
+        for line_num, line_content in enumerate(lines, 1):
+            if current_offset + len(line_content.encode("utf-8")) > offset:
+                # The offset is within this line
+                column = (offset - current_offset) + 1
+                return line_num, column
+            current_offset += len(line_content.encode("utf-8"))
+
+        # If offset is beyond file end (e.g., empty file or end of last line)
+        return len(lines), len(lines[-1].encode("utf-8")) + 1 if lines else 1
+
+    def _normalize_path(self, label: str) -> str:
+        """
+        Normalizes a given path string.
+
+        This involves two steps:
+        1. Replacing the absolute build root path with a relative '.' to ensure
+           cache-friendliness and portability.
+        2. Stripping Bazel external repository prefixes (e.g., 'external/repo+/src')
+           to clean up paths.
+
+        Args:
+            label: The path string to normalize.
+
+        Returns:
+            The normalized path string.
+        """
+        line = label.replace(self.root, ".")
+        return self.PATH_CLEANER.sub("", line)
+
+    def keep_file_node(self, node: Dict[str, str]) -> bool:
+        """
+        Determines whether a file node (typically a Replacement entry) should be kept.
+
+        This method applies filtering rules based on the file's extension and
+        the `HeaderFilterRegex` and `ExcludeHeaderFilterRegex` configured
+        in the .clang-tidy file. It helps ignore fixes for irrelevant headers
+        (e.g., system headers or third-party libraries).
+
+        Args:
+            node: A dictionary representing a file or a replacement entry,
+                  expected to contain a 'FilePath' key.
+
+        Returns:
+            True if the file should be kept, False otherwise.
+        """
+        if not "FilePath" in node:
+            # ?? Not a file
+            return True
+        path = node["FilePath"]
+        if Path(path).suffix not in self.tidy_config.header_file_extensions:
+            # Not a header, we keep you
+            return True
+
+        # Explicitly excluded?
+        if self.tidy_config.exclude_header_filter_re.match(path):
+            return False
+
+        # If the header matches the regex we keep you
+        return self.tidy_config.header_filter_re.match(path)
+
+    def rewrite(self, tree: Any) -> Any:
+        """
+        Recursively traverses a YAML tree (representing clang-tidy diagnostics)
+        and applies the defined rewrite rules.
+
+        This method performs the following transformations:
+        - Filters 'Replacements' based on header file exclusion rules.
+        - Applies user-defined regex transformations to 'ReplacementText'.
+        - Normalizes all string-based paths found in the tree.
+
+        Args:
+            tree: The YAML tree (dictionary or list) to rewrite.
+
+        Returns:
+            The rewritten YAML tree.
+        """
+        if not tree:
+            return {}
+
+        for key, value in tree.items():
+            if key == "Replacements":
+                value = [x for x in value if self.keep_file_node(x)]
+            if self.user_pattern and key == "ReplacementText":
+                value = self.user_pattern.sub(self.replacement, value)
+
+            if isinstance(value, dict):
+                tree[key] = self.rewrite(value)
+            elif isinstance(value, list):
+                tree[key] = [self.rewrite(x) for x in value]
+            elif isinstance(value, str):
+                tree[key] = self._normalize_path(value)
+            else:
+                tree[key] = value
+
+        return tree
+
+    def _extract_regex(self, sed: str) -> Tuple[str, str, int]:
+        """
+        Extracts a sed-style regular expression string into its components:
+        pattern, replacement, and a count for replacements.
+
+        This method parses a string like 's/pattern/replacement/flags' and returns
+        the extracted regex pattern, the replacement string, and an integer
+        indicating how many times the replacement should occur (0 for all, 1 for first).
+
+        Args:
+            sed: The sed-style regex string.
+
+        Returns:
+            A tuple containing (pattern, replacement, count).
+
+        Raises:
+            ValueError: If the sed string format is invalid.
+        """
+        if not sed:
+            return "", "", 0
+
+        if not sed.startswith("s") or len(sed) < 4:
+            raise ValueError(
+                "Invalid sed format. Expected 's/pattern/replacement/flags'"
+            )
+
+        delimiter = sed[1]
+
+        # Note: This assumes the user picks a delimiter that isn't IN the pattern.
+        # e.g., use s|http://|...| instead of s/http:\/\///.../
+        parts = sed.split(delimiter)
+
+        if len(parts) < 4:
+            raise ValueError("Invalid sed format. Missing delimiters.")
+
+        _, pattern, replacement, raw_flags = parts[0], parts[1], parts[2], parts[3]
+
+        # 'g' in sed means "Global" (replace all). Absence means replace First.
+        # Python re.sub replaces ALL by default (count=0).
+        count = 0 if "g" in raw_flags else 1
+        return (pattern, replacement, count)
+
+    def augment_with_details(self, diagnostics_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Augments raw diagnostic messages with detailed line and column information,
+        and extracts affected line code and sorts replacements.
+
+        This method iterates through a list of raw diagnostics, and for each diagnostic
+        message, it calculates and adds the 1-based 'Line' and 'Column' numbers
+        based on the 'FileOffset'. It also retrieves the 'AffectedLineCode' from
+        the file cache and sorts any 'Replacements' by line and column.
+
+        Args:
+            diagnostics_raw: A list of raw diagnostic dictionaries from clang-tidy's YAML output.
+        """
+        for diag in diagnostics_raw:
+            if not "DiagnosticMessage" in diag:
+                continue
+            msg = diag["DiagnosticMessage"]
+            full_filepath = Path(msg["FilePath"])
+
+            # Add augmented fields to DiagnosticMessage
+            line, col = self._offset_to_line_col(full_filepath, msg["FileOffset"])
+            msg["Line"] = line
+            msg["Column"] = col
+
+            # Extract affected line code (ensure newline is handled)
+            if full_filepath in self.file_cache and line <= len(
+                self.file_cache[full_filepath]
+            ):
+                msg["AffectedLineCode"] = self.file_cache[full_filepath][
+                    line - 1
+                ].rstrip("\n")
+            else:
+                msg["AffectedLineCode"] = ""
+
+            # Augment Replacements with Line/Column and create a representative suggested_fix string
+            if "Replacements" in msg and msg["Replacements"]:
+                for rep in msg["Replacements"]:
+                    rep_filepath = Path(rep["FilePath"])
+                    rep_line, rep_col = self._offset_to_line_col(
+                        rep_filepath, rep["Offset"]
+                    )
+                    rep["Line"] = rep_line
+                    rep["Column"] = rep_col
+                # Sort replacements by line then column for consistent processing later (e.g., diffing)
+                msg["Replacements"].sort(key=lambda r: (r["Line"], r["Column"]))
+        return diagnostics_raw
+
+    def rewrite_fixes(self, clang_tidy_fixes_file: Path, fixed_up_output: Path):
+        """
+        Loads a clang-tidy fixes YAML file, applies the rewrite logic, and
+        dumps the modified fixes to a new output file.
+
+        This method orchestrates the full rewriting process:
+        1. Reads the raw clang-tidy fixes from the input YAML file.
+        2. Augments diagnostics with detailed line/column information.
+        3. Applies path normalization, header filtering, and text transformations
+           to the entire YAML tree.
+        4. Writes the processed (normalized and filtered) YAML fixes to the
+           specified output file.
+
+        Args:
+            clang_tidy_fixes_file: Path to the input YAML file containing raw clang-tidy fixes.
+            fixed_up_output: Path where the rewritten (normalized and filtered)
+                             YAML fixes should be written.
+        """
+        final_fixes = {}
+        with open(clang_tidy_fixes_file, "r") as fexp:
+            tidy_fixes = yaml.load(fexp, Loader=Loader) or {}
+            if "Diagnostics" in tidy_fixes:
+                self.augment_with_details(tidy_fixes["Diagnostics"])
+            final_fixes = self.rewrite(tidy_fixes)
+
+        with open(fixed_up_output, "w") as fout:
+            yaml.dump(final_fixes, fout, Dumper=Dumper)
 
 
 def _setup_logging(verbose: bool):
@@ -46,30 +422,28 @@ def _create_parser() -> argparse.ArgumentParser:
     gen_parser = subparsers.add_parser(
         "generate", help="Runs clang-tidy, generating warnings and fixes"
     )
-    gen_parser.add_argument("--tidy-exe", required=True, help="Path clang-tidy.")
     gen_parser.add_argument(
-        "--config-file", required=True, help="Path to the clang-tidy config"
+        "--clang-tidy-exe", required=True, help="Path to the clang-tidy executable."
     )
     gen_parser.add_argument(
-        "--source", required=True, help="Path to the source file to check"
-    )
-    gen_parser.add_argument(
-        "--fix",
-        help="Pass on the fix flag to clang-tidy. (Note, fixes might end up in bazel sandbox and not your codebase)",
-    )
-    gen_parser.add_argument(
-        "--export-fixes", required=True, help="Path to YAML with fixes."
-    )
-    gen_parser.add_argument(
-        "--re",
-        type=str,
-        help="Sed s/old_text/new_text/g style regex to apply to rewrites. This allows you to rewrite m_foo to foo for example.",
-    )
-    gen_parser.add_argument(
-        "--warnings_file",
+        "--config-file",
         required=True,
-        help="Path where all warnings and errors will be written.",
+        help="Path to the .clang-tidy configuration file.",
     )
+    gen_parser.add_argument(
+        "--source-file", required=True, help="The source file to run clang-tidy on."
+    )
+    gen_parser.add_argument(
+        "--fixes-file",
+        required=True,
+        help="Path to the YAML file where fixes should be exported.",
+    )
+    gen_parser.add_argument(
+        "--rewrite-rules",
+        type=str,
+        help="A sed-style regex (e.g., 's/old/new/g') to apply to replacement text. Useful for systematic transformations.",
+    )
+
     # NOTE: We do NOT define 'flags' here.
     # We rely on parse_known_args in main() to capture the compiler command
     # as 'unknown' arguments. This prevents argparse from crashing on flags
@@ -80,22 +454,50 @@ def _create_parser() -> argparse.ArgumentParser:
         "fix", help="Apply fixes from a set of yaml files"
     )
     fix_parser.add_argument(
-        "-C", type=str, help="Directory to use when applying fixes."
+        "--working-dir",
+        type=str,
+        help="The directory to execute from.",
+        default=os.environ.get("BUILD_WORKSPACE_DIRECTORY", "."),
     )
     fix_parser.add_argument(
-        "--re",
+        "--subdir",
         type=str,
-        help="Sed s/old_text/new_text/g style regex to apply to rewrites. This allows you to rewrite m_foo to foo for example.",
+        help="Subdirectory within the working directory to apply fixes.",
+        default=".",
     )
-    fix_parser.add_argument("yaml", nargs="+", type=str, help="A list of yaml files")
+    fix_parser.add_argument(
+        "fixes_files",
+        nargs="+",
+        type=str,
+        help="One or more YAML files containing fixes.",
+    )
 
-    # --- Subcommand: combine ---
-    comb_parser = subparsers.add_parser("combine", help="Combine multiple reportss.")
-    comb_parser.add_argument(
-        "-o", "--output_file", required=True, help="Path to the output report file."
+    # --- Subcommand: combine-text ---
+    comb_parser = subparsers.add_parser(
+        "combine-text", help="Combine multiple report files by concatenating them."
     )
     comb_parser.add_argument(
-        "inputs", nargs="*", help="List of input report files to merge."
+        "--output-file", required=True, help="Path to the merged output file."
+    )
+    comb_parser.add_argument(
+        "input_files", nargs="*", help="List of input files to merge."
+    )
+
+    tidy_parser = subparsers.add_parser(
+        "combine-tidy", help="Combine multiple tidy .yaml files into one."
+    )
+    tidy_parser.add_argument(
+        "--output-file", required=True, help="Path to the merged YAML output file."
+    )
+    tidy_parser.add_argument(
+        "input_files", nargs="*", help="List of YAML input files to merge."
+    )
+
+    fix_parser.add_argument(
+        "--source-root",
+        type=str,
+        help="The directory from where we can find the sources.",
+        default=os.environ.get("BUILD_WORKSPACE_DIRECTORY", "."),
     )
 
     return parser
@@ -107,31 +509,6 @@ def _extract_resource_dir(compiler_flags: List[str]) -> Path:
         compiler_flags + ["-print-resource-dir"],
         text=True,
     )
-
-
-def _extract_regex(sed: str) -> (str, str, int):
-    """Extracts a sed style regex into a pattern, replacement and count that can be used as res.sub(...)"""
-    if not sed:
-        return "", "", 0
-
-    if not sed.startswith("s") or len(sed) < 4:
-        raise ValueError("Invalid sed format. Expected 's/pattern/replacement/flags'")
-
-    delimiter = sed[1]
-
-    # Note: This assumes the user picks a delimiter that isn't IN the pattern.
-    # e.g., use s|http://|...| instead of s/http:\/\//.../
-    parts = sed.split(delimiter)
-
-    if len(parts) < 4:
-        raise ValueError("Invalid sed format. Missing delimiters.")
-
-    _, pattern, replacement, raw_flags = parts[0], parts[1], parts[2], parts[3]
-
-    # 'g' in sed means "Global" (replace all). Absence means replace First.
-    # Python re.sub replaces ALL by default (count=0).
-    count = 0 if "g" in raw_flags else 1
-    return (pattern, replacement, count)
 
 
 def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> None:
@@ -146,7 +523,7 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
     # If the flags start with '--', it's a separator passed by Bazel to protect
     # the flags from our argparse. We must remove it before constructing the command.
     if compiler_flags and compiler_flags[0] == "--":
-        compiler_flags = compiler_flags[1:] + ["-c", args.source]
+        compiler_flags = compiler_flags[1:] + ["-c", args.source_file]
 
     logging.debug("Cleaned compiler flags: %s", compiler_flags)
     # Tidy will incorrectly resolve the resource_directory outside
@@ -156,81 +533,32 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
     logging.debug("Extracted resource dir: %s", resource_dir)
 
     tidy_cmd = [
-        args.tidy_exe,
+        args.clang_tidy_exe,
         f"--config-file={args.config_file}",
-        f"--export-fixes={args.export_fixes}",
+        f"--export-fixes={args.fixes_file}",
         f"-extra-arg=-resource-dir={resource_dir}",
-        args.source,
-    ]
+        args.source_file,
+        "--",
+    ] + compiler_flags
 
-    if args.fix:
-        tidy_cmd.append("--fix")
-
-    # Add compiler flags
-    tidy_cmd = tidy_cmd + ["--"] + compiler_flags
     logging.debug("Running clang-tidy command: %s", " ".join(tidy_cmd))
-    with open(args.warnings_file, "w") as fout:
-        subprocess.run(
-            tidy_cmd,
-            stderr=fout,
-            text=True,
-            check=False,
-        )
-        fout.write("\n")
+    subprocess.run(
+        tidy_cmd,
+        text=True,
+        check=False,
+    )
 
     # Make sure an export with fixes exist.
-    if not Path(args.export_fixes).exists():
-        with open(args.export_fixes, "a") as fexp:
+    if not Path(args.fixes_file).exists():
+        with open(args.fixes_file, "a") as fexp:
             fexp.write("\n")
 
-    # Next up, the YAML file contains all the internal sandbox paths
-    # We need to remove those so:
-    # - We are cache friendly
-    # - We have an actionable result file
-
-    # We are basically going to replace the current path which will
-    # end up everywhere, and next we will strip external/some_foo+ etc.
-    cwd_str = str(Path.cwd())
-    logging.debug("CWD for path replacement: %s", cwd_str)
-
-    # This matches the pattern used to strip external repo prefixes
-    path_cleaner = re.compile(r"'.*\+[\/\\]")
-
-    user_pattern = None
-    if args.re:
-        pattern, replacement, count = _extract_regex(args.re)
-        user_pattern = re.compile(pattern)
-        logging.debug(
-            "Applying user regex: pattern=`%s`, replacement=`%s`, count=`%d`",
-            pattern,
-            replacement,
-            count,
-        )
-
-    output_lines = []
-
-    # Read and process line by line
-    with open(args.export_fixes, "r") as fexp:
-        for line in fexp:
-            line = line.replace(cwd_str, ".")
-            line = path_cleaner.sub("'", line)
-
-            # Apply user regex ONLY to lines containing ReplacementText
-            if user_pattern and line.strip().startswith("ReplacementText:"):
-                line = user_pattern.sub(replacement, line, count=count)
-
-            output_lines.append(line)
-
-    with open(args.export_fixes, "w") as fexp:
-        fexp.writelines(output_lines)
+    rewriter = ReportRewriter(Path.cwd(), load_config_from_file(args.config_file), args.rewrite_rules)
+    rewriter.rewrite_fixes(args.fixes_file, args.fixes_file)
 
 
 def _parse_fixes_from_yaml(yaml_files: List[str]) -> Dict[str, List[Dict[str, Any]]]:
     """Parses a list of YAML files to extract replacement information.
-
-    This function uses a simple line-by-line parsing approach that expects
-    a specific structure for replacement blocks, which is typical for
-    clang-tidy's YAML output. It does not use a full YAML parser.
 
     Args:
         yaml_files: A list of paths to YAML files from clang-tidy.
@@ -245,60 +573,33 @@ def _parse_fixes_from_yaml(yaml_files: List[str]) -> Dict[str, List[Dict[str, An
             print(f"Warning: Fixes file not found: {file_path}", file=sys.stderr)
             continue
         with open(file_path, "r") as f:
-            lines = f.readlines()
+            data = yaml.load(f, Loader=Loader)
 
-        i = 0
-        while i < len(lines):
-            line = lines[i]
-            # Find the beginning of a replacements block
-            if "Replacements:" in line:
-                # Skip if the block is empty (e.g., "Replacements: []")
-                if "[]" in line:
-                    i += 1
-                    continue
-                i += 1
-                # Process all items in the block
-                while i + 3 < len(lines) and lines[i].strip().startswith("- FilePath:"):
-                    try:
-                        filepath = lines[i].split("'")[1]
-                        offset = int(lines[i + 1].split(":")[1].strip())
-                        length = int(lines[i + 2].split(":")[1].strip())
+        if not "Diagnostics" in data:
+            return fixes_map
 
-                        replacement_line = lines[i + 3]
-                        val_part = replacement_line.split(":", 1)[1].strip()
-                        # Handle both quoted and unquoted replacement text
-                        if val_part.startswith("'") and val_part.endswith("'"):
-                            replacement_text = val_part[1:-1]
-                        elif val_part.startswith('"') and val_part.endswith('"'):
-                            replacement_text = val_part[1:-1]
-                        else:
-                            # unquoted!
-                            replacement_text = val_part
-
-                        fix = {
-                            "offset": offset,
-                            "length": length,
-                            "text": replacement_text,
-                        }
-
-                        if filepath not in fixes_map:
-                            fixes_map[filepath] = []
-                        fixes_map[filepath].append(fix)
-
-                        i += 4
-                    except (IndexError, ValueError) as e:
-                        print(
-                            f"Error parsing replacement block in {file_path} near line {i+1}: {e}",
-                            file=sys.stderr,
-                        )
-                        i += 1
-                # Continue scanning for the next 'Replacements:' block
+        diagnostics = data["Diagnostics"]
+        for diagnostic in diagnostics:
+            if not "DiagnosticMessage" in diagnostic:
                 continue
-            i += 1
+            message = diagnostic["DiagnosticMessage"]
+            if not "Replacements" in message:
+                continue
+
+            replacements = message["Replacements"]
+            REQUIRED_FIELDS = Replacement._fields
+            for replacement in replacements:
+                filepath = replacement["FilePath"]
+                if filepath not in fixes_map:
+                    fixes_map[filepath] = set()
+                filtered_replacement = {
+                    k: v for k, v in replacement.items() if k in REQUIRED_FIELDS
+                }
+                fixes_map[filepath].add(Replacement(**filtered_replacement))
     return fixes_map
 
 
-def _apply_fixes(yaml_files: List[str], sed=None, cwd: str = None) -> None:
+def _apply_fixes(yaml_files: List[str], cwd: Path = None) -> None:
     """
     Parses clang-tidy YAML files and applies the suggested fixes to the source files.
 
@@ -306,13 +607,11 @@ def _apply_fixes(yaml_files: List[str], sed=None, cwd: str = None) -> None:
         yaml_files: A list of paths to YAML files containing the fixes.
         cwd: The current working directory to resolve relative paths against.
     """
-    pattern, replacement, count = _extract_regex(sed)
-
     fixes_map = _parse_fixes_from_yaml(yaml_files)
     for filepath_str, replacements in fixes_map.items():
         filepath = Path(filepath_str)
         if cwd:
-            filepath = Path(cwd) / filepath
+            filepath = cwd / filepath
 
         if not filepath.exists():
             print(f"Skipping ghost file: {filepath}", file=sys.stderr)
@@ -325,19 +624,26 @@ def _apply_fixes(yaml_files: List[str], sed=None, cwd: str = None) -> None:
 
         # Sort replacements in reverse order of offset to
         # avoid corrupting byte offsets for subsequent replacements.
-        replacements.sort(key=lambda x: x["offset"], reverse=True)
+        replacements = sorted(replacements, key=lambda x: x.Offset, reverse=True)
 
         for r in replacements:
-            start = r["offset"]
-            end = start + r["length"]
-            replacement_text = re.sub(pattern, replacement, r["text"], count=count)
-            replacement_bytes = replacement_text.replace("\\n", "\n").encode("utf-8")
+            start = r.Offset
+            end = start + r.Length
+            # The replacement text from clang-tidy may contain C-style escape sequences
+            # (e.g., '\\n', '\\t'). To correctly apply these as their literal byte
+            # values, we first encode to bytes, then decode using 'unicode_escape' to
+            # interpret the escapes, and finally re-encode to UTF-8 for writing to the file.
+            replacement_bytes = (
+                r.ReplacementText.encode("utf-8")
+                .decode("unicode_escape")
+                .encode("utf-8")
+            )
             logging.debug(
                 "Applying fix to %s: start=%d, end=%d, replacement=`%s`",
                 filepath,
                 start,
                 end,
-                replacement_text,
+                r.ReplacementText,
             )
             code_bytes = code_bytes[:start] + replacement_bytes + code_bytes[end:]
 
@@ -352,7 +658,7 @@ def _handle_combine(args: argparse.Namespace) -> None:
     """
     combined_entries: List[str] = []
 
-    for input_path in args.inputs:
+    for input_path in args.input_files:
         try:
             with open(input_path, "r", encoding="utf-8") as f:
                 data = f.read()
@@ -366,12 +672,105 @@ def _handle_combine(args: argparse.Namespace) -> None:
         f.write("\n".join(combined_entries))
 
 
+def _deep_merge(source, destination):
+    """
+    Recursively merges 'source' dictionary into 'destination' dictionary.
+
+    If both source and destination keys are dictionaries, they are merged recursively.
+    If both source and destination keys are lists, theu will be combined.
+    Otherwise, the value from 'source' overwrites the value in 'destination'.
+
+    Args:
+        source (dict): The dictionary to merge from (its values will override).
+        destination (dict): The dictionary to merge into (modified in place).
+
+    Returns:
+        dict: The updated destination dictionary.
+    """
+    if not source:
+        return destination
+
+    for key, value in source.items():
+        if (
+            key in destination
+            and isinstance(destination[key], dict)
+            and isinstance(value, dict)
+        ):
+            destination[key] = _deep_merge(value, destination[key])
+        elif (
+            key in destination
+            and isinstance(destination[key], list)
+            and isinstance(value, list)
+        ):
+            destination[key].extend(value)
+        else:
+            destination[key] = value
+
+    return destination
+
+
+def _process_chunk(file_paths: List[str]) -> Dict[Any, Any]:
+    """
+    Worker function: Reads a subset of files and merges them into a local dictionary.
+    This runs inside a separate process with its own memory space.
+    """
+    chunk_combined = {}
+    for input_path in file_paths:
+        with open(input_path, "r", encoding="utf-8") as f:
+            data = yaml.load(f, Loader=Loader)
+            if data:
+                _deep_merge(data, chunk_combined)
+
+    return chunk_combined
+
+
+def _handle_combine_tidy(args: argparse.Namespace) -> None:
+    """
+    Parallel implementation of the merge logic.
+    """
+    input_files = args.input_files
+    if not input_files:
+        # Create empty output file if no inputs
+        with open(args.output_file, "w", encoding="utf-8") as f:
+            f.write("")
+        return
+
+    # Use CPU count, but safeguard against overhead for tiny file counts
+    cpu_count = os.cpu_count() or 4
+    max_workers = min(cpu_count, len(input_files))
+
+    # Some metrics that justify the multi threading
+    # INFO: Elapsed time: 557.204s, Critical Path: 484.02s < multi c parse
+    # INFO: Elapsed time: 616.495s, Critical Path: 579.76s < single thread c parse
+    # INFO: Elapsed time: 1067.791s, Critical Path: 1025.37s < single thread python parser
+
+    if max_workers > 1:
+        chunk_size = math.ceil(len(input_files) / max_workers)
+        chunks = [
+            input_files[i : i + chunk_size]
+            for i in range(0, len(input_files), chunk_size)
+        ]
+    else:
+        chunks = [input_files]
+
+    final_entries: Dict[Any, Any] = {}
+
+    if max_workers > 1:
+        # ProcessPoolExecutor bypasses the GIL by forking the process
+        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+            for partial_result in executor.map(_process_chunk, chunks):
+                _deep_merge(partial_result, final_entries)
+
+    else:
+        final_entries = _process_chunk(input_files)
+
+    with open(args.output_file, "w", encoding="utf-8") as f:
+        yaml.dump(final_entries, f, Dumper=Dumper)
+
+
 def main() -> None:
     parser = _create_parser()
 
-    # parse_known_args is critical here!
-    # It parses known flags (-o, -i, -e) and leaves the rest in 'unknown'.
-    # This 'unknown' list contains the actual compiler command we need to capture.
     args, unknown = parser.parse_known_args()
     _setup_logging(args.verbose)
 
@@ -382,9 +781,14 @@ def main() -> None:
     if args.mode == "generate":
         _handle_generate(args, compiler_flags=unknown)
     elif args.mode == "fix":
-        _apply_fixes(yaml_files=args.yaml, sed=args.re, cwd=args.C)
-    elif args.mode == "combine":
+        _apply_fixes(
+            yaml_files=args.fixes_files,
+            cwd=Path(args.working_dir, args.subdir),
+        )
+    elif args.mode == "combine-text":  # Renamed from combine
         _handle_combine(args)
+    elif args.mode == "combine-tidy":
+        _handle_combine_tidy(args)
 
 
 if __name__ == "__main__":

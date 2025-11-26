@@ -1,6 +1,6 @@
 module(
     name = "goldfish_build",
-    version = "0.0.2",
+    version = "0.0.3",
 )
 
 bazel_dep(name = "platforms", version = "0.0.11")
@@ -13,6 +13,7 @@ bazel_dep(name = "rules_python", version = "1.6.3")
 bazel_dep(name = "with_cfg.bzl", version = "0.10.1")
 bazel_dep(name = "aemu", version = "0.0.1")
 bazel_dep(name = "arm-sysroot", version = "13.2.1.aemu")
+bazel_dep(name = "rules_license", version = "1.0.0")
 
 http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -36,3 +37,15 @@ register_toolchains(
     "@toolchain_hub//java/mac_arm64:all",
     "@toolchain_hub//java/windows:all",
 )
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    envsubst = ["PIP_INDEX_URL"],
+    # Use the bazel downloader to query the simple API for downloading the sources
+    # Note, that we can use envsubst for this value.
+    experimental_index_url = "${PIP_INDEX_URL:-https://pypi.org/simple}",
+    hub_name = "goldfish-build-pypi",
+    python_version = "3.10",
+    requirements_lock = "//:requirements_lock.txt",
+)
+use_repo(pip, "goldfish-build-pypi")

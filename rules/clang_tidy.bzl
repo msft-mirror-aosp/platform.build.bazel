@@ -44,6 +44,44 @@ tidy_regex_flag = rule(
     build_setting = config.string(flag = True, allow_multiple = False),
 )
 
+# So an aspect rule operates on the build graph
+# and it needs all the attributes used for operation
+# of the rule to be available before it starts executing
+# this in turn means that if you have a rule that is running
+# you cannot modify/or set the parameters used by the aspect
+# rule.
+
+# To work around this bazel has this notion of a transition
+# which basically allows us to replace the "contents" of an existing
+# label with the "contents" that the label of our rule is pointing
+# to.
+
+def _tidy_report_transition_impl(_settings, attr):
+    outputs = {}
+
+    if attr.tidy_config_file:
+        # the label //:clang_tidy_config now has the value
+        # for our attribute, overwriting the existing one.
+        outputs["//:clang_tidy_config"] = attr.tidy_config_file
+
+    if attr.source_path_substrings:
+        outputs["//:clang_tidy_check_files"] = attr.source_path_substrings
+
+    if attr.rewrite_sed_pattern:
+        outputs["//:clang_tidy_regex"] = attr.rewrite_sed_pattern
+
+    return outputs
+
+tidy_report_transition = transition(
+    implementation = _tidy_report_transition_impl,
+    inputs = [],
+    outputs = [
+        "//:clang_tidy_config",
+        "//:clang_tidy_check_files",
+        "//:clang_tidy_regex",
+    ],
+)
+
 # --- Constants ---
 _HEADER_EXTS = (".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".H")
 _SRC_EXTS = [".c", ".cc", ".cpp", ".cxx", ".c++", ".C"] + list(_HEADER_EXTS)
@@ -56,10 +94,14 @@ _UNSUPPORTED_FLAGS = [
     "-fcolor-diagnostics",
 ]
 
+def _is_windows(ctx):
+    # HACK ATTACK!
+    # If the host path separator is ';', we are running on Windows.
+    return ctx.configuration.host_path_separator == ";"
+
 ClangTidyInfo = provider(
     doc = "Propagates clang-tidy results up the graph",
     fields = {
-        "warnings": "A depset of files containing tidy warnings.",
         "fixes": "A depset of yaml files containing fixes.",
     },
 )
@@ -181,20 +223,18 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
     if not clang_tidy_exec:
         fail("Could not find clang-tidy executable in the toolchain {}".format(cc_toolchain.label))
 
-    warnings_file = ctx.actions.declare_file(src.path + "." + ctx.label.name + ".tidy.txt")
     fixes_file = ctx.actions.declare_file(src.path + "." + ctx.label.name + ".tidy.yaml")
 
     args = ctx.actions.args()
     args.add("generate")
-    args.add("--tidy-exe", clang_tidy_exec)
+    args.add("--clang-tidy-exe", clang_tidy_exec)
     args.add("--config-file", clang_tidy_config)
-    args.add("--warnings_file", warnings_file.path)
-    args.add("--export-fixes", fixes_file.path)
-    args.add("--source", src.path)
+    args.add("--fixes-file", fixes_file.path)
+    args.add("--source-file", src.path)
 
     regex = ctx.attr._clang_tidy_regex[TidyRegexProviderInfo].regex
     if regex:
-        args.add("--re", regex)
+        args.add("--rewrite-rules", regex)
 
     args.add("--")
     args.add_all(flags)
@@ -207,19 +247,18 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
         inputs = inputs,
         executable = action_tool,
         arguments = [args],
-        outputs = [warnings_file, fixes_file],
+        outputs = [fixes_file],
         mnemonic = "ClangTidy",
         use_default_shell_env = True,
         progress_message = "Running clang-tidy on {}".format(src.short_path),
     )
 
-    return warnings_file, fixes_file
+    return fixes_file
 
 # --- Implementations ---
 
 def _clang_tidy_aspect_impl(target, ctx):
     # 1. Collect Transitive State
-    transitive_warnings = []
     transitive_fixes = []
     attr_aspects_to_check = ["deps", "implementation_deps", "srcs", "data"]
     for attr_name in attr_aspects_to_check:
@@ -228,13 +267,11 @@ def _clang_tidy_aspect_impl(target, ctx):
             if type(val) == "list":
                 for dep in val:
                     if ClangTidyInfo in dep:
-                        transitive_warnings.append(dep[ClangTidyInfo].warnings)
                         transitive_fixes.append(dep[ClangTidyInfo].fixes)
 
     # If not C++, return deps only
     if CcInfo not in target:
         return [ClangTidyInfo(
-            warnings = depset(transitive = transitive_warnings),
             fixes = depset(transitive = transitive_fixes),
         )]
 
@@ -254,8 +291,8 @@ def _clang_tidy_aspect_impl(target, ctx):
     # 3. Generate tidy actions for each source file
     srcs = _get_sources(ctx.rule.attr)
 
-    warning_files = []
     fix_files = []
+
     clang_tidy_config = ctx.file._clang_tidy_config
     action_tool = ctx.attr._run_tidy.files_to_run
 
@@ -268,7 +305,7 @@ def _clang_tidy_aspect_impl(target, ctx):
         for c in check_src:
             if c in src.path:
                 flags = c_flags if _is_c_source(src) else cxx_flags
-                warnings, fixes = _emit_tidy_action(
+                fixes = _emit_tidy_action(
                     ctx,
                     action_tool,
                     src,
@@ -277,65 +314,80 @@ def _clang_tidy_aspect_impl(target, ctx):
                     additional_files,
                     clang_tidy_config,
                 )
-                warning_files.append(warnings)
                 fix_files.append(fixes)
 
-    # 5. Merge with Transitive
-    all_warnings = depset(direct = warning_files, transitive = transitive_warnings)
     all_fixes = depset(direct = fix_files, transitive = transitive_fixes)
-
     return [
-        OutputGroupInfo(tidy_warnings = all_warnings, tidy_fixes = all_fixes),
-        ClangTidyInfo(warnings = all_warnings, fixes = all_fixes),
+        OutputGroupInfo(tidy_fixes = all_fixes),
+        ClangTidyInfo(fixes = all_fixes),
     ]
 
-def _clang_tidy_rule_impl(ctx):
-    # Collect inputs from the aspect
-    all_warnings = []
-    all_fixes = []
+def _clang_tidy_report_impl(ctx):
+    transitive_fix_depsets = []
     for target in ctx.attr.targets:
         if ClangTidyInfo in target:
-            all_warnings.append(target[ClangTidyInfo].warnings)
-            all_fixes.append(target[ClangTidyInfo].fixes)
+            transitive_fix_depsets.append(target[ClangTidyInfo].fixes)
 
-    warnings_depset = depset(transitive = all_warnings)
-    fixes_depset = depset(transitive = all_fixes)
+    all_fixes_depset = depset(transitive = transitive_fix_depsets)
 
-    # Filter out external repositories we don't care about.
-    allowed_external = ctx.attr.allow_external_workspaces
-    filtered_warnings = [f for f in warnings_depset.to_list() if f.owner.workspace_name == "" or f.owner.workspace_name in allowed_external]
-    filtered_fixes = [f for f in fixes_depset.to_list() if f.owner.workspace_name == "" or f.owner.workspace_name in allowed_external]
+    all_fixes = all_fixes_depset.to_list()
+    combine_tool = ctx.executable._run_tidy
 
-    # Combine warning files into a single file
-    combined_warnings_file = ctx.actions.declare_file(ctx.label.name + "_warnings.txt")
+    # --- Combine ALL Fixes ---
+    final_fixes_file = ctx.actions.declare_file(ctx.label.name + ".final_fixes.yaml")
 
-    input_paths = [f.path for f in filtered_warnings]
-    if input_paths:
-        action_tool = ctx.attr._run_tidy.files_to_run
-        args = ctx.actions.args()
-        args.add("combine")
-        args.add("--output_file", combined_warnings_file.path)
-        args.add_all(input_paths)
+    if all_fixes:
+        args_fixes = ctx.actions.args()
+        args_fixes.add("combine-tidy")  # Ensure this matches your tool's command
+        args_fixes.add("--output-file", final_fixes_file.path)
+        args_fixes.add_all(all_fixes)
 
         ctx.actions.run(
-            inputs = filtered_warnings,
-            executable = action_tool,
-            arguments = [args],
-            outputs = [combined_warnings_file],
-            mnemonic = "ClangTidyCombine",
-            use_default_shell_env = True,
-            progress_message = "Combining clang-tidy warnings",
+            inputs = all_fixes,
+            executable = combine_tool,
+            arguments = [args_fixes],
+            outputs = [final_fixes_file],
+            mnemonic = "ClangTidyFinalCombineFixes",
+            progress_message = "Combining clang-tidy fixes for {} targets".format(len(ctx.attr.targets)),
         )
     else:
-        # Create an empty file if there are no warnings
-        ctx.actions.write(output = combined_warnings_file, content = "")
+        ctx.actions.write(final_fixes_file, "")
 
-    # For fixes, we just provide all the YAML files.
-    return [
-        DefaultInfo(
-            files = depset([combined_warnings_file], transitive = [depset(filtered_fixes)]),
+    runner_script = ctx.actions.declare_file(ctx.label.name + ("_fix.bat" if _is_windows(ctx) else "_fix.sh"))
+    if _is_windows(ctx):
+        # Windows Batch Stub
+        content = """@echo off
+"{tool}" fix --subdir "{location}" "{yaml}"
+""".format(
+            tool = combine_tool.short_path.replace("/", "\\"),
+            yaml = final_fixes_file.short_path.replace("/", "\\"),
+            location = ctx.attr.apply_fixes_in.replace("/", "\\"),
+        )
+    else:
+        # POSIX Shell Stub
+        content = """#!/bin/bash
+# We use $0.runfiles to find the tool relative to this script
+ROOT="$0.runfiles/{workspace}"
+exec "$ROOT/{tool}" fix --subdir "{location}" "$ROOT/{yaml}"
+""".format(
+            workspace = ctx.workspace_name,
+            tool = combine_tool.short_path,
+            yaml = final_fixes_file.short_path,
+            location = ctx.attr.apply_fixes_in,
+        )
+
+    ctx.actions.write(runner_script, content, is_executable = True)
+
+    return DefaultInfo(
+        files = depset(
+            [final_fixes_file],
         ),
-    ]
+        executable = runner_script,
+        # IMPORTANT: We must include both the YAML *and* the tool in runfiles
+        runfiles = ctx.runfiles(files = [final_fixes_file]).merge(
+            ctx.attr._run_tidy[DefaultInfo].default_runfiles,
+        ),
+    )
 
 # --- Rules ---
 
@@ -367,22 +419,38 @@ clang_tidy_aspect = aspect(
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
 
-clang_tidy = rule(
-    implementation = _clang_tidy_rule_impl,
-    doc = "Runs clang-tidy on a set of targets and collects the warnings and suggested fixes.",
+clang_tidy_report = rule(
+    implementation = _clang_tidy_report_impl,
+    cfg = tidy_report_transition,
+    executable = True,
     attrs = {
         "targets": attr.label_list(
-            aspects = [
-                clang_tidy_aspect,
-            ],
-            doc = "The list of top-level targets to run clang-tidy on.",
+            doc = "The list of cc_* targets to be analyzed by clang-tidy.",
+            mandatory = True,
+            aspects = [clang_tidy_aspect],
         ),
-        "allow_external_workspaces": attr.string_list(
-            doc = "List of external workspace names (e.g., 'aemu') to include. The main workspace is always included.",
+        "source_path_substrings": attr.string_list(
+            doc = "A list of strings used to filter which source files to check. A file is checked only if its full path contains one of these substrings. If this list is empty, no files will be checked.",
         ),
-        "clang_tidy_config": attr.label(
-            doc = "The .clang-tidy configuration file to use.",
+        "rewrite_sed_pattern": attr.string(
+            doc = "A sed-style regular expression (e.g., 's/old/new/g') applied to the replacement text of each clang-tidy fix. This is useful for performing systematic transformations on the generated code, such as renaming prefixes. The regex is applied before writing the fix to disk.",
+            default = "",
+        ),
+        "apply_fixes_in": attr.string(
+            doc = "The working directory, relative to the workspace root, from which to apply clang-tidy fixes. This path is prefixed to the file paths in the generated fixes, ensuring they resolve correctly.",
+            default = ".",
+        ),
+        "tidy_config_file": attr.label(
+            doc = "A label pointing to the .clang-tidy configuration file to use.",
             allow_single_file = True,
+        ),
+        "_run_tidy": attr.label(
+            executable = True,
+            cfg = "exec",
+            default = Label("//:run-clang-tidy"),
+        ),
+        "_allowlist_function_transition": attr.label(
+            default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
         ),
     },
 )
