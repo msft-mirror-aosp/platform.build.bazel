@@ -28,11 +28,14 @@ cc_toolchain_import(
         ":sysroot/usr/include",
         ":sysroot/usr/include/x86_64-linux-gnu",
     ],
-    support_files = glob([
-        "sysroot/usr/include/*.h",
-        "sysroot/usr/include/**/*.h",
-        "sysroot/usr/include/x86_64-linux-gnu/**",
-    ]) + [
+    support_files = glob(
+        [
+            "sysroot/usr/include/*.h",
+            "sysroot/usr/include/**/*.h",
+            "sysroot/usr/include/x86_64-linux-gnu/**",
+        ],
+        allow_empty = True,
+    ) + [
         # keep sorted
         ":sysroot/usr/lib/libc.so",
         ":sysroot/usr/lib/libc.so.6",
