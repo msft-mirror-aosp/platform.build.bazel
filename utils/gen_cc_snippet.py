@@ -29,7 +29,6 @@ import argparse
 import json
 import os
 import shlex
-import shutil
 import sys
 from typing import List, Dict, Any
 from pathlib import Path
@@ -55,11 +54,11 @@ def guess_execroot(path: Path) -> Path:
     Returns:
         Path: The guessed path to 'execroot/_main'.
     """
-    if path.name == "sandbox":
+    if path.name == "execroot":
         # We found the sandbox root. The execroot is usually a sibling directory.
-        # Structure: .../output_base/sandbox/...
-        # Target:    .../output_base/execroot/_main
-        return path.parent / "execroot" / "_main"
+        # Structure: .../output_base/execroot/...
+        # Target:    .../output_base/
+        return path / "_main"
 
     if path.parent == path:
         # We hit the filesystem root without finding 'sandbox'.
@@ -87,6 +86,12 @@ def _create_parser() -> argparse.ArgumentParser:
         required=True,
         help="Path to the generated JSON file in runfiles.",
     )
+    install_parser.add_argument(
+        "--output_base",
+        required=False,
+        default=guess_execroot(Path.cwd()),
+        help="The bazel output base. Defaults to guessing based on CWD.",
+    )
 
     # --- Subcommand: generate ---
     gen_parser = subparsers.add_parser("generate", help="Generate a JSON snippet.")
@@ -95,13 +100,6 @@ def _create_parser() -> argparse.ArgumentParser:
     )
     gen_parser.add_argument(
         "-i", "--input_file", required=True, help="Path to the C/C++ source file."
-    )
-    gen_parser.add_argument(
-        "-e",
-        "--exec_root",
-        required=False,
-        default=guess_execroot(Path.cwd()),
-        help="The bazel execution_root. Defaults to guessing based on CWD.",
     )
     # NOTE: We do NOT define 'flags' here.
     # We rely on parse_known_args in main() to capture the compiler command
@@ -136,8 +134,6 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
     if compiler_flags and compiler_flags[0] == "--":
         compiler_flags = compiler_flags[1:]
 
-    exec_root = str(args.exec_root)
-
     # 2. Construct the full command
     # We explicitly append the source file to the compiler flags to mimic a
     # standard compiler invocation (clang++ [flags] -c source.cc).
@@ -147,7 +143,6 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
     # 'directory': Must be the build root so relative paths in 'command' resolve.
     # 'command': We use shlex.join to properly quote arguments with spaces.
     entry = {
-        "directory": exec_root,
         "command": shlex.join(full_args),
         "file": args.input_file,
     }
@@ -177,7 +172,15 @@ def _handle_install(args: argparse.Namespace) -> None:
 
     print(f"Installing {source.name} to {destination}...")
     try:
-        shutil.copyfile(source, destination)
+        entries = []
+        with open(source, "r", encoding="utf-8") as f:
+            entries = json.load(f)
+            for entry in entries:
+                entry["directory"] = str(args.output_base)
+
+        with open(destination, "w", encoding="utf-8") as f:
+            json.dump(entries, f, indent=2)
+
         # Ensure it is writable so the user can easily overwrite/delete it later
         os.chmod(destination, 0o644)
         print("Success.")
