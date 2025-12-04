@@ -22,20 +22,23 @@
 // An environment variable "WRAPPER_WRAP_BINARY" must be set when running the
 // wrapper, pointing to the compiler binary to run.
 
-#include <cstddef>
+#include <sched.h>
 #include <spawn.h>
-#include <string.h>
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
-
-using namespace std;
 
 static const char *kBinaryPathVarName = "WRAPPER_WRAP_BINARY";
 static const char *kDebugFlagVarName = "__WRAPPER_LOG_ONLY";
@@ -44,8 +47,8 @@ static const char *kLtoObjPathFlag = "-Wl,--lto-obj-path=";
 namespace {
 
 // Unescape and unquote an argument read from a line of a response file.
-const string Unescape(const string &arg) {
-  string result;
+const std::string Unescape(const std::string &arg) {
+  std::string result;
   auto length = arg.size();
   for (size_t i = 0; i < length; i++) {
     auto ch = arg[i];
@@ -85,8 +88,8 @@ const string Unescape(const string &arg) {
 // Converts an array of string arguments to char *arguments.
 // Note that the lifetime of the char* arguments in the returned array
 // are controlled by the lifetime of the strings in args.
-vector<const char *> ConvertToCArgs(const vector<string> &args) {
-  vector<const char *> c_args;
+std::vector<const char *> ConvertToCArgs(const std::vector<std::string> &args) {
+  std::vector<const char *> c_args;
   for (int i = 0; i < args.size(); i++) {
     c_args.push_back(args[i].c_str());
   }
@@ -96,43 +99,40 @@ vector<const char *> ConvertToCArgs(const vector<string> &args) {
 
 // Spawns a subprocess for given arguments args. The first argument is used
 // for the executable path.
-int RunSubProcess(const vector<string> &args) {
+int RunSubProcess(const std::vector<std::string> args) {
   auto exec_argv = ConvertToCArgs(args);
 
   pid_t pid;
   int status = posix_spawn(&pid, args[0].c_str(), nullptr, nullptr,
                            const_cast<char **>(exec_argv.data()), nullptr);
   if (status != 0) {
-    cerr << "Error forking process '" << args[0] << "': " << strerror(status)
-         << endl;
+    std::cerr << "Error forking process '" << args[0]
+              << "': " << strerror(status) << std::endl;
     return status;
   }
-  int wait_status;
-  do {
-    wait_status = waitpid(pid, &status, 0);
-  } while ((wait_status == -1) && (errno == EINTR));
-  if (wait_status < 0) {
-    cerr << "Error waiting on child process '" << args[0]
-         << "': " << strerror(errno) << endl;
-    return wait_status;
+  if (waitpid(pid, &status, 0) == -1) {
+    perror(("Error waiting for process " + args[0]).c_str());
+    return EXIT_FAILURE;
   }
-  if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
-    cerr << "Error in child process '" << args[0]
-         << "': " << WEXITSTATUS(status) << endl;
-    return status;
+  if (WIFEXITED(status)) {
+    if (WEXITSTATUS(status) != 0) {
+      std::cerr << "Error in child process '" << args[0]
+                << "': " << strerror(WEXITSTATUS(status)) << std::endl;
+    }
+    return WEXITSTATUS(status);
   } else if (WIFSIGNALED(status)) {
-    cerr << "Error in child process '" << args[0] << "': " << WTERMSIG(status)
-         << endl;
+    std::cerr << "Child process '" << args[0]
+              << "' terminated by signal: " << WTERMSIG(status) << std::endl;
     return status;
   }
-
   return EXIT_SUCCESS;
 }
 
 // Finds and replaces all instances of oldsub with newsub, in-place on str.
-void FindAndReplace(const string &oldsub, const string &newsub, string *str) {
+void FindAndReplace(const std::string &oldsub, const std::string &newsub,
+                    std::string *str) {
   int start = 0;
-  while ((start = str->find(oldsub, start)) != string::npos) {
+  while ((start = str->find(oldsub, start)) != std::string::npos) {
     str->replace(start, oldsub.length(), newsub);
     start += newsub.length();
   }
@@ -140,10 +140,10 @@ void FindAndReplace(const string &oldsub, const string &newsub, string *str) {
 
 // Returns an environment variable in the current process
 // environment. Aborts if this variable is unset.
-string GetMandatoryEnvVar(const string &var_name) {
+std::string GetMandatoryEnvVar(const std::string &var_name) {
   char *env_value = getenv(var_name.c_str());
   if (env_value == nullptr) {
-    cerr << "Error: " << var_name << " not set.\n";
+    std::cerr << "Error: " << var_name << " not set." << std::endl;
     exit(EXIT_FAILURE);
   }
   return env_value;
@@ -155,21 +155,20 @@ public:
   // Create a new temporary file using the given path template string (the same
   // form used by `mkstemp`). The file will automatically be deleted when the
   // object goes out of scope.
-  static unique_ptr<TempFile> Create(const string &path_template) {
+  static std::unique_ptr<TempFile> Create(const std::string &path_template) {
     const char *tmpDir = getenv("TMPDIR");
     if (!tmpDir) {
       tmpDir = "/tmp";
     }
     size_t size = strlen(tmpDir) + path_template.size() + 2;
-    unique_ptr<char[]> path(new char[size]);
+    std::unique_ptr<char[]> path(new char[size]);
     snprintf(path.get(), size, "%s/%s", tmpDir, path_template.c_str());
 
     if (mkstemp(path.get()) == -1) {
-      cerr << "Failed to create temporary file '" << path.get()
-           << "': " << strerror(errno) << endl;
+      perror(("Failed to create file " + std::string(path.get())).c_str());
       return nullptr;
     }
-    return unique_ptr<TempFile>(new TempFile(path.get()));
+    return std::unique_ptr<TempFile>(new TempFile(path.get()));
   }
 
   // Explicitly make TempFile non-copyable and movable.
@@ -178,20 +177,21 @@ public:
   TempFile(TempFile &&) = default;
   TempFile &operator=(TempFile &&) = default;
 
-  ~TempFile() { remove(path_.c_str()); }
+  ~TempFile() { std::filesystem::remove(path_); }
 
   // Gets the path to the temporary file.
-  string GetPath() const { return path_; }
+  std::filesystem::path GetPath() const { return path_; }
 
 private:
-  explicit TempFile(const string &path) : path_(path) {}
+  explicit TempFile(std::filesystem::path path) : path_(path) {}
 
-  string path_;
+  std::filesystem::path path_;
 };
 
-static unique_ptr<TempFile> WriteResponseFile(const vector<string> &args) {
+static std::unique_ptr<TempFile>
+WriteResponseFile(const std::vector<std::string> &args) {
   auto response_file = TempFile::Create("wrapper_params.XXXXXX");
-  ofstream response_file_stream(response_file->GetPath());
+  std::ofstream response_file_stream(response_file->GetPath());
 
   for (const auto &arg : args) {
     // When Clang writes out a response file to communicate from driver to
@@ -211,27 +211,27 @@ static unique_ptr<TempFile> WriteResponseFile(const vector<string> &args) {
   return response_file;
 }
 
-void ProcessArgument(const string arg, const string cwd,
-                     function<void(const string &)> consumer);
+void ProcessArgument(const std::string arg, const std::string execroot,
+                     std::function<void(const std::string &)> consumer);
 
-bool ProcessResponseFile(const string arg, const string cwd,
-                         function<void(const string &)> consumer) {
+bool ProcessResponseFile(const std::string arg, const std::string execroot,
+                         std::function<void(const std::string &)> consumer) {
   auto path = arg.substr(1);
-  ifstream original_file(path);
+  std::ifstream original_file(path);
   // Ignore non-file args such as '@loader_path/...'
   if (!original_file.good()) {
     return false;
   }
 
-  string arg_from_file;
+  std::string arg_from_file;
   while (getline(original_file, arg_from_file)) {
     // Arguments in response files might be quoted/escaped, so we need to
     // unescape them ourselves.
-    string unescaped = Unescape(arg_from_file);
+    auto unescaped = Unescape(arg_from_file);
     // Argument can have spaces inside. We need to split to multiple args.
     char *p = strtok(unescaped.data(), " ");
     while (p != nullptr) {
-      ProcessArgument(p, cwd, consumer);
+      ProcessArgument(p, execroot, consumer);
       p = strtok(nullptr, " ");
     }
   }
@@ -239,49 +239,61 @@ bool ProcessResponseFile(const string arg, const string cwd,
   return true;
 }
 
-string GetCurrentDirectory() {
+std::string GetCurrentDirectory() {
   // Passing null,0 causes getcwd to allocate the buffer of the correct size.
   char *buffer = getcwd(nullptr, 0);
-  string cwd(buffer);
+  std::string cwd(buffer);
   free(buffer);
   return cwd;
 }
 
-void ProcessArgument(const string arg, const string cwd,
-                     function<void(const string &)> consumer) {
+void ProcessArgument(const std::string arg, const std::string execroot,
+                     std::function<void(const std::string &)> consumer) {
   auto new_arg = arg;
   if (arg[0] == '@') {
-    if (ProcessResponseFile(arg, cwd, consumer))
+    if (ProcessResponseFile(arg, execroot, consumer))
       return;
   }
 
-  FindAndReplace("{BAZEL_EXECUTION_ROOT}", cwd, &new_arg);
+  FindAndReplace("{BAZEL_EXECUTION_ROOT}", execroot, &new_arg);
   consumer(new_arg);
 }
 
-void CreateFile(const string path) {
-  ofstream file(path);
+void CreateFile(const std::string path) {
+  std::ofstream file(path);
   if (file.is_open()) {
     file.close();
   } else {
-    cerr << "Failed to create file: " << path << endl;
+    std::cerr << "Failed to create file: " << path << std::endl;
   }
 }
 
 } // namespace
 
 int main(int argc, char *argv[]) {
-  string tool_path = GetMandatoryEnvVar(kBinaryPathVarName);
+  auto tool_path = GetMandatoryEnvVar(kBinaryPathVarName);
   unsetenv(kBinaryPathVarName);
   char *debug = getenv(kDebugFlagVarName);
   unsetenv(kDebugFlagVarName);
 
-  const string cwd = GetCurrentDirectory();
-  vector<string> processed_args = {};
+  auto execroot = GetCurrentDirectory();
 
-  auto consumer = [&](const string &arg) { processed_args.push_back(arg); };
+  // Golang calls the wrapper from its own sandbox so relative paths don't work.
+  // rules_go rewrites the paths to absolute ones and sets "GO_CC_ROOT" to the
+  // execroot path. We use that to correct the tool path and the replaced paths.
+  char *go_cc_root = getenv("GO_CC_ROOT");
+  if (go_cc_root != nullptr) {
+    execroot = go_cc_root;
+    tool_path = std::filesystem::path(go_cc_root) / tool_path;
+  }
+
+  std::vector<std::string> processed_args = {};
+
+  auto consumer = [&](const std::string &arg) {
+    processed_args.push_back(arg);
+  };
   for (int i = 1; i < argc; i++) {
-    ProcessArgument(argv[i], cwd, consumer);
+    ProcessArgument(argv[i], execroot, consumer);
   }
 
   // Create an empty LTO object file when linker flag -object_path_lto is
@@ -290,7 +302,7 @@ int main(int argc, char *argv[]) {
   // actual object. Without this file, lld64 will create a same-named directory
   // instead. For details, see
   // https://github.com/llvm/llvm-project/commit/2b2e858e9cbb1d459804f8e393ac6b90459ccb7a.
-  string prefix = kLtoObjPathFlag;
+  std::string prefix = kLtoObjPathFlag;
   for (auto &arg : processed_args) {
     if (arg.rfind(prefix, 0) == 0) {
       CreateFile(arg.substr(prefix.length()));
@@ -302,13 +314,13 @@ int main(int argc, char *argv[]) {
 
   // Special mode that only prints the command. Used for testing.
   if (debug) {
-    cout << tool_path << endl;
-    ifstream f(response_file->GetPath());
+    std::cerr << tool_path << std::endl;
+    std::ifstream f(response_file->GetPath());
     if (f.is_open())
-      cout << f.rdbuf();
-    return EXIT_SUCCESS;
+      std::cerr << f.rdbuf();
+    return EXIT_FAILURE;
   }
 
-  vector<string> invocation_args = {tool_path, "@" + response_file->GetPath()};
+  auto invocation_args = {tool_path, "@" + response_file->GetPath().string()};
   return RunSubProcess(invocation_args);
 }
