@@ -120,6 +120,7 @@ cc_toolchain_config(
     cc_tools = [
         "@clang_mac_all//:clang",
         "@clang_mac_all//:clang++",
+        "@clang_mac_all//:clang-tidy",
         "@clang_mac_all//:archiver",
         "@clang_mac_all//:strip",
         "@clang_mac_all//:dsymutil",
@@ -224,6 +225,7 @@ cc_toolchain_config(
     cc_tools = [
         "@clang_mac_all//:clang",
         "@clang_mac_all//:clang++",
+        "@clang_mac_all//:clang-tidy",
         "@clang_mac_all//:archiver",
         "@clang_mac_all//:strip",
         "@clang_mac_all//:dsymutil",

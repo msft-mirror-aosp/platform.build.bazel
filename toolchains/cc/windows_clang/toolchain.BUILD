@@ -157,6 +157,7 @@ cc_toolchain_config(
     cc_features = ":x64_features",
     cc_tools = [
         "@clang_win_x64//:clang-cl",
+        "@clang_win_x64//:clang-tidy",
         "@clang_win_x64//:link",
         "@clang_win_x64//:archiver",
         ":ml64",

@@ -62,6 +62,13 @@ cc_tool(
     tool = ":bin/llvm-strip",
 )
 
+cc_tool(
+    name = "clang-tidy",
+    applied_actions = ["clang-tidy"],
+    runfiles = glob(["bin/clang-tidy*"]),
+    tool = ":bin/clang-tidy",
+)
+
 cc_toolchain_import(
     name = "libcxx",
     dynamic_mode_libs = [

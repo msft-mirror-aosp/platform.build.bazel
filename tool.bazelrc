@@ -43,3 +43,11 @@ build --proto_toolchain_for_cc=@protobuf//:cc_toolchain
 
 ## Python
 build --@rules_python//python/config_settings:bootstrap_impl=script
+
+# Default clang tidy config, use --config clang-tidy
+build:clang-tidy --aspects @goldfish_build//rules:clang_tidy.bzl%clang_tidy_aspect
+build:clang-tidy --output_groups=tidy_fixes
+build:clang-tidy "--@goldfish_build//:clang_tidy_config=@goldfish//:clang_tidy_config"
+build:clang-tidy "--@goldfish_build//:clang_tidy_regex=s/m_//g"
+
+

@@ -107,6 +107,13 @@ cc_tool(
     tool = ":bin/dsymutil",
 )
 
+cc_tool(
+    name = "clang-tidy",
+    applied_actions = ["clang-tidy"],
+    runfiles = glob(["bin/clang-tidy*"]),
+    tool = ":bin/clang-tidy",
+)
+
 cc_toolchain_import(
     name = "compiler_rt",
     include_paths = glob(

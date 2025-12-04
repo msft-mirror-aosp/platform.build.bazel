@@ -63,6 +63,13 @@ cc_tool(
     tool = ":bin/llvm-lib.exe",
 )
 
+cc_tool(
+    name = "clang-tidy",
+    applied_actions = ["clang-tidy"],
+    runfiles = glob(["bin/clang-tidy*"]),
+    tool = ":bin/clang-tidy.exe",
+)
+
 cc_toolchain_import(
     name = "compiler_runtime",
     include_paths = [
