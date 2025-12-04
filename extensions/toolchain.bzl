@@ -41,12 +41,20 @@ def _toolchain_impl(ctx):
             path = "{}/windows-x86/{}".format(clang_tag.root_path, tool_versions["clang"]),
         )
 
-        # Repository that provides include / libs from GCC
-        new_local_repository(
-            name = "gcc_lib",
-            build_file = "//toolchains/cc/linux_clang:gcc_lib.BUILD",
-            path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
-        )
+        if ctx.os.name.lower().startswith("linux"):
+            # Repository that provides include / libs from GCC
+            new_local_repository(
+                name = "gcc_lib",
+                build_file = "//toolchains/cc/linux_clang:gcc_lib.BUILD",
+                path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
+            )
+        else:
+            # dummy
+            new_local_repository(
+                name = "gcc_lib",
+                build_file = "//toolchains/cc/linux_clang:gcc_lib.BUILD",
+                path = "build/bazel/empty_dir",
+            )
 
         # Hermetic SDKs
         gcs_archive(
@@ -79,10 +87,25 @@ def _toolchain_impl(ctx):
                 build_file = "//toolchains/cc/windows_clang:sdk.BUILD",
                 sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
             )
-        elif ctx.os.name.lower().startswith("mac"):
+        else:
+            # dummy
+            new_local_repository(
+                name = "vctools",
+                build_file = "//toolchains/cc/windows_clang:vctools.BUILD",
+                path = "build/bazel/empty_dir",
+            )
+
+        if ctx.os.name.lower().startswith("mac"):
             xcode_tools_repository(
                 name = "xcode_tools",
                 build_file = "//toolchains/cc/mac_clang:xcode.BUILD",
+            )
+        else:
+            # dummy
+            new_local_repository(
+                name = "xcode_tools",
+                build_file = "//toolchains/cc/mac_clang:xcode.BUILD",
+                path = "build/bazel/empty_dir",
             )
 
     rust_tag = _get_singleton_tag(ctx.modules, "rust")
