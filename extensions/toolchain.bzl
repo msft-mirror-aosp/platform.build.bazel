@@ -41,20 +41,12 @@ def _toolchain_impl(ctx):
             path = "{}/windows-x86/{}".format(clang_tag.root_path, tool_versions["clang"]),
         )
 
-        if ctx.os.name.lower().startswith("linux"):
-            # Repository that provides include / libs from GCC
-            new_local_repository(
-                name = "gcc_lib",
-                build_file = "//toolchains/cc/linux_clang:gcc_lib.BUILD",
-                path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
-            )
-        else:
-            # dummy
-            new_local_repository(
-                name = "gcc_lib",
-                build_file = "//toolchains/cc/linux_clang:gcc_lib.BUILD",
-                path = "build/bazel/empty_dir",
-            )
+        overlay_repository(
+            name = "gcc_lib",
+            path = "prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8",
+            not_found_ok = True,
+            overlay_files = {"BUILD.bazel": "//toolchains/cc/linux_clang:gcc_lib.BUILD"},
+        )
 
         # Hermetic SDKs
         gcs_archive(
@@ -89,10 +81,11 @@ def _toolchain_impl(ctx):
             )
         else:
             # dummy
-            new_local_repository(
+            overlay_repository(
                 name = "vctools",
-                build_file = "//toolchains/cc/windows_clang:vctools.BUILD",
-                path = "build/bazel/empty_dir",
+                path = "build/bazel/no-such-dir",
+                not_found_ok = True,
+                overlay_files = {"BUILD.bazel": "//toolchains/cc/windows_clang:vctools.BUILD"},
             )
 
         if ctx.os.name.lower().startswith("mac"):
@@ -102,10 +95,11 @@ def _toolchain_impl(ctx):
             )
         else:
             # dummy
-            new_local_repository(
+            overlay_repository(
                 name = "xcode_tools",
-                build_file = "//toolchains/cc/mac_clang:xcode.BUILD",
-                path = "build/bazel/empty_dir",
+                path = "build/bazel/no-such-dir",
+                not_found_ok = True,
+                overlay_files = {"BUILD.bazel": "//toolchains/cc/mac_clang:xcode.BUILD"},
             )
 
     rust_tag = _get_singleton_tag(ctx.modules, "rust")
