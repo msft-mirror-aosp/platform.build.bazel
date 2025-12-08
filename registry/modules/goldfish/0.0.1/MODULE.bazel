@@ -105,6 +105,20 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "cts-media-1.4",
+    build_file = "@goldfish//emulator/sdk/xts/cts-media:cts-media-1.4.BUILD",
+    sha256 = "c4ca2ac08a9a192b8ed9a1e13c3b5d0c4b46a609a1608835d3915e76e30ab477",
+    url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.4.zip",
+)
+
+gcs_archive(
+    name = "cts-media-1.5",
+    build_file = "@goldfish//emulator/sdk/xts/cts-media:cts-media-1.5.BUILD",
+    sha256 = "0d047961309c7956442ef9c7a6559e3fe8cbb952c7369622f08f899c9e881ce7",
+    url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.5.zip",
+)
+
+gcs_archive(
     name = "cts-x86-64",
     build_file = "@goldfish//emulator/sdk/xts/cts-x86-64:cts.BUILD",
     sha256 = "e16721554b8e46d3138350670d83c11709dcf8bb12f50517f62ef40f0055235f",
