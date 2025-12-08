@@ -71,17 +71,14 @@ def load_config_from_file(tidy_file: Path) -> TidyConfig:
         for h in config_yaml.get("HeaderFileExtensions", ["h", "hh", "hpp", "hxx"])
     ]
     header_filter_re = re.compile(config_yaml.get("HeaderFilterRegex", ".*"))
-    exclude_header_filter_re = re.compile(
-        config_yaml.get("ExcludeHeaderFilterRegex", "$^")
-    )
+    exclude_header_filter = config_yaml.get("ExcludeHeaderFilterRegex", "$^") or "$^"
+    exclude_header_filter_re = re.compile(exclude_header_filter)
 
     return TidyConfig(
         header_file_extensions=header_extensions,
         header_filter_re=header_filter_re,
         exclude_header_filter_re=exclude_header_filter_re,
     )
-
-
 
 
 class ReportRewriter:
@@ -142,7 +139,6 @@ class ReportRewriter:
             self.user_pattern = re.compile("$^")  # A regex that never matches
 
         self.file_cache = OrderedDict()
-
 
     def _get_file_lines(self, filepath: Path) -> List[str]:
         """
@@ -323,7 +319,9 @@ class ReportRewriter:
         count = 0 if "g" in raw_flags else 1
         return (pattern, replacement, count)
 
-    def augment_with_details(self, diagnostics_raw: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def augment_with_details(
+        self, diagnostics_raw: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """
         Augments raw diagnostic messages with detailed line and column information,
         and extracts affected line code and sorts replacements.
@@ -553,7 +551,9 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
         with open(args.fixes_file, "a") as fexp:
             fexp.write("\n")
 
-    rewriter = ReportRewriter(Path.cwd(), load_config_from_file(args.config_file), args.rewrite_rules)
+    rewriter = ReportRewriter(
+        Path.cwd(), load_config_from_file(args.config_file), args.rewrite_rules
+    )
     rewriter.rewrite_fixes(args.fixes_file, args.fixes_file)
 
 
@@ -624,7 +624,11 @@ def _apply_fixes(yaml_files: List[str], cwd: Path = None) -> None:
 
         # Sort replacements in reverse order of offset to
         # avoid corrupting byte offsets for subsequent replacements.
-        replacements = sorted(replacements, key=lambda x: x.Offset, reverse=True)
+        # Note the we have a special case where multiple inserts can happen at the
+        # same offset. For example when renaming a variable and introducing const,
+        # usually the length == 0 (it's an insertion), so we want to do those after
+        # the initial replacement.
+        replacements = sorted(replacements, key=lambda x: (-x.Offset, -x.Length))
 
         for r in replacements:
             start = r.Offset

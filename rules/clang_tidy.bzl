@@ -57,7 +57,9 @@ tidy_regex_flag = rule(
 # to.
 
 def _tidy_report_transition_impl(_settings, attr):
-    outputs = {}
+    outputs = {
+        "//:clang_tidy_regex": attr.rewrite_sed_pattern if attr.rewrite_sed_pattern else "",
+    }
 
     if attr.tidy_config_file:
         # the label //:clang_tidy_config now has the value
@@ -66,9 +68,6 @@ def _tidy_report_transition_impl(_settings, attr):
 
     if attr.source_path_substrings:
         outputs["//:clang_tidy_check_files"] = attr.source_path_substrings
-
-    if attr.rewrite_sed_pattern:
-        outputs["//:clang_tidy_regex"] = attr.rewrite_sed_pattern
 
     return outputs
 
@@ -454,3 +453,126 @@ clang_tidy_report = rule(
         ),
     },
 )
+
+def _clang_tidy_test_impl(ctx):
+    """Implementation for the _clang_tidy_test."""
+    report_yaml = ctx.file.report_yaml
+
+    if _is_windows(ctx):
+        script_name = ctx.label.name + ".bat"
+
+        # Note: We need to use %%~zF to get file size in a batch for loop.
+        # The single % is for the format string, the double %% is for batch escaping.
+        script_content = """@echo off
+setlocal
+set YAML_FILE={yaml_path}
+
+if not exist "%YAML_FILE%" (
+    echo YAML file not found: %YAML_FILE%
+    exit /b 1
+)
+
+for %%F in ("%YAML_FILE%") do set FILE_SIZE=%%~zF
+
+if %FILE_SIZE% GTR 16 (
+    echo Clang-tidy found issues:
+    type "%YAML_FILE%"
+    exit /b 1
+) else (
+    echo No clang-tidy issues found.
+    exit /b 0
+)
+""".format(yaml_path = report_yaml.short_path.replace("/", "\\"))
+
+    else:
+        script_name = ctx.label.name + ".sh"
+        script_content = """#!/bin/bash
+YAML_FILE="{yaml_path}"
+if [ ! -f "$YAML_FILE" ]; then
+    echo "YAML file not found: $YAML_FILE"
+    exit 1
+fi
+FILE_SIZE=$(wc -m "$YAML_FILE")
+if [ "$FILE_SIZE" -gt 16 ]; then
+    echo "Clang-tidy found issues:"
+    cat "$YAML_FILE"
+    exit 1
+else
+    echo "No clang-tidy issues found."
+    exit 0
+fi
+""".format(yaml_path = report_yaml.short_path)
+
+    script = ctx.actions.declare_file(script_name)
+    ctx.actions.write(
+        output = script,
+        content = script_content,
+        is_executable = True,
+    )
+
+    return [DefaultInfo(
+        executable = script,
+        runfiles = ctx.runfiles(files = [report_yaml]),
+    )]
+
+_clang_tidy_test = rule(
+    implementation = _clang_tidy_test_impl,
+    test = True,
+    attrs = {
+        "report_yaml": attr.label(
+            doc = "The clang-tidy report yaml file.",
+            allow_single_file = True,
+            mandatory = True,
+        ),
+    },
+)
+
+def clang_tidy_test(
+        name,
+        targets,
+        tidy_config_file,
+        **kwargs):
+    """A test that fails if clang-tidy finds any issues.
+
+    This rule runs clang-tidy on the given targets and fails the test
+    if any diagnostics are reported. It automatically filters sources
+    to the repository where the test is defined.
+
+    Args:
+        name: The name of the test rule.
+        targets: A list of cc_* targets to be analyzed.
+        tidy_config_file: The .clang-tidy configuration file to use.
+        **kwargs: Additional arguments to pass to the underlying clang_tidy_report rule.
+    """
+    repo = native.repository_name()
+    substrings = []
+    apply_fixes_in = ""
+    rewrite_sed_pattern = ""
+    if repo == "@goldfish+":
+        substrings = ["goldfish+"]
+        apply_fixes_in = "hardware/generic/goldfish"
+        rewrite_sed_pattern = "s/^m_//g"
+    elif not repo:
+        # For the main repository, no explicit filtering is applied by default.
+        pass  # User can still pass source_path_substrings via kwargs if needed.
+    else:
+        # For other external repositories, use the repository name (without '@') and a trailing slash.
+        substrings = [repo.replace("@", "") + "/"]
+
+    report_name = name + "_report"
+    clang_tidy_report(
+        name = report_name,
+        targets = targets,
+        tidy_config_file = tidy_config_file,
+        source_path_substrings = substrings,
+        apply_fixes_in = apply_fixes_in,
+        rewrite_sed_pattern = rewrite_sed_pattern,
+        testonly = True,
+        **kwargs
+    )
+
+    _clang_tidy_test(
+        name = name,
+        report_yaml = report_name,
+        testonly = True,
+    )
