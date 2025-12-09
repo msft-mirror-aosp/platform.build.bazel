@@ -55,6 +55,9 @@ bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "tools_emulator", version = "0.0.1")
 
+android_sdk = use_extension("@goldfish_build//extensions:android_sdk.bzl", "android_sdk")
+use_repo(android_sdk, "sdk_linux", "sdk_macosx", "sdk_windows")
+
 # List of system images, these are updated by running the script
 # ./util/update_mingbm_image.sh -b <bid>
 # Please run that script if you wish to update the default system image used
