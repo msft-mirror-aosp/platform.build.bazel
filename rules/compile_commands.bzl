@@ -339,7 +339,7 @@ compile_commands_aspect = aspect(
     attr_aspects = ["implementation_deps", "deps", "srcs", "data"],
     attrs = {
         "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
-        "_generator": attr.label(default = Label("//:gen-cc-snippet")),
+        "_generator": attr.label(default = Label("//utils:gen-cc-snippet")),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
@@ -388,7 +388,7 @@ Note: This tool is best effort, it might not find all the header deps, but it is
             doc = "List of external workspace names (e.g., 'aemu') to include. The main workspace is always included.",
         ),
         "_generator": attr.label(
-            default = Label("//:gen-cc-snippet"),
+            default = Label("//utils:gen-cc-snippet"),
             executable = True,
             cfg = "exec",
         ),

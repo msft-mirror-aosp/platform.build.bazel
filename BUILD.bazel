@@ -1,5 +1,3 @@
-load("@goldfish-build-pypi//:requirements.bzl", "requirement")
-load("@rules_python//python:defs.bzl", "py_binary")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("//rules:clang_tidy.bzl", "tidy_regex_flag", "tidy_source_flag")
 
@@ -10,6 +8,7 @@ test_suite(
     ],
 )
 
+# Here are the various flags used for our clang-tidy rules
 # By default we will just accept all goldfish thingies.
 tidy_source_flag(
     name = "clang_tidy_check_files",
@@ -35,22 +34,8 @@ label_flag(
     visibility = ["//visibility:public"],
 )
 
-py_binary(
-    name = "gen-cc-snippet",
-    srcs = ["utils/gen_cc_snippet.py"],
-    main = "gen_cc_snippet.py",
-    visibility = ["//visibility:public"],
-)
-
-py_binary(
-    name = "run-clang-tidy",
-    srcs = ["utils/run_clang_tidy.py"],
-    main = "run_clang_tidy.py",
-    visibility = ["//visibility:public"],
-    deps = [requirement("PyYAML")],
-)
-
 # This rule adds a convenient way to update the requirements file.
+# If you make changes to "requirements.in" you will have to run this target.
 compile_pip_requirements(
     name = "requirements",
     src = "requirements.in",
