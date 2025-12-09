@@ -6,7 +6,7 @@ load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("//toolchains/cc:actions.bzl", "PACKAGE_DEBUG_SYMBOLS_ACTION_NAME")
 
 CPP_LINK_MNEMONIC = "CppLink"
-_SWITCH_FLAG = "//toolchains/cc/mac_clang:generate_apple_dsym"
+_SWITCH_FLAG = "//rules/native:generate_apple_dsym"
 
 AppleDsymInfo = provider(
     doc = "Metadata for generated Apple debug symbol (dSYM) bundle.",

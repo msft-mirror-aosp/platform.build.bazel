@@ -17,7 +17,7 @@
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 
 _OBJCOPY_TOOLCHAIN_TYPE = "//toolchains/cc:objcopy_toolchain_type"
-_SWITCH_FLAG = "//toolchains/cc/linux_clang:generate_gnu_debug_file"
+_SWITCH_FLAG = "//rules/native:generate_gnu_debug_file"
 
 GnuDebugInfo = provider(
     doc = "Metadata for GNU debug files from ELF binaries.",

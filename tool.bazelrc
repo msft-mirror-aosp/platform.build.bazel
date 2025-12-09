@@ -2,8 +2,8 @@
 build --host_platform='@host_platform//:host'
 
 ## Native common
-build:linux --@goldfish_build//toolchains/cc/linux_clang:generate_gnu_debug_file
-build:linux --@goldfish_build//toolchains/cc:allow_strip
+build:linux --@goldfish_build//rules/native:generate_gnu_debug_file
+build:linux --@goldfish_build//rules/native:allow_strip
 
 ## C++
 common --repo_env='BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1'
@@ -17,7 +17,7 @@ build:macos --features='generate_debug_symbols'
 # See https://github.com/bazelbuild/bazel/issues/4341#issuecomment-758361769
 # Prevent thread-local issues in protobuf.
 build:macos --features=-supports_dynamic_linker
-build:macos --@goldfish_build//toolchains/cc/mac_clang:generate_apple_dsym
+build:macos --@goldfish_build//rules/native:generate_apple_dsym
 build:macos --force_pic
 
 build:windows --features='generate_pdb_file'

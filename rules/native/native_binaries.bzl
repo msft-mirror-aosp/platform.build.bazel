@@ -15,9 +15,9 @@
 """Rules for post-processing native binaries."""
 
 load("@rules_cc//cc/common:debug_package_info.bzl", "DebugPackageInfo")
-load("//toolchains/cc:strip.bzl", "strip_aspect")
-load("//toolchains/cc/linux_clang:debug.bzl", "GnuDebugInfo", "gen_gnu_debug_aspect")
-load("//toolchains/cc/mac_clang:dsym.bzl", "AppleDsymInfo", "gen_dsym_aspect")
+load("dsym.bzl", "AppleDsymInfo", "gen_dsym_aspect")
+load("gnu.bzl", "GnuDebugInfo", "gen_gnu_debug_aspect")
+load("strip.bzl", "strip_aspect")
 
 TransformedFilesInfo = provider(
     doc = """Stores a map that corresponds src files to their transformed results.
