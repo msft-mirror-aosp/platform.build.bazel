@@ -396,7 +396,7 @@ clang_tidy_aspect = aspect(
     attr_aspects = ["implementation_deps", "deps", "srcs", "data"],
     attrs = {
         "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
-        "_run_tidy": attr.label(default = Label("//:run-clang-tidy")),
+        "_run_tidy": attr.label(default = Label("//utils:run-clang-tidy")),
         "_allow_external_workspaces": attr.string_list(
             doc = "List of external workspace names (e.g., 'aemu') to include. The main workspace is always included.",
             default = [],
@@ -446,7 +446,7 @@ clang_tidy_report = rule(
         "_run_tidy": attr.label(
             executable = True,
             cfg = "exec",
-            default = Label("//:run-clang-tidy"),
+            default = Label("//utils:run-clang-tidy"),
         ),
         "_allowlist_function_transition": attr.label(
             default = "@bazel_tools//tools/allowlists/function_transition_allowlist",
