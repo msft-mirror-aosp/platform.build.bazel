@@ -81,7 +81,7 @@ local_path_override(
 )
 
 # Enable Java gRPC compilation
-bazel_dep(name = "rules_jvm_external", version = "6.0")
+bazel_dep(name = "rules_jvm_external", version = "6.9")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 use_repo(maven, "maven")
