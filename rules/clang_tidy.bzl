@@ -44,6 +44,19 @@ tidy_regex_flag = rule(
     build_setting = config.string(flag = True, allow_multiple = False),
 )
 
+TidyExcludeTagsProviderInfo = provider(
+    "a set of tags that we can use to exclude a set of targets from clang-tidy analysis.",
+    fields = ["tags"],
+)
+
+def _tidy_exclude_tags_impl(ctx):
+    return TidyExcludeTagsProviderInfo(tags = ctx.build_setting_value)
+
+tidy_exclude_tags_flag = rule(
+    implementation = _tidy_exclude_tags_impl,
+    build_setting = config.string_list(flag = True),
+)
+
 # So an aspect rule operates on the build graph
 # and it needs all the attributes used for operation
 # of the rule to be available before it starts executing
@@ -69,6 +82,9 @@ def _tidy_report_transition_impl(_settings, attr):
     if attr.source_path_substrings:
         outputs["//:clang_tidy_check_files"] = attr.source_path_substrings
 
+    if attr.exclude_tags:
+        outputs["//:clang_tidy_exclude_tags"] = attr.exclude_tags
+
     return outputs
 
 tidy_report_transition = transition(
@@ -78,6 +94,7 @@ tidy_report_transition = transition(
         "//:clang_tidy_config",
         "//:clang_tidy_check_files",
         "//:clang_tidy_regex",
+        "//:clang_tidy_exclude_tags",
     ],
 )
 
@@ -257,6 +274,14 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
 # --- Implementations ---
 
 def _clang_tidy_aspect_impl(target, ctx):
+    # Check for excluded tags before collecting transitive state
+    excluded_tags = ctx.attr._clang_tidy_exclude_tags[TidyExcludeTagsProviderInfo].tags
+    target_tags = getattr(ctx.rule.attr, "tags", [])
+
+    for tag in excluded_tags:
+        if tag in target_tags:
+            return [ClangTidyInfo(fixes = depset())]
+
     # 1. Collect Transitive State
     transitive_fixes = []
     attr_aspects_to_check = ["deps", "implementation_deps", "srcs", "data"]
@@ -414,6 +439,10 @@ clang_tidy_aspect = aspect(
             doc = "The set of sed style regexes to apply before applying a rewrite rule.",
             default = Label("//:clang_tidy_regex"),
         ),
+        "_clang_tidy_exclude_tags": attr.label(
+            doc = "The set of tags that can be used to exclude targets from clang-tidy analysis.",
+            default = Label("//:clang_tidy_exclude_tags"),
+        ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
@@ -442,6 +471,10 @@ clang_tidy_report = rule(
         "tidy_config_file": attr.label(
             doc = "A label pointing to the .clang-tidy configuration file to use.",
             allow_single_file = True,
+        ),
+        "exclude_tags": attr.string_list(
+            doc = "A list of tags. Any target with one or more of these tags will be excluded from clang-tidy analysis.",
+            default = ["no-tidy", "no-clang-tidy"],
         ),
         "_run_tidy": attr.label(
             executable = True,

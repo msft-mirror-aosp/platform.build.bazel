@@ -1,5 +1,5 @@
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
-load("//rules:clang_tidy.bzl", "tidy_regex_flag", "tidy_source_flag")
+load("//rules:clang_tidy.bzl", "tidy_exclude_tags_flag", "tidy_regex_flag", "tidy_source_flag")
 
 test_suite(
     name = "sanity_checks",
@@ -31,6 +31,12 @@ filegroup(
 label_flag(
     name = "clang_tidy_config",
     build_setting_default = ":default_tidy_config",
+    visibility = ["//visibility:public"],
+)
+
+tidy_exclude_tags_flag(
+    name = "clang_tidy_exclude_tags",
+    build_setting_default = [],
     visibility = ["//visibility:public"],
 )
 
