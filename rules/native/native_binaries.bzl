@@ -14,10 +14,8 @@
 
 """Rules for post-processing native binaries."""
 
-load("@rules_cc//cc/common:debug_package_info.bzl", "DebugPackageInfo")
-load("dsym.bzl", "AppleDsymInfo", "gen_dsym_aspect")
-load("gnu.bzl", "GnuDebugInfo", "gen_gnu_debug_aspect")
-load("strip.bzl", "strip_aspect")
+load("debug.bzl", "DebugSymbolsSetInfo", "collect_pdb_aspect", "gen_dsym_aspect", "gen_gnu_debug_aspect")
+load("strip.bzl", "StrippedBinarySetInfo", "strip_aspect")
 
 TransformedFilesInfo = provider(
     doc = """Stores a map that corresponds src files to their transformed results.
@@ -30,28 +28,40 @@ TransformedFilesInfo = provider(
     },
 )
 
+def _symbol_collector():
+    return struct(
+        files = [],
+        mapping = {},
+        original = {},
+    )
+
+def _add_symbols(collector, executable_file, original_executable_file, symbol_files):
+    for symbol_file in symbol_files:
+        if not symbol_file:
+            continue
+        collector.files.append(symbol_file)
+        collector.mapping.setdefault(executable_file, []).append(symbol_file)
+        if original_executable_file and executable_file != original_executable_file:
+            collector.original[symbol_file] = original_executable_file
+
 def _native_symbols_impl(ctx):
-    symbol_files = []
-    mapping = {}
-    original = {}
-    for binary_target in ctx.attr.srcs:
-        executable_file = binary_target.files_to_run.executable or binary_target.files.to_list()[0]
-        symbol_file = []
-        if AppleDsymInfo in binary_target:
-            symbol_file = [binary_target[AppleDsymInfo].dsym_bundle]
-            original[symbol_file[0]] = binary_target[AppleDsymInfo].executable_file
-        elif OutputGroupInfo in binary_target and hasattr(binary_target[OutputGroupInfo], "pdb_file"):
-            symbol_file = binary_target[OutputGroupInfo].pdb_file.to_list()
-        elif GnuDebugInfo in binary_target:
-            symbol_file = [binary_target[GnuDebugInfo].debug_file]
-            original[symbol_file[0]] = binary_target[GnuDebugInfo].executable_file
-        if DebugPackageInfo in binary_target and binary_target[DebugPackageInfo].dwp_file:
-            symbol_file.append(binary_target[DebugPackageInfo].dwp_file)
-            original[binary_target[DebugPackageInfo].dwp_file] = binary_target[DebugPackageInfo].unstripped_file
-        symbol_files.extend(symbol_file)
-        if symbol_file:
-            mapping[executable_file] = symbol_file
-    return [DefaultInfo(files = depset(symbol_files)), TransformedFilesInfo(mapping = mapping, original = original)]
+    symbol_packages = [t[DebugSymbolsSetInfo] for t in ctx.attr.srcs if DebugSymbolsSetInfo in t]
+    collector = _symbol_collector()
+    for package in symbol_packages:
+        if package.dsym:
+            for dsym in package.dsym.to_list():
+                _add_symbols(collector, dsym.executable_file, dsym.original_executable_file, [dsym.dsym_bundle])
+        if package.gnu:
+            for gnu in package.gnu.to_list():
+                _add_symbols(collector, gnu.executable_file, gnu.original_executable_file, [gnu.debug_file, gnu.dwp_file])
+        if package.pdb:
+            for pdb in package.pdb.to_list():
+                _add_symbols(collector, pdb.executable_file, pdb.original_executable_file, [pdb.pdb_file])
+
+    return [
+        DefaultInfo(files = depset(collector.files)),
+        TransformedFilesInfo(mapping = collector.mapping, original = collector.original),
+    ]
 
 native_symbols = rule(
     implementation = _native_symbols_impl,
@@ -64,22 +74,29 @@ native_symbols = rule(
             doc = "The binary targets to inspect.",
             mandatory = True,
             allow_empty = False,
-            aspects = [gen_dsym_aspect, gen_gnu_debug_aspect],
+            aspects = [
+                gen_dsym_aspect,
+                gen_gnu_debug_aspect,
+                collect_pdb_aspect,
+            ],
         ),
     },
     provides = [TransformedFilesInfo],
 )
 
 def _stripped_binaries_impl(ctx):
+    strip_info_set = [t[StrippedBinarySetInfo] for t in ctx.attr.srcs if StrippedBinarySetInfo in t]
     stripped_files = []
     mapping = {}
-    for binary_target in ctx.attr.srcs:
-        executable_file = binary_target.files_to_run.executable or binary_target.files.to_list()[0]
-        if OutputGroupInfo in binary_target and hasattr(binary_target[OutputGroupInfo], "stripped_file"):
-            stripped_file = binary_target[OutputGroupInfo].stripped_file.to_list()
-            stripped_files.extend(stripped_file)
-            mapping[executable_file] = stripped_file
-    return [DefaultInfo(files = depset(stripped_files)), TransformedFilesInfo(mapping = mapping, original = None)]
+    for strip_info in strip_info_set:
+        for binary in strip_info.binaries.to_list():
+            stripped_files.append(binary.stripped)
+            mapping[binary.unstripped] = [binary.stripped]
+
+    return [
+        DefaultInfo(files = depset(stripped_files)),
+        TransformedFilesInfo(mapping = mapping, original = None),
+    ]
 
 stripped_binaries = rule(
     implementation = _stripped_binaries_impl,

@@ -1,13 +1,14 @@
-load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag", "string_flag")
 
-bool_flag(
-    name = "generate_gnu_debug_file",
-    build_setting_default = False,
-)
-
-bool_flag(
-    name = "generate_apple_dsym",
-    build_setting_default = False,
+string_flag(
+    name = "generate_debug_package",
+    build_setting_default = "none",
+    values = [
+        "none",
+        "gnu",
+        "dsym",
+        "pdb",
+    ],
 )
 
 bool_flag(
