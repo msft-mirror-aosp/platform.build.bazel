@@ -43,6 +43,106 @@ Replacement = namedtuple(
 # The maximum number of files to keep in the cache.
 MAX_CACHE_ENTRIES = 5000
 
+# These are diagnostics that are local to a single file
+# They *DO NOT* require a worspace wide replace.
+SIMPLE_FIX_DIAGNOSTIC = set(
+    [
+        "abseil-faster-strsplit-delimiter",
+        "abseil-string-find-str-contains",
+        "bugprone-assignment-in-if-condition",
+        "bugprone-implicit-widening-of-multiplication-result",
+        "bugprone-macro-parentheses",
+        "bugprone-misplaced-widening-cast",
+        "bugprone-narrowing-conversions",
+        "bugprone-string-constructor",
+        "bugprone-switch-missing-default-case",
+        "google-build-namespaces",
+        "google-build-using-namespace",
+        "google-explicit-constructor",
+        "google-readability-braces-around-statements",
+        "google-readability-casting",
+        "google-runtime-int",
+        "misc-const-correctness",
+        "misc-misplaced-const",
+        "misc-redundant-expression",
+        "misc-unused-alias-decls",
+        "misc-unused-parameters",
+        "misc-unused-using-decls",
+        "misc-use-anonymous-namespace",
+        "misc-use-internal-linkage",
+        "modernize-avoid-bind",
+        "modernize-concat-nested-namespaces",
+        "modernize-deprecated-headers",
+        "modernize-loop-convert",
+        "modernize-macro-to-enum",
+        "modernize-pass-by-value",
+        "modernize-raw-string-literal",
+        "modernize-redundant-void-arg",
+        "modernize-replace-disallow-copy-and-assign-macro",
+        "modernize-return-braced-init-list",
+        "modernize-type-traits",
+        "modernize-unary-static-assert",
+        "modernize-use-auto",
+        "modernize-use-bool-literals",
+        "modernize-use-default-member-init",
+        "modernize-use-designated-initializers",
+        "modernize-use-emplace",
+        "modernize-use-equals-default",
+        "modernize-use-integer-sign-comparison",
+        "modernize-use-nodiscard",
+        "modernize-use-nullptr",
+        "modernize-use-override",
+        "modernize-use-ranges",
+        "modernize-use-starts-ends-with",
+        "modernize-use-std-numbers",
+        "modernize-use-transparent-functors",
+        "modernize-use-using",
+        "performance-avoid-endl",
+        "performance-enum-size",
+        "performance-faster-string-find",
+        "performance-for-range-copy",
+        "performance-inefficient-string-concatenation",
+        "performance-inefficient-vector-operation",
+        "performance-move-const-arg",
+        "performance-no-automatic-move",
+        "performance-no-int-to-ptr",
+        "performance-noexcept-move-constructor",
+        "performance-noexcept-swap",
+        "performance-unnecessary-copy-initialization",
+        "performance-unnecessary-value-param",
+        "readability-avoid-const-params-in-decls",
+        "readability-avoid-return-with-void-value",
+        "readability-avoid-unconditional-preprocessor-if",
+        "readability-const-return-type",
+        "readability-container-contains",
+        "readability-container-data-pointer",
+        "readability-container-size-empty",
+        "readability-convert-member-functions-to-static",
+        "readability-delete-null-pointer",
+        "readability-duplicate-include",
+        "readability-else-after-return",
+        "readability-enum-initial-value",
+        "readability-isolate-declaration",
+        "readability-make-member-function-const",
+        "readability-math-missing-parentheses",
+        "readability-non-const-parameter",
+        "readability-qualified-auto",
+        "readability-redundant-access-specifiers",
+        "readability-redundant-casting",
+        "readability-redundant-declaration",
+        "readability-redundant-member-init",
+        "readability-redundant-smartptr-get",
+        "readability-redundant-string-init",
+        "readability-simplify-boolean-expr",
+        "readability-static-accessed-through-instance",
+        "readability-static-definition-in-anonymous-namespace",
+        "readability-string-compare",
+        "readability-uppercase-literal-suffix",
+        "readability-use-anyofallof",
+        "readability-use-std-min-max",
+    ]
+)
+
 
 @dataclass
 class TidyConfig:
@@ -580,8 +680,16 @@ def _parse_fixes_from_yaml(yaml_files: List[str]) -> Dict[str, List[Dict[str, An
 
         diagnostics = data["Diagnostics"]
         for diagnostic in diagnostics:
-            if not "DiagnosticMessage" in diagnostic:
+            if not (
+                "DiagnosticMessage" in diagnostic and "DiagnosticName" in diagnostic
+            ):
                 continue
+
+            name = diagnostic["DiagnosticName"]
+            if not name in SIMPLE_FIX_DIAGNOSTIC:
+                logging.info("Cannot apply %s, skipping", name)
+                continue
+
             message = diagnostic["DiagnosticMessage"]
             if not "Replacements" in message:
                 continue
@@ -607,6 +715,7 @@ def _apply_fixes(yaml_files: List[str], cwd: Path = None) -> None:
         yaml_files: A list of paths to YAML files containing the fixes.
         cwd: The current working directory to resolve relative paths against.
     """
+
     fixes_map = _parse_fixes_from_yaml(yaml_files)
     for filepath_str, replacements in fixes_map.items():
         filepath = Path(filepath_str)
