@@ -334,7 +334,6 @@ def _clang_tidy_report_impl(ctx):
 
     # --- Combine ALL Fixes ---
     final_fixes_file = ctx.actions.declare_file(ctx.label.name + ".final_fixes.yaml")
-
     if all_fixes:
         args_fixes = ctx.actions.args()
         args_fixes.add("combine-tidy")  # Ensure this matches your tool's command
@@ -492,13 +491,14 @@ if [ ! -f "$YAML_FILE" ]; then
     echo "YAML file not found: $YAML_FILE"
     exit 1
 fi
-FILE_SIZE=$(wc -m "$YAML_FILE")
-if [ "$FILE_SIZE" -gt 16 ]; then
+FILE_SIZE=$(wc -l "$YAML_FILE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]].*//')
+if [ "$FILE_SIZE" -gt 4 ]; then
     echo "Clang-tidy found issues:"
     cat "$YAML_FILE"
     exit 1
 else
     echo "No clang-tidy issues found."
+    cat "$YAML_FILE"
     exit 0
 fi
 """.format(yaml_path = report_yaml.short_path)
