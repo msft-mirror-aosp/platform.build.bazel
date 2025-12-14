@@ -1,17 +1,20 @@
 """Script to set up a local development environment."""
 
 import enum
+import hashlib
 import logging
 import pathlib
 import platform
 
+CARTFS_MOUNT = '/google/cartfs/mount'
+
 
 class Platform(enum.Enum):
-  UNKNOWN        = 0
+  UNKNOWN = 0
   GLINUX_DESKTOP = 1
-  GLINUX_LAPTOP  = 2
-  WINDOWS        = 3
-  MAC            = 4
+  GLINUX_LAPTOP = 2
+  WINDOWS = 3
+  MAC = 4
 
 
 def detect_platform() -> Platform:
@@ -37,20 +40,26 @@ def find_workspace_root() -> pathlib.Path:
     FileNotFoundError: If the workspace root could not be found.
   """
   path = pathlib.Path(__file__)
-  while True:
-    repo = path / '.repo'
-    if repo.exists() and repo.is_dir():
+  for path in path.parents:
+    if (path / '.repo').is_dir():
       return path
-    if path == path.parent:
-      raise FileNotFoundError('Could not find workspace root')
-    path = path.parent
+    if (path / '.supermanifest').exists():
+      return path
+  else:
+    raise FileNotFoundError('Could not find workspace root')
 
 
-def build_env_bazelrc(platform: Platform) -> str:
+def build_env_bazelrc(platform: Platform, workspace_root: pathlib.Path) -> str:
   """Returns the env.bazelrc file for the given platform."""
   bazelrc = ''
   if platform is Platform.GLINUX_DESKTOP:
     bazelrc += 'import %workspace%/tools/vendor/google/bazel/glinux.bazelrc\n'
+    if pathlib.Path(CARTFS_MOUNT).exists():
+      # Configure CartFS for reducing disk usage on output artifacts.
+      workspace_hash = hashlib.md5(
+          str(workspace_root).encode('utf-8'), usedforsecurity=False
+      ).hexdigest()
+      bazelrc += f'startup --output_base={CARTFS_MOUNT}/{workspace_hash}\n'
   else:
     bazelrc += 'common --google_default_credentials\n'
   bazelrc += 'common --config=rcache\n'
@@ -67,7 +76,7 @@ def main():
   logging.info('Detected platform %s', platform)
   logging.info('Found workspace root %s', workspace_root)
 
-  env_bazelrc_contents = build_env_bazelrc(platform)
+  env_bazelrc_contents = build_env_bazelrc(platform, workspace_root)
   env_bazelrc_path = workspace_root / 'env.bazelrc'
   env_bazelrc_path.write_text(env_bazelrc_contents)
   logging.info('Wrote env.bazelrc')
