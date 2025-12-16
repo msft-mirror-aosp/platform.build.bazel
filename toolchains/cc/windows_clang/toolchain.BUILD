@@ -83,9 +83,11 @@ cc_features(
         "/wd4996",  # '...' is deprecated
         "-Wno-macro-redefined",  # We force define a large set windows settings
         "--target=x86_64-pc-windows-msvc",
-        # Use standard c++ exception handling
+        # Disable exception handling
         # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
-        "/EHsc",
+        "/EHs-",
+        "/EHc-",
+        "/EHa-",
     ],
     compiler_defines_flags = [
         # Improves compatibility with older or embedded systems where atomics might not be supported or efficient.

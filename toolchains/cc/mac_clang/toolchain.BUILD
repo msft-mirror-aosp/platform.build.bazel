@@ -93,7 +93,10 @@ cc_features(
         "@goldfish_build//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
-    cxx_flags = ["-std=c++20"],
+    cxx_flags = [
+        "-std=c++20",
+        "-fno-exceptions",
+    ],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
         "-mmacos-version-min=10.15",
@@ -206,7 +209,10 @@ cc_features(
         "@goldfish_build//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
-    cxx_flags = ["-std=c++20"],
+    cxx_flags = [
+        "-std=c++20",
+        "-fno-exceptions",
+    ],
     link_flags = [
         "--target=arm64-apple-darwin-macho",
         "-mmacos-version-min=11",

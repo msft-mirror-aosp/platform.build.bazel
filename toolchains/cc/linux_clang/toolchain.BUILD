@@ -32,6 +32,7 @@ cc_features(
     ],
     cxx_flags = [
         "-std=c++20",
+        "-fno-exceptions",
     ],
     link_flags = [
         "--target=x86_64-unknown-linux-gnu",
