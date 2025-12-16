@@ -124,8 +124,8 @@ gcs_archive(
 gcs_archive(
     name = "cts-x86-64",
     build_file = "@goldfish//emulator/sdk/xts/cts-x86-64:cts.BUILD",
-    sha256 = "e16721554b8e46d3138350670d83c11709dcf8bb12f50517f62ef40f0055235f",
-    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_x86_64/14236881/android-cts.zip",
+    sha256 = "b33dd4562eac1192e909c99baf3a0a569b3086a35a59566bc8f529ccf26b71fb",
+    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_x86_64/14236881/android-cts.modified-20251216.zip",
 )
 
 gcs_archive(
