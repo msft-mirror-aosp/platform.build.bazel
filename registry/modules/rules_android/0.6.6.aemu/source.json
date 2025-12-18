@@ -1,0 +1,9 @@
+{
+    "integrity": "sha256-+Pi8pt9h6mBwoKirxAVJQLGcn9tPq7hk5A0p0ST1F/k=",
+    "strip_prefix": "rules_android-0.6.6",
+    "url": "https://github.com/bazelbuild/rules_android/releases/download/v0.6.6/rules_android-v0.6.6.tar.gz",
+    "patch_strip": 1,
+    "patches": {
+        "update_protobuf_to_32_1.patch": "sha256-BT6YwvtIhoKq9d6PFpXRGgQINZZlScE/1woso+QS/7Y="
+    }
+}
