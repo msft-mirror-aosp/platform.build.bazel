@@ -2,7 +2,7 @@
 
 set -e
 
-MODULE_FILE="$(git rev-parse --show-toplevel)/toplevel.MODULE.bazel"
+MODULE_FILE="$(realpath ../registry/modules/goldfish/0.0.1/MODULE.bazel)"
 FETCH_ARTIFACT="/google/data/ro/projects/android/fetch_artifact"
 
 USAGE="Usage: $0 -b <build_id>"
@@ -43,10 +43,10 @@ update_target() {
     a_suffix="16k"
   fi
 
-  target_name="sdk_gphone${k_suffix}_${arch}_minigbm-userdebug"
+  target_name="sdk_gphone${k_suffix}_${arch}-userdebug"
   zip_filename="sdk-repo-linux-system-images-${build_id}.zip"
-  gcs_target_dir="sdk_gphone${k_suffix}_${arch}_minigbm-userdebug"
-  archive_name="android_minigbm${a_suffix}-${arch}${arch_suffix}"
+  gcs_target_dir="sdk_gphone${k_suffix}_${arch}-userdebug"
+  archive_name="android${a_suffix}-${arch}${arch_suffix}"
 
   echo "--------------------------------------------------" >&2
   echo "Updating $archive_name for build $build_id..." >&2
@@ -109,6 +109,6 @@ update_target "arm64"  false "$BUILD_ID"
 update_target "arm64"  true  "$BUILD_ID"
 
 echo "--------------------------------------------------" >&2
-echo "Minigbm image update process complete." >&2
+echo "Image update process complete." >&2
 
 exit 0
