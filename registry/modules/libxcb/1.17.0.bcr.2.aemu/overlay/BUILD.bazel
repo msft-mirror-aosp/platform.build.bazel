@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_python//python:py_binary.bzl", "py_binary")
 
 EXTENSIONS = [
@@ -119,7 +120,7 @@ cc_library(
 )
 
 cc_library(
-    name = "xcb",
+    name = "xcb_lib",
     srcs = (
         ["{}.c".format(x) for x in EXTENSIONS] +
         ["{}.h".format(x) for x in EXTENSIONS] +
@@ -152,8 +153,18 @@ cc_library(
     ],
 )
 
+cc_shared_library(
+    name = "libxcb_shared",
+    user_link_flags = ["-Wl,-soname=libxcb-aemu.so"],
+    shared_lib_name = "libxcb-aemu.so",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":xcb_lib",
+    ],
+)
+
 alias(
     name = "libxcb",
-    actual = ":xcb",
+    actual = ":libxcb_shared",
     visibility = ["//visibility:public"],
 )
