@@ -26,8 +26,3 @@ xcode_config(
 )
 
 toolchain_type(name = "mig_toolchain_type")
-
-bool_flag(
-    name = "generate_apple_dsym",
-    build_setting_default = False,
-)

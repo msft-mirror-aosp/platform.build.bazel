@@ -20,42 +20,72 @@
 # 2. It integrates with other aspects to add debug link if applicable.
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
-load("//toolchains/cc/linux_clang:debug.bzl", "GnuDebugInfo", "gen_gnu_debug_aspect")
+load("debug.bzl", "DebugSymbolsSetInfo", "gen_gnu_debug_aspect", "is_elf_binary")
 
 _OBJCOPY_TOOLCHAIN_TYPE = "//toolchains/cc:objcopy_toolchain_type"
-_SWITCH_FLAG = "//toolchains/cc:allow_strip"
+_SWITCH_FLAG = "//rules/native:allow_strip"
+
+StrippedBinaryInfo = provider(
+    doc = "Metadata for stripped binary.",
+    fields = ["stripped", "unstripped"],
+)
+
+StrippedBinarySetInfo = provider(
+    doc = "A depset of StrippedBinaryInfo.",
+    fields = ["binaries"],
+)
 
 def _strip_aspect_impl(target, ctx):
-    executable_file = target.files_to_run.executable or target.files.to_list()[0]  # type: File
-    debug_file = None
-    if GnuDebugInfo in target:
-        executable_file = target[GnuDebugInfo].executable_file  # type: File
-        debug_file = target[GnuDebugInfo].debug_file  # type: File
+    if target.files_to_run.executable:
+        binaries = [target.files_to_run.executable]
+    else:
+        binaries = [f for f in target.files.to_list() if is_elf_binary(f)]
+
     if not ctx.attr._switch_flag[BuildSettingInfo].value:
-        return [OutputGroupInfo(stripped_file = depset([executable_file]))]
+        return [StrippedBinarySetInfo(
+            binaries = depset([
+                StrippedBinaryInfo(stripped = f, unstripped = f)
+                for f in binaries
+            ]),
+        )]
+
     toolchain = ctx.toolchains[_OBJCOPY_TOOLCHAIN_TYPE]
     if not toolchain:
         fail("Flag", _SWITCH_FLAG, "is enabled, but no toolchain is available for toolchain type", _OBJCOPY_TOOLCHAIN_TYPE)
-    output_name = "_stripped/" + executable_file.basename
-    output = ctx.actions.declare_file(output_name)
-    objcopy = toolchain.tool
-    args = list(objcopy.args)
-    inputs = [executable_file]
-    if debug_file:
-        args.append("--add-gnu-debuglink={}".format(debug_file.path))
-        inputs.append(debug_file)
-    ctx.actions.run(
-        mnemonic = "Strip",
-        progress_message = "Stripping " + output.short_path,
-        outputs = [output],
-        inputs = inputs,
-        executable = objcopy.executable,
-        tools = objcopy.runfiles,
-        arguments = args + ["--strip-all", executable_file.path, output.path],
-        env = objcopy.env,
-        toolchain = _OBJCOPY_TOOLCHAIN_TYPE,
-    )
-    return [OutputGroupInfo(stripped_file = depset([output]))]
+
+    debug_file_lookup = {}
+    if DebugSymbolsSetInfo in target and target[DebugSymbolsSetInfo].gnu:
+        for gnu in target[DebugSymbolsSetInfo].gnu.to_list():
+            debug_file_lookup[gnu.executable_file] = gnu.debug_file
+
+    strip_info = []
+    for binary in binaries:
+        output_name = "_stripped/" + binary.basename
+        output = ctx.actions.declare_file(output_name)
+        objcopy = toolchain.tool
+        args = list(objcopy.args)
+        inputs = [binary]
+        debug_file = debug_file_lookup.get(binary)
+        if debug_file:
+            args.append("--add-gnu-debuglink={}".format(debug_file.path))
+            inputs.append(debug_file)
+        ctx.actions.run(
+            mnemonic = "Strip",
+            progress_message = "Stripping " + output.short_path,
+            outputs = [output],
+            inputs = inputs,
+            executable = objcopy.executable,
+            tools = objcopy.runfiles,
+            arguments = args + ["--strip-all", binary.path, output.path],
+            env = objcopy.env,
+            toolchain = _OBJCOPY_TOOLCHAIN_TYPE,
+        )
+        strip_info.append(StrippedBinaryInfo(
+            stripped = output,
+            unstripped = binary,
+        ))
+
+    return [StrippedBinarySetInfo(binaries = depset(strip_info))]
 
 strip_aspect = aspect(
     doc = """Create a stripped binary and add it to output group 'stripped_file'.
