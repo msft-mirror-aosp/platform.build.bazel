@@ -1208,7 +1208,7 @@
     "@@rules_android+//rules/android_sdk_repository:rule.bzl%android_sdk_repository_extension": {
       "general": {
         "bzlTransitiveDigest": "NAy+0M15JNVEBb8Tny6t7j3lKqTnsAMjoBB6LJ+C370=",
-        "usagesDigest": "6gliMaMYc3GJMYRKFaSxKQKIMRRy+i1fGJf8ViYYVig=",
+        "usagesDigest": "ZjvMAQjc67s5BdmGxtEJ1CFXaUG+gjbKOwKgJbpLvMI=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},

@@ -1,0 +1,109 @@
+"""Goldfish test module."""
+
+module(
+    name = "goldfish_test",
+    version = "0.0.1",
+)
+
+bazel_dep(name = "goldfish", version = "0.0.1")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_gcs", version = "1.0.1")
+bazel_dep(name = "rules_kotlin", version = "2.1.6")
+bazel_dep(name = "rules_java", version = "8.14.0")
+bazel_dep(name = "rules_pkg", version = "1.1.0")
+bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "grpc-java", version = "1.75.0")
+bazel_dep(name = "grpc", version = "1.74.1")
+bazel_dep(name = "protobuf", version = "32.1")
+bazel_dep(name = "rules_proto", version = "7.1.0")
+
+# Enable Java gRPC compilation
+bazel_dep(name = "rules_jvm_external", version = "6.7")
+
+# Note: We expect the ANDROID_HOME variable to point to an actual android sdk
+bazel_dep(name = "rules_android", version = "0.6.6")
+
+remote_android_extensions = use_extension(
+    "@rules_android//bzlmod_extensions:android_extensions.bzl",
+    "remote_android_tools_extensions",
+)
+use_repo(remote_android_extensions, "android_tools")
+
+android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
+use_repo(android_sdk_repository_extension, "androidsdk")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+use_repo(maven, "maven")
+
+maven.artifact(
+    testonly = True,
+    artifact = "runner",
+    group = "androidx.test",
+    version = "1.7.0",
+)
+maven.install(
+    artifacts = [
+        # Rerun REPIN=1 bazel run @maven//:pin, and update
+        # the lock_file if you change this list.
+        "com.google.api.grpc:grpc-google-cloud-pubsub-v1:1.125.0",
+        "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
+        "com.squareup.okhttp:okhttp:2.7.5",
+        "com.squareup.okio:okio:2.10.0",
+        "io.grpc:grpc-core:1.75.0",
+        "io.grpc:grpc-android:1.75.0",
+        "io.grpc:grpc-stub:1.75.0",
+        "androidx.test:core:1.7.0",
+        "androidx.test:rules:1.7.0",
+    ],
+    lock_file = ":maven_install.json",
+    repositories = [
+        "https://repo.maven.apache.org/maven2/",
+        "https://maven.google.com",
+    ],
+    strict_visibility = True,
+)
+
+gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
+
+gcs_archive(
+    name = "test_seq_linux",
+    build_file = "//deps/test_seq:linux.BUILD",
+    sha256 = "ffebc35e4c811facc921b0f92294211bcfa485e26ce2e880b0aa65b2fb4a2501",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20251119_0840_RC00/test_seq_linux.zip",
+)
+
+gcs_archive(
+    name = "tradefed",
+    build_file = "//deps/tradefed:tradefed.BUILD",
+    sha256 = "59d1f73d91ab1a12c93457db38d2d880bef3fcd042717fe3546b36b0150b7fa2",
+    url = "gs://emu-next-bazel/ab/tradefed/tradefed/14344819/tradefed.zip",
+)
+
+# Generic BUILD.bazel file which exposes all files in the archive.
+_generic_build = """package(default_visibility = ["//visibility:public"])
+filegroup(
+  name = "all_files",
+  srcs = glob(["**/*"]),
+)
+"""
+
+gcs_archive(
+    name = "build-tools-linux",
+    build_file_content = _generic_build,
+    sha256 = "321e687caa570210bf4acd80e8cfbe901d17368d83f51976ccbba3656093fe2b",
+    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk/13278306/sdk-repo-linux-build-tools-13278306.zip",
+)
+
+gcs_archive(
+    name = "platform-tools-linux",
+    build_file_content = _generic_build,
+    sha256 = "5c377d32e7ba0c1f982417ec588c33d8e379141e806c46c2de26cf42fe6ed51e",
+    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk/13278306/sdk-repo-linux-platform-tools-13278306.zip",
+)
+
+gcs_archive(
+    name = "android16k-x86_64",
+    build_file_content = _generic_build,
+    sha256 = "6bea9e99c48dda7879b6011edaa8d68442a993ffebe40580aa0bf34164dd3565",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14663885.zip",
+)

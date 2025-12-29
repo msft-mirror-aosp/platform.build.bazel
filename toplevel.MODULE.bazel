@@ -75,11 +75,6 @@ local_path_override(
 )
 
 bazel_dep(name = "goldfish_test", version = "0.0.1")
-local_path_override(
-    module_name = "goldfish_test",
-    path = "third_party/adt-infra/goldfish_test",
-)
-
 bazel_dep(name = "rules_android", version = "0.6.6.aemu")
 
 # Enable Java gRPC compilation
