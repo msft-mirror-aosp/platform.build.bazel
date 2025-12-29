@@ -3,6 +3,7 @@
 import enum
 import hashlib
 import logging
+import os
 import pathlib
 import platform
 
@@ -33,6 +34,30 @@ def detect_platform() -> Platform:
   return Platform.UNKNOWN
 
 
+def check_app_default_credentials(host_platform: Platform):
+  """Checks Google ADC are set, and prompts the user to set them otherwise."""
+  if host_platform == Platform.GLINUX_DESKTOP:
+    return
+  if host_platform == Platform.WINDOWS:
+    config_path = pathlib.Path(os.environ.get('APPDATA'))
+  else:
+    config_path = pathlib.Path(os.environ.get('HOME')) / '.config'
+  adc_path = config_path / 'gcloud' / 'application_default_credentials.json'
+
+  if adc_path.exists():
+    logging.info('Found application default credentials at %s', adc_path)
+  else:
+    logging.error(
+        'Google Application Default Credentials (ADC) not found.'
+    )
+    cmd = (
+        'gcloud auth application-default login'
+        ' --project="google.com:android-studio-alphasource"'
+    )
+    logging.error(f'Please set up ADC by running `{cmd}`')
+    logging.error('Download gcloud CLI from https://docs.cloud.google.com/sdk/docs/install-sdk')
+
+
 def find_workspace_root() -> pathlib.Path:
   """Returns the path to the workspace root.
 
@@ -49,10 +74,10 @@ def find_workspace_root() -> pathlib.Path:
     raise FileNotFoundError('Could not find workspace root')
 
 
-def build_env_bazelrc(platform: Platform, workspace_root: pathlib.Path) -> str:
+def build_env_bazelrc(host_platform: Platform, workspace_root: pathlib.Path) -> str:
   """Returns the env.bazelrc file for the given platform."""
   bazelrc = ''
-  if platform is Platform.GLINUX_DESKTOP:
+  if host_platform is Platform.GLINUX_DESKTOP:
     bazelrc += 'import %workspace%/tools/vendor/google/bazel/glinux.bazelrc\n'
     if pathlib.Path(CARTFS_MOUNT).exists():
       # Configure CartFS for reducing disk usage on output artifacts.
@@ -70,17 +95,19 @@ def build_env_bazelrc(platform: Platform, workspace_root: pathlib.Path) -> str:
 def main():
   logging.basicConfig(level=logging.INFO)
 
-  platform = detect_platform()
+  host_platform = detect_platform()
   workspace_root = find_workspace_root()
 
-  logging.info('Detected platform %s', platform)
+  logging.info('Detected platform %s', host_platform)
   logging.info('Found workspace root %s', workspace_root)
 
-  env_bazelrc_contents = build_env_bazelrc(platform, workspace_root)
+  env_bazelrc_contents = build_env_bazelrc(host_platform, workspace_root)
   env_bazelrc_path = workspace_root / 'env.bazelrc'
   env_bazelrc_path.write_text(env_bazelrc_contents)
   logging.info('Wrote env.bazelrc')
+  check_app_default_credentials(host_platform)
 
 
 if __name__ == '__main__':
+  logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
   main()
