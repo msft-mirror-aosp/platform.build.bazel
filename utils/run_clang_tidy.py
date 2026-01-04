@@ -537,15 +537,15 @@ def _create_parser() -> argparse.ArgumentParser:
         help="Path to the YAML file where fixes should be exported.",
     )
     gen_parser.add_argument(
+        "--flags-file",
+        type=str,
+        help="A file containing the compiler flags, one per line.",
+    )
+    gen_parser.add_argument(
         "--rewrite-rules",
         type=str,
         help="A sed-style regex (e.g., 's/old/new/g') to apply to replacement text. Useful for systematic transformations.",
     )
-
-    # NOTE: We do NOT define 'flags' here.
-    # We rely on parse_known_args in main() to capture the compiler command
-    # as 'unknown' arguments. This prevents argparse from crashing on flags
-    # like -I, -D, or -o which the compiler uses but our script does not.
 
     # --- Subcommand: fix ---
     fix_parser = subparsers.add_parser(
@@ -588,7 +588,9 @@ def _create_parser() -> argparse.ArgumentParser:
         "--output-file", required=True, help="Path to the merged YAML output file."
     )
     tidy_parser.add_argument(
-        "input_files", nargs="*", help="List of YAML input files to merge."
+        "--input-files-file",
+        type=str,
+        help="A file containing the paths to the YAML input files, one per line.",
     )
 
     fix_parser.add_argument(
@@ -609,7 +611,7 @@ def _extract_resource_dir(compiler_flags: List[str]) -> Path:
     )
 
 
-def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> None:
+def _handle_generate(args: argparse.Namespace) -> None:
     """
     Runs clang-tidy on a single source file
 
@@ -620,9 +622,12 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
     # 1. Clean up compiler flags
     # If the flags start with '--', it's a separator passed by Bazel to protect
     # the flags from our argparse. We must remove it before constructing the command.
-    if compiler_flags and compiler_flags[0] == "--":
-        compiler_flags = compiler_flags[1:] + ["-c", args.source_file]
+    compiler_flags = []
+    if args.flags_file:
+        with open(args.flags_file, "r") as f:
+            compiler_flags = [line.strip() for line in f if line.strip()]
 
+    compiler_flags = compiler_flags + ["-c", args.source_file]
     logging.debug("Cleaned compiler flags: %s", compiler_flags)
     # Tidy will incorrectly resolve the resource_directory outside
     # of the sandbox which would result clang not finding standard headers,
@@ -841,7 +846,10 @@ def _handle_combine_tidy(args: argparse.Namespace) -> None:
     """
     Parallel implementation of the merge logic.
     """
-    input_files = args.input_files
+    input_files = []
+    if args.input_files_file:
+        with open(args.input_files_file, "r") as f:
+            input_files = [line.strip() for line in f if line.strip()]
     if not input_files:
         # Create empty output file if no inputs
         with open(args.output_file, "w", encoding="utf-8") as f:
@@ -884,15 +892,14 @@ def _handle_combine_tidy(args: argparse.Namespace) -> None:
 def main() -> None:
     parser = _create_parser()
 
-    args, unknown = parser.parse_known_args()
+    args = parser.parse_args()
     _setup_logging(args.verbose)
 
     logging.debug("Starting clang-tidy utility in %s mode.", args.mode)
     logging.debug("Received args: %s", args)
-    logging.debug("Received unknown args: %s", unknown)
 
     if args.mode == "generate":
-        _handle_generate(args, compiler_flags=unknown)
+        _handle_generate(args)
     elif args.mode == "fix":
         _apply_fixes(
             yaml_files=args.fixes_files,

@@ -240,6 +240,8 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
         fail("Could not find clang-tidy executable in the toolchain {}".format(cc_toolchain.label))
 
     fixes_file = ctx.actions.declare_file(src.path + "." + ctx.label.name + ".tidy.yaml")
+    flags_file = ctx.actions.declare_file(src.path + "." + ctx.label.name + ".tidy.flags")
+    ctx.actions.write(flags_file, "\n".join(flags))
 
     args = ctx.actions.args()
     args.add("generate")
@@ -247,15 +249,13 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
     args.add("--config-file", clang_tidy_config)
     args.add("--fixes-file", fixes_file.path)
     args.add("--source-file", src.path)
+    args.add("--flags-file", flags_file.path)
 
     regex = ctx.attr._clang_tidy_regex[TidyRegexProviderInfo].regex
     if regex:
         args.add("--rewrite-rules", regex)
 
-    args.add("--")
-    args.add_all(flags)
-
-    inputs = depset([src, clang_tidy_exec], transitive = [additional_files, cc_toolchain.all_files])
+    inputs = depset([src, clang_tidy_exec, flags_file], transitive = [additional_files, cc_toolchain.all_files])
     if clang_tidy_config:
         inputs = depset([clang_tidy_config], transitive = [inputs])
 
@@ -361,12 +361,14 @@ def _clang_tidy_report_impl(ctx):
     final_fixes_file = ctx.actions.declare_file(ctx.label.name + ".final_fixes.yaml")
     if all_fixes:
         args_fixes = ctx.actions.args()
+        input_files_file = ctx.actions.declare_file(ctx.label.name + ".input_files.txt")
+        ctx.actions.write(input_files_file, "\n".join([f.path for f in all_fixes]))
         args_fixes.add("combine-tidy")  # Ensure this matches your tool's command
         args_fixes.add("--output-file", final_fixes_file.path)
-        args_fixes.add_all(all_fixes)
+        args_fixes.add("--input-files-file", input_files_file.path)
 
         ctx.actions.run(
-            inputs = all_fixes,
+            inputs = all_fixes + [input_files_file],
             executable = combine_tool,
             arguments = [args_fixes],
             outputs = [final_fixes_file],

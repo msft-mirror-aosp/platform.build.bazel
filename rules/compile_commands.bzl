@@ -40,14 +40,17 @@ CompileCommandsInfo = provider(
 
 def _emit_combine_action(ctx, action_tool, inputs, output_file):
     """Generates the action to combine multiple JSON snippets."""
+    inputs_file = ctx.actions.declare_file(output_file.path + ".inputs")
+    ctx.actions.write(inputs_file, "\n".join([f.path for f in inputs]))
+
     args = ctx.actions.args()
     args.add("combine")
     args.add("--output_file", output_file.path)
-    args.add_all(inputs)
+    args.add("--inputs_file", inputs_file.path)
 
     # Our tool is going to stich together individual json snippets.
     ctx.actions.run(
-        inputs = inputs,
+        inputs = inputs + [inputs_file],
         outputs = [output_file],
         executable = action_tool,
         arguments = [args],
@@ -65,9 +68,13 @@ def _emit_generate_action(ctx, action_tool, infile, flags, toolchain_files, addi
     outfile = ctx.actions.declare_file(
         "bazel_compile_commands_{}.{}.json".format(infile.path, discriminator),
     )
+    flags_file = ctx.actions.declare_file(
+        "bazel_compile_commands_{}.{}.flags".format(infile.path, discriminator),
+    )
+    ctx.actions.write(flags_file, "\n".join(flags))
 
     inputs = depset(
-        direct = [infile],
+        direct = [infile, flags_file],
         transitive = [additional_files, toolchain_files],
     )
 
@@ -75,8 +82,7 @@ def _emit_generate_action(ctx, action_tool, infile, flags, toolchain_files, addi
     args.add("generate")
     args.add("--output_file", outfile.path)
     args.add("--input_file", infile)
-    args.add("--")
-    args.add_all(flags)
+    args.add("--flags_file", flags_file.path)
 
     ctx.actions.run(
         inputs = inputs,

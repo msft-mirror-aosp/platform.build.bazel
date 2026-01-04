@@ -101,10 +101,9 @@ def _create_parser() -> argparse.ArgumentParser:
     gen_parser.add_argument(
         "-i", "--input_file", required=True, help="Path to the C/C++ source file."
     )
-    # NOTE: We do NOT define 'flags' here.
-    # We rely on parse_known_args in main() to capture the compiler command
-    # as 'unknown' arguments. This prevents argparse from crashing on flags
-    # like -I, -D, or -o which the compiler uses but our script does not.
+    gen_parser.add_argument(
+        "--flags_file", help="A file containing the compiler flags, one per line."
+    )
 
     # --- Subcommand: combine ---
     comb_parser = subparsers.add_parser(
@@ -114,13 +113,13 @@ def _create_parser() -> argparse.ArgumentParser:
         "-o", "--output_file", required=True, help="Path to the output JSON file."
     )
     comb_parser.add_argument(
-        "inputs", nargs="*", help="List of input JSON snippet files to merge."
+        "--inputs_file", help="A file with a list of json files to combine."
     )
 
     return parser
 
 
-def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> None:
+def _handle_generate(args: argparse.Namespace) -> None:
     """
     Writes a single compilation database entry.
 
@@ -128,11 +127,10 @@ def _handle_generate(args: argparse.Namespace, compiler_flags: List[str]) -> Non
         args: Parsed arguments containing output_file, input_file, and exec_root.
         compiler_flags: The raw list of flags meant for the compiler (e.g. ['-I.', '-O2']).
     """
-    # 1. Clean up compiler flags
-    # If the flags start with '--', it's a separator passed by Bazel to protect
-    # the flags from our argparse. We must remove it before constructing the command.
-    if compiler_flags and compiler_flags[0] == "--":
-        compiler_flags = compiler_flags[1:]
+    compiler_flags = []
+    if args.flags_file:
+        with open(args.flags_file, "r") as f:
+            compiler_flags = [line.strip() for line in f if line.strip()]
 
     # 2. Construct the full command
     # We explicitly append the source file to the compiler flags to mimic a
@@ -196,8 +194,12 @@ def _handle_combine(args: argparse.Namespace) -> None:
     """
     combined_entries: List[Dict[str, Any]] = []
     seen_entries = set()
+    inputs = []
+    if args.inputs_file:
+        with open(args.inputs_file, "r") as f:
+            inputs = [line.strip() for line in f if line.strip()]
 
-    for input_path in args.inputs:
+    for input_path in inputs:
         try:
             with open(input_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
@@ -228,10 +230,10 @@ def main() -> None:
     # parse_known_args is critical here!
     # It parses known flags (-o, -i, -e) and leaves the rest in 'unknown'.
     # This 'unknown' list contains the actual compiler command we need to capture.
-    args, unknown = parser.parse_known_args()
+    args = parser.parse_args()
 
     if args.mode == "generate":
-        _handle_generate(args, unknown)
+        _handle_generate(args)
     elif args.mode == "combine":
         _handle_combine(args)
     elif args.mode == "install":
