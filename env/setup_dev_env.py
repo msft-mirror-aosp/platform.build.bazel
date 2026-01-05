@@ -1,5 +1,6 @@
 """Script to set up a local development environment."""
 
+import dataclasses
 import enum
 import hashlib
 import logging
@@ -16,6 +17,13 @@ class Platform(enum.Enum):
   GLINUX_LAPTOP = 2
   WINDOWS = 3
   MAC = 4
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkspaceInfo:
+  """Contains information about the detected workspace."""
+  is_cog: bool
+  root: pathlib.Path
 
 
 def detect_platform() -> Platform:
@@ -58,8 +66,8 @@ def check_app_default_credentials(host_platform: Platform):
     logging.error('Download gcloud CLI from https://docs.cloud.google.com/sdk/docs/install-sdk')
 
 
-def find_workspace_root() -> pathlib.Path:
-  """Returns the path to the workspace root.
+def find_workspace_root() -> WorkspaceInfo:
+  """Returns information about the workspace root.
 
   Raises:
     FileNotFoundError: If the workspace root could not be found.
@@ -67,9 +75,9 @@ def find_workspace_root() -> pathlib.Path:
   path = pathlib.Path(__file__)
   for path in path.parents:
     if (path / '.repo').is_dir():
-      return path
+      return WorkspaceInfo(is_cog=False, root=path)
     if (path / '.supermanifest').exists():
-      return path
+      return WorkspaceInfo(is_cog=True, root=path)
   else:
     raise FileNotFoundError('Could not find workspace root')
 
@@ -92,18 +100,38 @@ def build_env_bazelrc(host_platform: Platform, workspace_root: pathlib.Path) -> 
   return bazelrc
 
 
+def check_python_env_vars():
+  """Displays a warning if Python bytecode will pollute the Cog workspace."""
+  if (
+      'PYTHONPYCACHEPREFIX' in os.environ
+      or 'PYTHONDONTWRITEBYTECODE' in os.environ
+  ):
+    return
+  logging.error("""
+    Environment variables PYTHONPYCACHEPREFIX or PYTHONDONTWRITEBYTECODE must
+    be set to avoid writing *.pyc bytecode in the Cog workspace. Without this,
+    python build actions will write *.pyc in the workspace and you can run into
+    go/cider-g-common-issues#why-workspaces-become-unresponsive.
+
+    Add the following to your shell profile:
+    export PYTHONPYCACHEPREFIX=~/.pycache
+    """)
+
+
 def main():
   logging.basicConfig(level=logging.INFO)
 
   host_platform = detect_platform()
-  workspace_root = find_workspace_root()
+  workspace_info = find_workspace_root()
 
   logging.info('Detected platform %s', host_platform)
-  logging.info('Found workspace root %s', workspace_root)
+  logging.info('Found workspace root %s', workspace_info.root)
 
-  env_bazelrc_contents = build_env_bazelrc(host_platform, workspace_root)
-  env_bazelrc_path = workspace_root / 'env.bazelrc'
+  env_bazelrc_contents = build_env_bazelrc(host_platform, workspace_info.root)
+  env_bazelrc_path = workspace_info.root / 'env.bazelrc'
   env_bazelrc_path.write_text(env_bazelrc_contents)
+  if workspace_info.is_cog:
+    check_python_env_vars()
   logging.info('Wrote env.bazelrc')
   check_app_default_credentials(host_platform)
 
