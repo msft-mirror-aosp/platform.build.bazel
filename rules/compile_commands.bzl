@@ -162,7 +162,7 @@ def _get_toolchain_flags(ctx, cc_toolchain, action_name = ACTION_NAMES.cpp_compi
     cc = tool_env.get("WRAPPER_WRAP_BINARY", tool_path)
     return [cc] + flags
 
-def _get_deps_flags(deps):
+def _get_deps_flags(ctx, deps):
     """Extracts include paths and defines from dependencies."""
     compilation_contexts = [dep[CcInfo].compilation_context for dep in deps]
 
@@ -172,6 +172,8 @@ def _get_deps_flags(deps):
     ])
 
     flags = []
+    is_windows = _is_windows(ctx)
+
     for cc in compilation_contexts:
         # Defines
         flags.extend(["-D" + d for d in cc.defines.to_list()])
@@ -183,11 +185,20 @@ def _get_deps_flags(deps):
 
         # And the others.
         for i in cc.quote_includes.to_list():
-            flags.extend(["-iquote", i])
+            if is_windows:
+                flags.extend(["-I", i])
+            else:
+                flags.extend(["-iquote", i])
         for i in cc.system_includes.to_list():
-            flags.extend(["-isystem", i])
+            if is_windows:
+                flags.extend(["-external:I", i])
+            else:
+                flags.extend(["-isystem", i])
         for i in cc.external_includes.to_list():
-            flags.extend(["-isystem", i])
+            if is_windows:
+                flags.extend(["-external:I", i])
+            else:
+                flags.extend(["-isystem", i])
 
     return flags, additional_files
 
@@ -225,7 +236,7 @@ def _compile_commands_aspect_impl(target, ctx):
     action_tool = ctx.attr._generator.files_to_run
     deps = [target] + getattr(ctx.rule.attr, "implementation_deps", [])
 
-    dep_flags, additional_files = _get_deps_flags(deps)
+    dep_flags, additional_files = _get_deps_flags(ctx, deps)
 
     # Expand make variables in copts
     copts = ctx.rule.attr.copts if hasattr(ctx.rule.attr, "copts") else []
