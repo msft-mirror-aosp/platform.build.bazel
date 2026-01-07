@@ -55,6 +55,10 @@ bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "tools_emulator", version = "0.0.1")
 
+# modem_simulator
+bazel_dep(name = "jsoncpp", version = "1.9.6")
+bazel_dep(name = "tinyxml2", version = "10.0.0")
+
 android_sdk = use_extension("@goldfish_build//extensions:android_sdk.bzl", "android_sdk")
 use_repo(android_sdk, "sdk_linux", "sdk_macosx", "sdk_windows")
 
