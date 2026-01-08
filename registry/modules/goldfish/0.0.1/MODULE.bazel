@@ -179,8 +179,8 @@ gcs_archive(
 gcs_archive(
     name = "android-x86_64",
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-    sha256 = "6c16aba01b17891cfc2a1937a85497e7e596f40b7f5ad668303e1a7889e16746",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_x86_64-userdebug/sdk-repo-linux-system-images-14656655.zip",
+    sha256 = "0a6485c71c2d2530c9844212993b50e353c70cd2fdd5b91e6b03ddde729e5b41",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_x86_64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
 # END android-x86_64
 
@@ -188,8 +188,8 @@ gcs_archive(
 gcs_archive(
     name = "android16k-x86_64",
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-    sha256 = "65d40eca8b613b2da21c96b043e96288bee5f10d42514aef0beba3b3d506b442",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14656655.zip",
+    sha256 = "6bea9e99c48dda7879b6011edaa8d68442a993ffebe40580aa0bf34164dd3565",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
 # END android16-x86_64
 
@@ -197,8 +197,8 @@ gcs_archive(
 gcs_archive(
     name = "android-arm64-v8a",
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
-    sha256 = "07ddc3d9716c7f2f98a58df2f5cf52136bfb451674f92e5593e7ab7ddcb1dc5d",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64-userdebug/sdk-repo-linux-system-images-14656655.zip",
+    sha256 = "bc590f8a78128ca35ed68bb7a6da26b792d0f0bd74ad33cd7024f7c2eab840ba",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
 # END android-arm64-v8a
 
@@ -206,7 +206,7 @@ gcs_archive(
 gcs_archive(
     name = "android16k-arm64-v8a",
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
-    sha256 = "7dc7c091b3b3b7ea36e97207ae1f6068a0d2a3de3f5bafa7226ccbab01eb28b0",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-14656655.zip",
+    sha256 = "c62821a92a71d3d909bff98c22d714b562d71ea8d18d7c77a6a70eed483ba9db",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
 # END android16-arm64-v8a
