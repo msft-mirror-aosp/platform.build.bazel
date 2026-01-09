@@ -77,12 +77,22 @@ local_path_override(
 bazel_dep(name = "goldfish_test", version = "0.0.1")
 bazel_dep(name = "rules_android", version = "0.6.6.aemu")
 
+android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
+android_sdk_repository_extension.configure(path = "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux")
+use_repo(android_sdk_repository_extension, "androidsdk")
+
 # Enable Java gRPC compilation
 bazel_dep(name = "rules_jvm_external", version = "6.9")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 use_repo(maven, "maven")
 
+maven.artifact(
+    testonly = True,
+    artifact = "runner",
+    group = "androidx.test",
+    version = "1.7.0",
+)
 maven.install(
     artifacts = [
         # Rerun REPIN=1 bazel run @maven//:pin, and update
@@ -91,9 +101,12 @@ maven.install(
         "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
         "com.squareup.okhttp:okhttp:2.7.5",
         "com.squareup.okio:okio:2.10.0",
+        "io.grpc:grpc-okhttp:1.75.0",
         "io.grpc:grpc-core:1.75.0",
         "io.grpc:grpc-android:1.75.0",
         "io.grpc:grpc-stub:1.75.0",
+        "androidx.test:core:1.7.0",
+        "androidx.test:rules:1.7.0",
     ],
     lock_file = "@goldfish_build//:maven_install.json",
     repositories = [
@@ -101,4 +114,5 @@ maven.install(
         "https://maven.google.com",
     ],
     strict_visibility = True,
+    version_conflict_policy = "pinned",
 )
