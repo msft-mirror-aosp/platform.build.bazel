@@ -68,8 +68,8 @@ gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
 gcs_archive(
     name = "test_seq_linux",
     build_file = "//deps/test_seq:linux.BUILD",
-    sha256 = "ffebc35e4c811facc921b0f92294211bcfa485e26ce2e880b0aa65b2fb4a2501",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251119_0840_RC00/test_seq_linux.zip",
+    sha256 = "ad91fca83802c9b9f2b4c629936ce3e6055be42133b5e01d4369ec9ac34bee0a",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip",
 )
 
 gcs_archive(

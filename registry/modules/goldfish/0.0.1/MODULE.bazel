@@ -100,15 +100,15 @@ gcs_archive(
 gcs_archive(
     name = "test_seq_linux",
     build_file = "@goldfish//emulator/tests:test_seq_linux.BUILD",
-    sha256 = "ffebc35e4c811facc921b0f92294211bcfa485e26ce2e880b0aa65b2fb4a2501",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251119_0840_RC00/test_seq_linux.zip",
+    sha256 = "ad91fca83802c9b9f2b4c629936ce3e6055be42133b5e01d4369ec9ac34bee0a",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip",
 )
 
 gcs_archive(
     name = "test_seq_mac_arm64",
     build_file = "@goldfish//emulator/tests:test_seq_mac_arm64.BUILD",
-    sha256 = "c4eddb017a5755955d494960a127125c30e4edcf3ad6476c65753e51ed9c5b59",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251119_0840_RC00/test_seq_darwin_arm64.zip",
+    sha256 = "8a89931206345d84d8a2cf700d0f20668135c4eaa98a84e2dcafe7e00d5b11c9",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_darwin_arm64.zip",
 )
 
 gcs_archive(
