@@ -4,6 +4,7 @@
     "url": "https://github.com/bazelbuild/rules_android/releases/download/v0.6.6/rules_android-v0.6.6.tar.gz",
     "patch_strip": 1,
     "patches": {
-        "update_protobuf_to_32_1.patch": "sha256-BT6YwvtIhoKq9d6PFpXRGgQINZZlScE/1woso+QS/7Y="
+        "update_protobuf_to_32_1.patch": "sha256-BT6YwvtIhoKq9d6PFpXRGgQINZZlScE/1woso+QS/7Y=",
+        "support-multiple-os-paths.patch": "sha256-1iGE4E7PTsU5jsUt8SbebmfyVL1J/Ne05FGfMWyrRuw="
     }
 }
