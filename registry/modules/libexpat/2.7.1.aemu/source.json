@@ -3,7 +3,7 @@
     "strip_prefix": "libexpat-R_2_7_1",
     "overlay": {
         "BUILD.bazel": "sha256-OWIxEPY4sTiYzCaxHooHYFLow20xH3di23IIdrivpD0=",
-        "MODULE.bazel": "sha256-punVuYpbmlDQI1oGIYqNHoPV7iEYryGWv2bysyVfx6s="
+        "MODULE.bazel": "sha256-vHz/zHCu9/pbqH2Ct4B7psoJ9v3JgU8N7pFyBUoSkbw="
     },
     "integrity": "sha256-hTcnl/8Gc6j8SmvhZGa7WgyijA3PPG96wWhrSjuiqrs="
 }
