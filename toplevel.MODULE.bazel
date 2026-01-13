@@ -56,6 +56,7 @@ bazel_dep(name = "dtc", version = "0.0.1")
 bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "aemu", version = "0.0.1")
 bazel_dep(name = "crosvm", version = "0.0.1")
+bazel_dep(name = "libpng", version = "0.0.1")
 
 # These are all deps of lavapipe?
 bazel_dep(name = "libdrm", version = "2.4.110")
