@@ -1207,8 +1207,8 @@
     },
     "@@rules_android+//rules/android_sdk_repository:rule.bzl%android_sdk_repository_extension": {
       "general": {
-        "bzlTransitiveDigest": "NAy+0M15JNVEBb8Tny6t7j3lKqTnsAMjoBB6LJ+C370=",
-        "usagesDigest": "GN4KkxUUJrb0Rpy4VvQUg2O/PsptFJXetXV1Tm+GXJQ=",
+        "bzlTransitiveDigest": "SR3L27VZ5KBkR+djTiQZZ6QPNBlFDyg7PqzF7kFfGWI=",
+        "usagesDigest": "hRwdYuCCJHyH0XVzM7dPCw65WIabaqSVUm+zPbNqxrI=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1218,7 +1218,11 @@
             "attributes": {
               "api_level": 0,
               "build_tools_version": "",
-              "path": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux"
+              "paths": {
+                "linux": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux",
+                "macos": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/macosx",
+                "windows": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/windows"
+              }
             }
           }
         },
