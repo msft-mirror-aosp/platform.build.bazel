@@ -19,8 +19,8 @@ class SetupDevEnvTest(absltest.TestCase):
         env_bazelrc,
         (
             'import %workspace%/tools/vendor/google/bazel/glinux.bazelrc\n'
-            'common --config=rcache\n'
-            'common --config=release\n'
+            'build --config=rcache\n'
+            'build --config=release\n'
         ),
     )
 
@@ -33,8 +33,8 @@ class SetupDevEnvTest(absltest.TestCase):
         (
             'import %workspace%/tools/vendor/google/bazel/glinux.bazelrc\n'
             f'startup --output_base={setup_dev_env.CARTFS_MOUNT}/a4b9186eaa242a59f802b0b2b29770df\n'
-            'common --config=rcache\n'
-            'common --config=release\n'
+            'build --config=rcache\n'
+            'build --config=release\n'
         ),
     )
 
@@ -48,9 +48,9 @@ class SetupDevEnvTest(absltest.TestCase):
       self.assertEqual(
           env_bazelrc,
           (
-              'common --google_default_credentials\n'
-              'common --config=rcache\n'
-              'common --config=release\n'
+              'build --google_default_credentials\n'
+              'build --config=rcache\n'
+              'build --config=release\n'
           ),
       )
 
