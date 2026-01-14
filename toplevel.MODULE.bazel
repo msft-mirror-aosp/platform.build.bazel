@@ -121,3 +121,9 @@ maven.install(
     strict_visibility = True,
     version_conflict_policy = "pinned",
 )
+
+bazel_dep(name = "lavapipe_bazel_deps", version = "0.0.1")
+local_path_override(
+    module_name = "lavapipe_bazel_deps",
+    path = "prebuilts/android-emulator-build/common/vulkan/linux-x86_64/lavapipe-bazel-deps",
+)
