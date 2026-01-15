@@ -94,9 +94,9 @@ def build_env_bazelrc(host_platform: Platform, workspace_root: pathlib.Path) -> 
       ).hexdigest()
       bazelrc += f'startup --output_base={CARTFS_MOUNT}/{workspace_hash}\n'
   else:
-    bazelrc += 'common --google_default_credentials\n'
-  bazelrc += 'common --config=rcache\n'
-  bazelrc += 'common --config=release\n'
+    bazelrc += 'build --google_default_credentials\n'
+  bazelrc += 'build --config=rcache\n'
+  bazelrc += 'build --config=release\n'
   return bazelrc
 
 
