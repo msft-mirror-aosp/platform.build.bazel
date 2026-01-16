@@ -26,6 +26,7 @@ windows_resources(
     rc_files = [
         "hello-world.rc",
     ],
+    target_compatible_with = ["@platforms//os:windows"],
 )
 
 cc_test(
