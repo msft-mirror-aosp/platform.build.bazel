@@ -3,6 +3,7 @@ load(
     "cc_artifact_name",
     "cc_toolchain_config",
 )
+load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
