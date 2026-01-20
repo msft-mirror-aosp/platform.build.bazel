@@ -1205,30 +1205,6 @@
         ]
       }
     },
-    "@@rules_android+//rules/android_sdk_repository:rule.bzl%android_sdk_repository_extension": {
-      "general": {
-        "bzlTransitiveDigest": "SR3L27VZ5KBkR+djTiQZZ6QPNBlFDyg7PqzF7kFfGWI=",
-        "usagesDigest": "hRwdYuCCJHyH0XVzM7dPCw65WIabaqSVUm+zPbNqxrI=",
-        "recordedFileInputs": {},
-        "recordedDirentsInputs": {},
-        "envVariables": {},
-        "generatedRepoSpecs": {
-          "androidsdk": {
-            "repoRuleId": "@@rules_android+//rules/android_sdk_repository:rule.bzl%_android_sdk_repository",
-            "attributes": {
-              "api_level": 0,
-              "build_tools_version": "",
-              "paths": {
-                "linux": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux",
-                "macos": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/macosx",
-                "windows": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/windows"
-              }
-            }
-          }
-        },
-        "recordedRepoMappingEntries": []
-      }
-    },
     "@@rules_apple+//apple:apple.bzl%provisioning_profile_repository_extension": {
       "general": {
         "bzlTransitiveDigest": "DBjF8z9KnkAVkDon8si62fhfjje60FibbeIt+zE+BWw=",
