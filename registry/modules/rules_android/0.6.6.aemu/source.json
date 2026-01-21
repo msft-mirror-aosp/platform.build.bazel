@@ -5,6 +5,6 @@
     "patch_strip": 1,
     "patches": {
         "update_protobuf_to_32_1.patch": "sha256-BT6YwvtIhoKq9d6PFpXRGgQINZZlScE/1woso+QS/7Y=",
-        "support-multiple-os-paths.patch": "sha256-1iGE4E7PTsU5jsUt8SbebmfyVL1J/Ne05FGfMWyrRuw="
+        "support-multiple-os-paths.patch": "sha256-8pN3dsRJ6DQD5yIyviU5ok4J7TbODH0gLddhd7YM44A="
     }
 }
