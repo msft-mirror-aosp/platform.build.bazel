@@ -11,7 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides a rule to run clang-tidy on a set of targets."""
+"""Provides a rule to run clang-tidy on a set of targets.
+
+Note: Clang-tidy is currently disabled on Windows due to b/477626338.
+"""
 
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
@@ -274,6 +277,10 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
 # --- Implementations ---
 
 def _clang_tidy_aspect_impl(target, ctx):
+    if _is_windows(ctx):
+        # b/477626338: Clang-tidy is disabled on Windows.
+        return [ClangTidyInfo(fixes = depset())]
+
     # Check for excluded tags before collecting transitive state
     excluded_tags = ctx.attr._clang_tidy_exclude_tags[TidyExcludeTagsProviderInfo].tags
     target_tags = getattr(ctx.rule.attr, "tags", [])
