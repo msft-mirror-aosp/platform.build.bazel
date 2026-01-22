@@ -958,6 +958,32 @@
         ]
       }
     },
+    "@@goldfish_test+//deps/test_seq:extension.bzl%test_seq_extension": {
+      "general": {
+        "bzlTransitiveDigest": "bAfKBg7g2pqMys+pVCGnp4uUYW8fM4ztlPIzE89qJiE=",
+        "usagesDigest": "hpTEs6Z1+6BUCQMgbI4yDd0vs3sUFiyL7n+MawNhrD0=",
+        "recordedFileInputs": {},
+        "recordedDirentsInputs": {},
+        "envVariables": {},
+        "generatedRepoSpecs": {
+          "test_seq": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
+            "attributes": {
+              "build_file_content": "package(default_visibility = [\"//visibility:public\"])\n\nfilegroup(\n    name = \"test_seq_files\",\n    srcs = glob([\"test_seq/**\"]),\n)\n\nfilegroup(\n    name = \"test_seq\",\n    srcs = select({\n      \"@platforms//os:windows\": [\"test_seq/test_seq.exe\"],\n      \"//conditions:default\": [\"test_seq/test_seq\"],\n    }),\n)\n",
+              "sha256": "ad91fca83802c9b9f2b4c629936ce3e6055be42133b5e01d4369ec9ac34bee0a",
+              "url": "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip"
+            }
+          }
+        },
+        "recordedRepoMappingEntries": [
+          [
+            "goldfish_test+",
+            "rules_gcs",
+            "rules_gcs+"
+          ]
+        ]
+      }
+    },
     "@@googleapis+//:extensions.bzl%switched_rules": {
       "general": {
         "bzlTransitiveDigest": "vG6fuTzXD8MMvHWZEQud0MMH7eoC4GXY0va7VrFFh04=",
@@ -1207,8 +1233,8 @@
     },
     "@@rules_android+//rules/android_sdk_repository:rule.bzl%android_sdk_repository_extension": {
       "general": {
-        "bzlTransitiveDigest": "NAy+0M15JNVEBb8Tny6t7j3lKqTnsAMjoBB6LJ+C370=",
-        "usagesDigest": "GN4KkxUUJrb0Rpy4VvQUg2O/PsptFJXetXV1Tm+GXJQ=",
+        "bzlTransitiveDigest": "SR3L27VZ5KBkR+djTiQZZ6QPNBlFDyg7PqzF7kFfGWI=",
+        "usagesDigest": "hRwdYuCCJHyH0XVzM7dPCw65WIabaqSVUm+zPbNqxrI=",
         "recordedFileInputs": {},
         "recordedDirentsInputs": {},
         "envVariables": {},
@@ -1218,7 +1244,11 @@
             "attributes": {
               "api_level": 0,
               "build_tools_version": "",
-              "path": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux"
+              "paths": {
+                "linux": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux",
+                "macos": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/macosx",
+                "windows": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/windows"
+              }
             }
           }
         },

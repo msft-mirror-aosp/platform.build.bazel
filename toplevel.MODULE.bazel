@@ -56,6 +56,7 @@ bazel_dep(name = "dtc", version = "0.0.1")
 bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "aemu", version = "0.0.1")
 bazel_dep(name = "crosvm", version = "0.0.1")
+bazel_dep(name = "libpng", version = "0.0.1")
 
 # These are all deps of lavapipe?
 bazel_dep(name = "libdrm", version = "2.4.110")
@@ -78,7 +79,11 @@ bazel_dep(name = "goldfish_test", version = "0.0.1")
 bazel_dep(name = "rules_android", version = "0.6.6.aemu")
 
 android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
-android_sdk_repository_extension.configure(path = "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux")
+android_sdk_repository_extension.configure(paths = {
+    "linux": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux",
+    "macos": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/macosx",
+    "windows": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/windows",
+})
 use_repo(android_sdk_repository_extension, "androidsdk")
 
 # Enable Java gRPC compilation
@@ -115,4 +120,10 @@ maven.install(
     ],
     strict_visibility = True,
     version_conflict_policy = "pinned",
+)
+
+bazel_dep(name = "lavapipe_bazel_deps", version = "0.0.1")
+local_path_override(
+    module_name = "lavapipe_bazel_deps",
+    path = "prebuilts/android-emulator-build/common/vulkan/linux-x86_64/lavapipe-bazel-deps",
 )
