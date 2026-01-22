@@ -52,8 +52,13 @@ bazel_dep(name = "crosvm", version = "0.0.1")
 bazel_dep(name = "gfxstream", version = "0.0.1")
 bazel_dep(name = "netsim", version = "0.0.1")
 bazel_dep(name = "pixman", version = "0.0.1")
+bazel_dep(name = "libpng", version = "0.0.1")
 bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "tools_emulator", version = "0.0.1")
+
+# modem_simulator
+bazel_dep(name = "jsoncpp", version = "1.9.6")
+bazel_dep(name = "tinyxml2", version = "10.0.0")
 
 android_sdk = use_extension("@goldfish_build//extensions:android_sdk.bzl", "android_sdk")
 use_repo(android_sdk, "sdk_linux", "sdk_macosx", "sdk_windows")
@@ -96,15 +101,15 @@ gcs_archive(
 gcs_archive(
     name = "test_seq_linux",
     build_file = "@goldfish//emulator/tests:test_seq_linux.BUILD",
-    sha256 = "ffebc35e4c811facc921b0f92294211bcfa485e26ce2e880b0aa65b2fb4a2501",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251119_0840_RC00/test_seq_linux.zip",
+    sha256 = "ad91fca83802c9b9f2b4c629936ce3e6055be42133b5e01d4369ec9ac34bee0a",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip",
 )
 
 gcs_archive(
     name = "test_seq_mac_arm64",
     build_file = "@goldfish//emulator/tests:test_seq_mac_arm64.BUILD",
-    sha256 = "c4eddb017a5755955d494960a127125c30e4edcf3ad6476c65753e51ed9c5b59",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20251119_0840_RC00/test_seq_darwin_arm64.zip",
+    sha256 = "8a89931206345d84d8a2cf700d0f20668135c4eaa98a84e2dcafe7e00d5b11c9",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_darwin_arm64.zip",
 )
 
 gcs_archive(
@@ -135,15 +140,6 @@ gcs_archive(
     url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_arm64/14236881/android-cts.zip",
 )
 
-# BEGIN android_minigbm-x86_64
-gcs_archive(
-    name = "android_minigbm-x86_64",
-    build_file = "@goldfish//emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
-    sha256 = "3777c65e2bc80d924b1fe329d3adad60d1f3f1954cd3ea73445e2f0778c969ab",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
-)
-# END android_minigbm-x86_64
-
 # BEGIN android_minigbm16k-x86_64
 gcs_archive(
     name = "android_minigbm16k-x86_64",
@@ -152,15 +148,6 @@ gcs_archive(
     url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
 )
 # END android_minigbm16-x86_64
-
-# BEGIN android_minigbm-arm64-v8a
-gcs_archive(
-    name = "android_minigbm-arm64-v8a",
-    build_file = "@goldfish//emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
-    sha256 = "5327811f7714f43527bc2723ca95647fc549a867307f0988d2eb0eaa0accf524",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
-)
-# END android_minigbm-arm64-v8a
 
 # BEGIN android_minigbm16k-arm64-v8a
 gcs_archive(
@@ -171,38 +158,20 @@ gcs_archive(
 )
 # END android_minigbm16-arm64-v8a
 
-# BEGIN android-x86_64
-gcs_archive(
-    name = "android-x86_64",
-    build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-    sha256 = "6d92125c5b61fc421c5ab6c58f8448f0e01bc1fcb12a0f4a57454e675155de40",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_x86_64-userdebug/sdk-repo-linux-system-images-14611781.zip",
-)
-# END android-x86_64
-
 # BEGIN android16k-x86_64
 gcs_archive(
     name = "android16k-x86_64",
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-    sha256 = "ed961d53c135d60a756902db14b49036d2c2ffb496ecc7dc929eafa19f594ded",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14611781.zip",
+    sha256 = "6bea9e99c48dda7879b6011edaa8d68442a993ffebe40580aa0bf34164dd3565",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
 # END android16-x86_64
-
-# BEGIN android-arm64-v8a
-gcs_archive(
-    name = "android-arm64-v8a",
-    build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
-    sha256 = "13863b4e3e47c5efedcbd9534bb67c9474f9aa65f449cb7df7ffcdda15f96ace",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone64_arm64-userdebug/sdk-repo-linux-system-images-14611781.zip",
-)
-# END android-arm64-v8a
 
 # BEGIN android16k-arm64-v8a
 gcs_archive(
     name = "android16k-arm64-v8a",
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
-    sha256 = "5e9a64f47650fe1b3a235bc19cd50c3cb4e75cdbb4b18907185056b148fdd4d2",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-14611781.zip",
+    sha256 = "c62821a92a71d3d909bff98c22d714b562d71ea8d18d7c77a6a70eed483ba9db",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
 # END android16-arm64-v8a
