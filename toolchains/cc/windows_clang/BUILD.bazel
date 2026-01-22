@@ -3,6 +3,7 @@ load(
     "cc_artifact_name",
     "cc_toolchain_config",
 )
+load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
@@ -49,6 +50,9 @@ cc_features(
     cxx_flags = ["-std:c++17"],
     link_flags_msvc = [
         "/ignore:4070",
+    ],
+    target_compatible_with = [
+        "@platforms//os:windows",
     ],
     toolchain_imports_gnu = _x64_imports_gnu,
     toolchain_imports_msvc = _x64_imports_msvc,
@@ -108,6 +112,9 @@ cc_toolchain_config(
     ],
     compiler_name = "clang-cl",
     identifier = "win_clangcl_x64",
+    target_compatible_with = [
+        "@platforms//os:windows",
+    ],
     target_cpu = "k8",
     toolchain_imports = _x64_imports_msvc + _x64_imports_gnu,
 )
@@ -123,6 +130,9 @@ cc_toolchain(
     objcopy_files = "@//build/bazel/toolchains/cc:empty",
     strip_files = "@//build/bazel/toolchains/cc:empty",
     supports_param_files = 1,
+    target_compatible_with = [
+        "@platforms//os:windows",
+    ],
     toolchain_config = ":x64_config",
 )
 
