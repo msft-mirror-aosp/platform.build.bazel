@@ -67,16 +67,16 @@ gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
 
 test_seq_ext = use_extension("//deps/test_seq:extension.bzl", "test_seq_extension")
 test_seq_ext.linux(
-    sha256 = "ad91fca83802c9b9f2b4c629936ce3e6055be42133b5e01d4369ec9ac34bee0a",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip",
+    sha256 = "0166486945a5ed2d2135d59834f68cd0e0a3a369ae789b62c102fe1176d3e811",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260123_0905_RC00/test_seq_linux.zip",
 )
 test_seq_ext.macos(
-    sha256 = "8a89931206345d84d8a2cf700d0f20668135c4eaa98a84e2dcafe7e00d5b11c9",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_darwin_arm64.zip",
+    sha256 = "a78f18f94198490bc3c60a5460e526e440870c837a305ed88e2902c9c6eda416",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260123_0905_RC00/test_seq_darwin_arm64.zip",
 )
 test_seq_ext.windows(
-    sha256 = "d90e2e4d131c497a23b1200fe2cfc1da0b520890ae5feb690ce9f1854b434ef7",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip",
+    sha256 = "b3dd46e04b6f110bdcde2289c51192d274d7f6480acff74c851d4d8f9b3c3a07",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260123_0905_RC00/test_seq_windows.zip",
 )
 use_repo(test_seq_ext, "test_seq")
 
