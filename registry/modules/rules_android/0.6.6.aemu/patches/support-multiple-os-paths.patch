@@ -1,14 +1,14 @@
-From d51a746fc41d2d2d0172032725492d5f2340f3aa Mon Sep 17 00:00:00 2001
+From 233b9c82f9b79cbc16360ae90142122621c62139 Mon Sep 17 00:00:00 2001
 From: Kenneth Magic <kmagic@google.com>
-Date: Mon, 12 Jan 2026 09:47:15 -0800
-Subject: [PATCH] Support multiple os paths
+Date: Wed, 21 Jan 2026 12:59:17 -0800
+Subject: [PATCH] support multiple os paths
 
 ---
- rules/android_sdk_repository/rule.bzl | 18 ++++++++++++------
- 1 file changed, 12 insertions(+), 6 deletions(-)
+ rules/android_sdk_repository/rule.bzl | 20 ++++++++++++++------
+ 1 file changed, 14 insertions(+), 6 deletions(-)
 
 diff --git a/rules/android_sdk_repository/rule.bzl b/rules/android_sdk_repository/rule.bzl
-index fe82242..d6465ba 100644
+index fe82242..d62476e 100644
 --- a/rules/android_sdk_repository/rule.bzl
 +++ b/rules/android_sdk_repository/rule.bzl
 @@ -92,7 +92,13 @@ def _find_system_images(repo_ctx, android_sdk_path):
@@ -53,7 +53,7 @@ index fe82242..d6465ba 100644
          api_level = api_level,
          build_tools_version = build_tools_version,
      )
-@@ -216,7 +222,7 @@ def _android_sdk_repository_extension_impl(module_ctx):
+@@ -216,18 +222,20 @@ def _android_sdk_repository_extension_impl(module_ctx):
      if module.tags.configure:
          kwargs["api_level"] = module.tags.configure[0].api_level
          kwargs["build_tools_version"] = module.tags.configure[0].build_tools_version
@@ -62,8 +62,13 @@ index fe82242..d6465ba 100644
  
      _android_sdk_repository(
          name = "androidsdk",
-@@ -227,7 +233,7 @@ android_sdk_repository_extension = module_extension(
+         **kwargs
+     )
++    return module_ctx.extension_metadata(reproducible = True)
+ 
+ android_sdk_repository_extension = module_extension(
      implementation = _android_sdk_repository_extension_impl,
++    os_dependent = True,
      tag_classes = {
          "configure": tag_class(attrs = {
 -            "path": attr.string(),
