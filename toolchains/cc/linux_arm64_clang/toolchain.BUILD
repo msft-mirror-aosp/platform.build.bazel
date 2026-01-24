@@ -69,7 +69,7 @@ cc_features(
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ],
-    cxx_flags = ["-std=c++20"],
+    cxx_flags = ["-std=c++26"],
     link_flags = [
         "--gcc-toolchain=external/arm-sysroot+",
         "-fuse-ld=lld",
@@ -94,7 +94,7 @@ cc_features(
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ],
-    cxx_flags = ["-std=c++20"],
+    cxx_flags = ["-std=c++26"],
     link_flags = [
         "--gcc-toolchain=external/arm-sysroot+",
         "-fuse-ld=lld",
