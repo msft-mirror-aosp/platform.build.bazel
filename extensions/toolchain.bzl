@@ -58,8 +58,8 @@ def _toolchain_impl(ctx):
         gcs_archive(
             name = "vctools_hermetic",
             build_file = "//toolchains/cc/windows_clang:vctools.BUILD",
-            sha256 = "55153dc62b445d89d5cd3afe7adde75ecbe387277b07a6248f906795d1a17ffd",
-            url = "gs://emu-next-bazel/hermetic-msvc/msvc_tools_v143_202506021735.zip",
+            sha256 = "41c278147d9633427a7f9d606f43db42345b92b80e358a182e7e7047f4ddd4a0",
+            url = "gs://emu-next-bazel/hermetic-msvc/msvc_tools_14_50_35717_202601231558.zip",
         )
         gcs_archive(
             name = "windows_sdk_hermetic",
