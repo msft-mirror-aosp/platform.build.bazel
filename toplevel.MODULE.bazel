@@ -58,6 +58,15 @@ bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "aemu", version = "0.0.1")
 bazel_dep(name = "crosvm", version = "0.0.1")
 bazel_dep(name = "libpng", version = "0.0.1")
+bazel_dep(name = "libvpx", version = "1.7.0")
+bazel_dep(name = "libvpx_test_data", version = "0.0.1")
+bazel_dep(name = "nasm", version = "2.16.03.bcr.2")
+bazel_dep(name = "rules_nasm", version = "0.4.0")
+
+libvpx_test_data = use_extension("@libvpx_test_data//build/bazel/extensions:libvpx_test_data.bzl", "libvpx_test_data")
+use_repo(libvpx_test_data, "libvpx_test_vectors")
+
+register_toolchains("//build/bazel/toolchains:nasm_toolchain")
 
 # These are all deps of lavapipe?
 bazel_dep(name = "libdrm", version = "2.4.110")
