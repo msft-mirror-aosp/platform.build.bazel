@@ -1,0 +1,58 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "x264",
+    srcs = select({
+        "@platforms//os:linux": select({
+            "@platforms//cpu:x86_64": ["linux-x86_64/lib/libx264.a"],
+            "@platforms//cpu:aarch64": ["linux-aarch64/lib/libx264.a"],
+            "//conditions:default": [],
+        }),
+        "@platforms//os:osx": select({
+            "@platforms//cpu:x86_64": ["darwin-x86_64/lib/libx264.a"],
+            "@platforms//cpu:aarch64": ["darwin-aarch64/lib/libx264.a"],
+            "//conditions:default": [],
+        }),
+        "@platforms//os:windows": select({
+            "@platforms//cpu:x86_64": ["windows_msvc-x86_64/lib/libx264.lib"],
+            "//conditions:default": [],
+        }),
+        "//conditions:default": [],
+    }),
+    hdrs = select({
+        "@platforms//os:linux": select({
+            "@platforms//cpu:x86_64": glob(["linux-x86_64/include/*.h"]),
+            "@platforms//cpu:aarch64": glob(["linux-aarch64/include/*.h"]),
+            "//conditions:default": [],
+        }),
+        "@platforms//os:osx": select({
+            "@platforms//cpu:x86_64": glob(["darwin-x86_64/include/*.h"]),
+            "@platforms//cpu:aarch64": glob(["darwin-aarch64/include/*.h"]),
+            "//conditions:default": [],
+        }),
+        "@platforms//os:windows": select({
+            "@platforms//cpu:x86_64": glob(["windows_msvc-x86_64/include/*.h"]),
+            "//conditions:default": [],
+        }),
+        "//conditions:default": [],
+    }),
+    includes = select({
+        "@platforms//os:linux": select({
+            "@platforms//cpu:x86_64": ["linux-x86_64/include"],
+            "@platforms//cpu:aarch64": ["linux-aarch64/include"],
+            "//conditions:default": [],
+        }),
+        "@platforms//os:osx": select({
+            "@platforms//cpu:x86_64": ["darwin-x86_64/include"],
+            "@platforms//cpu:aarch64": ["darwin-aarch64/include"],
+            "//conditions:default": [],
+        }),
+        "@platforms//os:windows": select({
+            "@platforms//cpu:x86_64": ["windows_msvc-x86_64/include"],
+            "//conditions:default": [],
+        }),
+        "//conditions:default": [],
+    }),
+)
