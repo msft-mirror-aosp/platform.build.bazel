@@ -7,7 +7,10 @@ package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 filegroup(
     name = "dlls",
-    srcs = glob(["Redist/ucrt/DLLs/x64/*.dll"]),
+    srcs = glob(
+        ["Redist/ucrt/DLLs/x64/*.dll"],
+        allow_empty = True,
+    ),
     visibility = ["//visibility:public"],
 )
 
@@ -30,6 +33,7 @@ cc_toolchain_import(
             "lib/ucrt/x64/**",
             "lib/um/x64/**",
         ],
+        allow_empty = True,
     ),
 )
 
