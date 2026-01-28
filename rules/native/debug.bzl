@@ -312,8 +312,10 @@ def _gen_gnu_debug_aspect_impl(target, ctx):
     gnu = []
     empty_fission_package = FissionPackageInfo(dwp_file = None)
     for executable_file in binaries:
-        debug_file_name = executable_file.basename + ".debug"
-        output = ctx.actions.declare_file(debug_file_name, sibling = executable_file)
+        debug_file_name = str(
+            hash(executable_file.dirname),
+        ) + "/" + executable_file.basename + ".debug"
+        output = ctx.actions.declare_file(debug_file_name)
         ctx.actions.run(
             mnemonic = "GnuDebugInfo",
             progress_message = "Extracting Debug Info " + output.short_path,
