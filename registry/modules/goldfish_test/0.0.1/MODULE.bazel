@@ -96,6 +96,20 @@ filegroup(
 """
 
 gcs_archive(
+    name = "android16k-arm64-v8a",
+    build_file_content = _generic_build,
+    sha256 = "c62821a92a71d3d909bff98c22d714b562d71ea8d18d7c77a6a70eed483ba9db",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-14663885.zip",
+)
+
+gcs_archive(
+    name = "android16k-x86_64",
+    build_file_content = _generic_build,
+    sha256 = "6bea9e99c48dda7879b6011edaa8d68442a993ffebe40580aa0bf34164dd3565",
+    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14663885.zip",
+)
+
+gcs_archive(
     name = "build-tools-linux",
     build_file_content = _generic_build,
     sha256 = "321e687caa570210bf4acd80e8cfbe901d17368d83f51976ccbba3656093fe2b",
@@ -110,6 +124,34 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "cts-arm64",
+    build_file_content = _generic_build,
+    sha256 = "eb6b31ea8b61038ad4f21f4b0189c1092b3a3133161329bd71c7e6d48e41d83a",
+    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_arm64/14236881/android-cts.zip",
+)
+
+gcs_archive(
+    name = "cts-x86-64",
+    build_file_content = _generic_build,
+    sha256 = "b33dd4562eac1192e909c99baf3a0a569b3086a35a59566bc8f529ccf26b71fb",
+    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_x86_64/14236881/android-cts.modified-20251216.zip",
+)
+
+gcs_archive(
+    name = "cts-media-1.4",
+    build_file_content = _generic_build,
+    sha256 = "c4ca2ac08a9a192b8ed9a1e13c3b5d0c4b46a609a1608835d3915e76e30ab477",
+    url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.4.zip",
+)
+
+gcs_archive(
+    name = "cts-media-1.5",
+    build_file_content = _generic_build,
+    sha256 = "0d047961309c7956442ef9c7a6559e3fe8cbb952c7369622f08f899c9e881ce7",
+    url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.5.zip",
+)
+
+gcs_archive(
     name = "platform-tools-linux",
     build_file_content = _generic_build,
     sha256 = "5c377d32e7ba0c1f982417ec588c33d8e379141e806c46c2de26cf42fe6ed51e",
@@ -121,18 +163,4 @@ gcs_archive(
     build_file_content = _generic_build,
     sha256 = "45f3fdc096a584aa83440d0437ba5673fc693d17784293416cdb99213afe07cd",
     url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-platform-tools-13278306.zip",
-)
-
-gcs_archive(
-    name = "android16k-x86_64",
-    build_file_content = _generic_build,
-    sha256 = "6bea9e99c48dda7879b6011edaa8d68442a993ffebe40580aa0bf34164dd3565",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-14663885.zip",
-)
-
-gcs_archive(
-    name = "android16k-arm64-v8a",
-    build_file_content = _generic_build,
-    sha256 = "c62821a92a71d3d909bff98c22d714b562d71ea8d18d7c77a6a70eed483ba9db",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-14663885.zip",
 )
