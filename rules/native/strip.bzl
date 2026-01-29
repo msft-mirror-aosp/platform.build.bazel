@@ -36,10 +36,10 @@ StrippedBinarySetInfo = provider(
 )
 
 def _strip_aspect_impl(target, ctx):
-    if target.files_to_run.executable:
-        binaries = [target.files_to_run.executable]
+    if target[DefaultInfo].files_to_run.executable:
+        binaries = [target[DefaultInfo].files_to_run.executable]
     else:
-        binaries = [f for f in target.files.to_list() if is_elf_binary(f)]
+        binaries = [f for f in target[DefaultInfo].files.to_list() if is_elf_binary(f)]
 
     if not ctx.attr._switch_flag[BuildSettingInfo].value:
         return [StrippedBinarySetInfo(

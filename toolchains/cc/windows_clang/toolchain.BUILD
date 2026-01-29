@@ -98,8 +98,7 @@ cc_features(
         "/D_WIN32_WINNT=0x0A00",  # Sets the target Windows version to Windows 10.
         "/DWINVER=0x0A00",
         "/DNTDDI_VERSION=0x0A000006",  # NTDDI_WIN10_RS5 (EOL October 14, 2025)
-        "/DUNICODE",  # Enable WIN32 Unicode API
-        "/D_UNICODE",  # Enable Unicode CRT
+        # We no longer define UNICODE but we also don't undef it here as some of our deps define it locally.
         "/D_CRT_SECURE_NO_DEPRECATE",  # Suppresses warnings about using deprecated CRT functions.
         "/D_CRT_SECURE_NO_WARNINGS",  # Suppresses warnings related to potentially insecure CRT functions (e.g., strcpy).
         # https://stackoverflow.com/questions/79195142/recent-msvc-versions-dont-treat-nan-as-constant-workaround

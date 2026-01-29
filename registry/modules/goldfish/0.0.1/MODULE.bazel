@@ -20,6 +20,7 @@ bazel_dep(name = "goldfish_build", version = "0.0.3")
 bazel_dep(name = "goldfish_prebuilts_common", version = "0.0.1")
 bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "bazel_skylib", version = "1.8.1")
+bazel_dep(name = "bazel_lib", version = "3.1.1")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.3")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
@@ -59,6 +60,20 @@ bazel_dep(name = "tools_emulator", version = "0.0.1")
 # modem_simulator
 bazel_dep(name = "jsoncpp", version = "1.9.6")
 bazel_dep(name = "tinyxml2", version = "10.0.0")
+
+# On Windows we package some DLLs in the release zip..
+custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
+use_repo(custom_toolchains, "vctools", "windows_sdk")
+
+# For studio_stats.proto
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+new_local_repository(
+    name = "studio_stats",
+    build_file = "//:studio_stats.BUILD",
+    #overlay_files = {"BUILD.bazel": "//:studio_stats.BUILD"},
+    path = "tools/analytics-library/protos/src/main/proto",
+)
 
 android_sdk = use_extension("@goldfish_build//extensions:android_sdk.bzl", "android_sdk")
 use_repo(android_sdk, "sdk_linux", "sdk_macosx", "sdk_windows")
