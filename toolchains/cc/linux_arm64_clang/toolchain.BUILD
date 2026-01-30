@@ -43,8 +43,8 @@ filegroup(
 # 1. This list is for the TARGET configuration (e.g., your Linux binary).
 #    It's used by cc_toolchain_dynamic_runtime.
 _runtime_libs_for_target = [
-    "@arm-sysroot//:libstdcxx",
-    "@arm-sysroot//:libs",
+    "@arm_sysroot//:libstdcxx",
+    "@arm_sysroot//:libs",
 ]
 
 # Host configurations
@@ -63,7 +63,7 @@ cc_features(
     cc_only_link_flags = ["-lstdc++"],
     compile_flags = [
         "--target=aarch64-none-linux-gnu",
-        "--gcc-toolchain=external/arm-sysroot+",
+        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
         "-Wall",
         "-Wthread-safety",
         "-fstack-protector-strong",
@@ -71,7 +71,7 @@ cc_features(
     ],
     cxx_flags = ["-std=c++26"],
     link_flags = [
-        "--gcc-toolchain=external/arm-sysroot+",
+        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
         "-Wl,--as-needed",
@@ -88,7 +88,7 @@ cc_features(
     cc_only_link_flags = ["-lstdc++"],
     compile_flags = [
         "--target=aarch64-none-linux-gnu",
-        "--gcc-toolchain=external/arm-sysroot+",
+        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
         "-Wall",
         "-Wthread-safety",
         "-fstack-protector-strong",
@@ -96,7 +96,7 @@ cc_features(
     ],
     cxx_flags = ["-std=c++26"],
     link_flags = [
-        "--gcc-toolchain=external/arm-sysroot+",
+        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
         "-Wl,--as-needed",
@@ -118,7 +118,7 @@ cc_toolchain_config(
     ],
     compiler_name = "clang",
     identifier = "linux_clang_arm64",
-    sysroot = "@arm-sysroot//:arm_sysroot",
+    sysroot = "@arm_sysroot//:arm_sysroot",
     target_cpu = "aarch64",
     toolchain_imports = _all_imports_for_macos,
 )
@@ -166,7 +166,7 @@ cc_toolchain_config(
     ],
     compiler_name = "clang",
     identifier = "linux_clang_arm64",
-    sysroot = "@arm-sysroot//:arm_sysroot",
+    sysroot = "@arm_sysroot//:arm_sysroot",
     target_cpu = "aarch64",
     toolchain_imports = _all_imports_for_linux,
 )

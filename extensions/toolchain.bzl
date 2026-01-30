@@ -68,6 +68,18 @@ def _toolchain_impl(ctx):
             url = "gs://emu-next-bazel/hermetic-msvc/windows_11_sdk_10.0.22621.0_202506021733.zip",
         )
 
+        gcs_archive(
+            name = "arm_sysroot",
+            build_file = "//toolchains/cc/linux_arm64_clang:sysroot.BUILD",
+            patch_strip = 1,
+            patches = ["//toolchains/cc/linux_arm64_clang/patches:Resolve-libc-relative-to-sysroot-aarch64_none_linux_gnu.patch"],
+            sha256 = "12fcdf13a7430655229b20438a49e8566e26551ba08759922cdaf4695b0d4e23",
+            strip_prefix = "arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu",
+            # We could also use an http_archive with the following URL for open-source:
+            # https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz?rev=22c39fc25e5541818967b4ff5a09ef3e&hash=B9FEDC2947EB21151985C2DC534ECCEC
+            url = "gs://emu-next-bazel/arm-toolchain/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz",
+        )
+
         # Host SDKs
         if ctx.os.name.lower().startswith("windows"):
             msvc_tools_repository(
