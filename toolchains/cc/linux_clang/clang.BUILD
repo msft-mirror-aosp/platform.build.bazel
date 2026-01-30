@@ -38,14 +38,17 @@ cc_tool(
         [
             "bin/clang*",
             "bin/*lld",
+            "lib/libxml2.so*",
         ],
         exclude = [
+            "bin/clang++*",
             "bin/clang-check",
+            "bin/clang-scan-deps",
             "bin/clangd",
             "bin/*clang-format",
             "bin/clang-tidy*",
         ],
-    ) + ["bin/lld-link"],
+    ),
     tool = ":bin/clang",
 )
 

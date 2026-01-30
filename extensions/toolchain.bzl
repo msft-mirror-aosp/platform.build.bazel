@@ -120,19 +120,6 @@ def _toolchain_impl(ctx):
                 overlay_files = {"BUILD.bazel": "//toolchains/cc/mac_clang:xcode.BUILD"},
             )
 
-    rust_tag = _get_singleton_tag(ctx.modules, "rust")
-    if rust_tag:
-        if rust_tag.version:
-            tool_versions["rust"] = rust_tag.version
-        if not tool_versions.get("rust"):
-            fail("rust version is missing from tag", rust_tag)
-
-        new_local_repository(
-            name = "rust_linux",
-            build_file = "//toolchains/rust:linux.BUILD",
-            path = "{}/linux-x86/{}".format(rust_tag.root_path, tool_versions["rust"]),
-        )
-
     java_tag = _get_singleton_tag(ctx.modules, "java")
     if java_tag:
         if java_tag.version:
@@ -161,7 +148,7 @@ def _toolchain_impl(ctx):
         "cc/mac_clang/BUILD.bazel": "//toolchains/cc/mac_clang:toolchain.BUILD" if clang_tag else None,
         "cc/windows_clang/BUILD.bazel": "//toolchains/cc/windows_clang:toolchain.BUILD" if clang_tag else None,
         "cc/linux_arm64_clang/BUILD.bazel": "//toolchains/cc/linux_arm64_clang:toolchain.BUILD" if clang_tag else None,
-        "rust/linux/BUILD.bazel": "//toolchains/rust:linux_toolchain.BUILD" if rust_tag else None,
+        "rust/linux/BUILD.bazel": None,
         "java/linux/BUILD.bazel": "//toolchains/java:linux_toolchain.BUILD" if java_tag else None,
         "java/mac_arm64/BUILD.bazel": "//toolchains/java:mac_arm64_toolchain.BUILD" if java_tag else None,
         "java/windows/BUILD.bazel": "//toolchains/java:windows_toolchain.BUILD" if java_tag else None,
@@ -193,13 +180,6 @@ _clang = tag_class(
         "version": attr.string(doc = "Directory name of the versioned clang toolchain."),
     },
 )
-_rust = tag_class(
-    doc = "The Rust toolchain based on rust prebuilts. Linux only.",
-    attrs = {
-        "root_path": attr.string(doc = "Workspace relative path up to (but excluding) host platform triples", mandatory = True),
-        "version": attr.string(doc = "Directory name of the versioned rust toolchain."),
-    },
-)
 _java = tag_class(
     doc = "The Java toolchain based on studio jdk prebuilts.",
     attrs = {
@@ -221,7 +201,6 @@ toolchain = module_extension(
     implementation = _toolchain_impl,
     tag_classes = {
         "clang": _clang,
-        "rust": _rust,
         "java": _java,
         "version_file": _version_file,
     },
