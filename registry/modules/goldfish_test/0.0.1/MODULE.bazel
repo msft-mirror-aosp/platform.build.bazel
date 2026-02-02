@@ -152,6 +152,13 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "hellovk",
+    build_file_content = _generic_build,
+    sha256 = "2f17d0097d81fcc3f200d97a90554108574e0959814537f63991987ef2e1ef01",
+    url = "gs://emu-next-bazel/apps/hellovk/2025-09-29/hellovk.zip",
+)
+
+gcs_archive(
     name = "platform-tools-linux",
     build_file_content = _generic_build,
     sha256 = "5c377d32e7ba0c1f982417ec588c33d8e379141e806c46c2de26cf42fe6ed51e",
