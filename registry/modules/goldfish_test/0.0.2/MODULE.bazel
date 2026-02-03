@@ -80,6 +80,10 @@ test_seq_ext.windows(
 )
 use_repo(test_seq_ext, "test_seq")
 
+local = use_repo_rule("//deps/local:repo.bzl", "local")
+
+local(name = "local")
+
 gcs_archive(
     name = "tradefed",
     build_file = "//deps/tradefed:tradefed.BUILD",
