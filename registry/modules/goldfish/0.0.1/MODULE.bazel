@@ -80,85 +80,12 @@ new_local_repository(
     path = "tools/analytics-library/protos/src/main/proto",
 )
 
-android_sdk = use_extension("@goldfish_build//extensions:android_sdk.bzl", "android_sdk")
-use_repo(android_sdk, "sdk_linux", "sdk_macosx", "sdk_windows")
-
 # List of system images, these are updated by running the script
 # ./util/update_mingbm_image.sh -b <bid>
 # Please run that script if you wish to update the default system image used
 # Do not remove the BEGIN/END markers, as that will break the fragile script.
 
 gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
-
-gcs_archive(
-    name = "mac-arm64-platform-tools",
-    build_file = "@goldfish//emulator/sdk/platform-tools/mac-arm64-platform-tools:platform-tools.BUILD",
-    sha256 = "45f3fdc096a584aa83440d0437ba5673fc693d17784293416cdb99213afe07cd",
-    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-platform-tools-13278306.zip",
-)
-
-gcs_archive(
-    name = "linux-platform-tools",
-    build_file = "@goldfish//emulator/sdk/platform-tools/linux-platform-tools:platform-tools.BUILD",
-    sha256 = "5c377d32e7ba0c1f982417ec588c33d8e379141e806c46c2de26cf42fe6ed51e",
-    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk/13278306/sdk-repo-linux-platform-tools-13278306.zip",
-)
-
-gcs_archive(
-    name = "linux-build-tools",
-    build_file = "@goldfish//emulator/sdk/build-tools/linux-build-tools:build-tools.BUILD",
-    sha256 = "321e687caa570210bf4acd80e8cfbe901d17368d83f51976ccbba3656093fe2b",
-    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk/13278306/sdk-repo-linux-build-tools-13278306.zip",
-)
-
-gcs_archive(
-    name = "mac-arm64-build-tools",
-    build_file = "@goldfish//emulator/sdk/build-tools/mac-arm64-build-tools:build-tools.BUILD",
-    sha256 = "40f143dda6d1d4b7028e45e96c5c5fe18227252880679465218881bd947c44f9",
-    url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-build-tools-13278306.zip",
-)
-
-gcs_archive(
-    name = "test_seq_linux",
-    build_file = "@goldfish//emulator/tests:test_seq_linux.BUILD",
-    sha256 = "ad91fca83802c9b9f2b4c629936ce3e6055be42133b5e01d4369ec9ac34bee0a",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_linux.zip",
-)
-
-gcs_archive(
-    name = "test_seq_mac_arm64",
-    build_file = "@goldfish//emulator/tests:test_seq_mac_arm64.BUILD",
-    sha256 = "8a89931206345d84d8a2cf700d0f20668135c4eaa98a84e2dcafe7e00d5b11c9",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260109_0916_RC00/test_seq_darwin_arm64.zip",
-)
-
-gcs_archive(
-    name = "cts-media-1.4",
-    build_file = "@goldfish//emulator/sdk/xts/cts-media:cts-media-1.4.BUILD",
-    sha256 = "c4ca2ac08a9a192b8ed9a1e13c3b5d0c4b46a609a1608835d3915e76e30ab477",
-    url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.4.zip",
-)
-
-gcs_archive(
-    name = "cts-media-1.5",
-    build_file = "@goldfish//emulator/sdk/xts/cts-media:cts-media-1.5.BUILD",
-    sha256 = "0d047961309c7956442ef9c7a6559e3fe8cbb952c7369622f08f899c9e881ce7",
-    url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.5.zip",
-)
-
-gcs_archive(
-    name = "cts-x86-64",
-    build_file = "@goldfish//emulator/sdk/xts/cts-x86-64:cts.BUILD",
-    sha256 = "b33dd4562eac1192e909c99baf3a0a569b3086a35a59566bc8f529ccf26b71fb",
-    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_x86_64/14236881/android-cts.modified-20251216.zip",
-)
-
-gcs_archive(
-    name = "cts-arm64",
-    build_file = "@goldfish//emulator/sdk/xts/cts-arm64:cts.BUILD",
-    sha256 = "eb6b31ea8b61038ad4f21f4b0189c1092b3a3133161329bd71c7e6d48e41d83a",
-    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_arm64/14236881/android-cts.zip",
-)
 
 # BEGIN android_minigbm16k-x86_64
 gcs_archive(

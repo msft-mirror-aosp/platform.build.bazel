@@ -94,7 +94,6 @@ android_sdk_repository_extension.configure(paths = {
     "macos": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/macosx",
     "windows": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/windows",
 })
-use_repo(android_sdk_repository_extension, "androidsdk")
 
 # Enable Java gRPC compilation
 bazel_dep(name = "rules_jvm_external", version = "6.9")
