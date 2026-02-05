@@ -76,8 +76,27 @@ new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.
 new_local_repository(
     name = "studio_stats",
     build_file = "//:studio_stats.BUILD",
-    #overlay_files = {"BUILD.bazel": "//:studio_stats.BUILD"},
     path = "tools/analytics-library/protos/src/main/proto",
+)
+
+gcs_file = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_file")
+
+gcs_file(
+    name = "fishtank-linux",
+    sha256 = "c429aa2c43af5d086f504afdfbc03d757066f1a000fd826ad0c03fb243de7c3e",
+    url = "gs://emu-next-bazel/fishtank/14834605/FISHTANK-sdk-repo-linux-emu-14834605.zip",
+)
+
+gcs_file(
+    name = "fishtank-mac",
+    sha256 = "d029694034b9a5d63e54ff1fe50f33741369dc90a16072ade6aaad1185d31963",
+    url = "gs://emu-next-bazel/fishtank/14834605/FISHTANK-sdk-repo-darwin-emu-14834605.zip",
+)
+
+gcs_file(
+    name = "fishtank-windows",
+    sha256 = "ce9d653af1eaf6342f0d0ccc494e217d5e8bace240c5dbef2cd50379b5f58cc5",
+    url = "gs://emu-next-bazel/fishtank/14834605/FISHTANK-sdk-repo-windows-emu-14834605.zip",
 )
 
 # List of system images, these are updated by running the script
