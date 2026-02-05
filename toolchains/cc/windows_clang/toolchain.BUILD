@@ -104,7 +104,7 @@ cc_features(
         # https://stackoverflow.com/questions/79195142/recent-msvc-versions-dont-treat-nan-as-constant-workaround
         "/D_UCRT_NOISY_NAN",
     ],
-    cxx_flags = ["/std:c++20"],
+    cxx_flags = ["/std:c++latest"],
     link_flags = ["/ignore:4070"],
     toolchain_imports = _x64_imports,
 )

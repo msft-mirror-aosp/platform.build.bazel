@@ -42,18 +42,17 @@ def _compile_rc(ctx, rc_toolchain, rc_file, extra_inputs):
     )
     return out
 
-def _windows_resources_impl(ctx):
-    rc_toolchain = ctx.toolchains[TOOLCHAIN_TYPE].tool
+def _windows_resources_shared(ctx, label, rc_files, resources, rc_toolchain):
     if not rc_toolchain.executable:
         return [CcInfo()]
 
     compiled_resources = [
-        _compile_rc(ctx, rc_toolchain, rc_file, ctx.files.resources)
-        for rc_file in ctx.files.rc_files
+        _compile_rc(ctx, rc_toolchain, rc_file, resources)
+        for rc_file in rc_files
     ]
     link_flags = [res.path for res in compiled_resources]
     linker_input = cc_common.create_linker_input(
-        owner = ctx.label,
+        owner = label,
         additional_inputs = depset(compiled_resources),
         user_link_flags = link_flags,
     )
@@ -64,6 +63,10 @@ def _windows_resources_impl(ctx):
         DefaultInfo(files = depset(compiled_resources)),
         CcInfo(linking_context = linking_context),
     ]
+
+def _windows_resources_impl(ctx):
+    rc_toolchain = ctx.toolchains[TOOLCHAIN_TYPE].tool
+    return _windows_resources_shared(ctx, ctx.label, ctx.files.rc_files, ctx.files.resources, rc_toolchain)
 
 windows_resources = rule(
     implementation = _windows_resources_impl,
@@ -106,4 +109,44 @@ Example usage:
         srcs = ["main.cc"],
         deps = [":hello_resources"],
     )""",
+)
+
+def _windows_manifest_resource_impl(ctx):
+    # exe or dll into which this manifest resource will be embedded.
+    binary_filename = ctx.attr.binary_filename
+
+    manifest_file = ctx.actions.declare_file(binary_filename + ".manifest")
+    manifest_rc_file = ctx.actions.declare_file(binary_filename + ".manifest.rc")
+
+    # TODO(whollins): Do we need to update the version?
+    manifest_content = [
+        "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>",
+        "<assembly manifestVersion=\"1.0\" xmlns=\"urn:schemas-microsoft-com:asm.v1\">",
+        "<assemblyIdentity type=\"win32\" name=\"{}\" version=\"1.0.0.0\"/>".format(binary_filename),
+        "<application>",
+        "<windowsSettings>",
+        "<activeCodePage xmlns=\"http://schemas.microsoft.com/SMI/2019/WindowsSettings\">UTF-8</activeCodePage>",
+        "</windowsSettings>",
+        "</application>",
+        "</assembly>",
+    ]
+    ctx.actions.write(output = manifest_file, content = "\n".join(manifest_content))
+
+    manifest_rc_content = [
+        # e.g. "1 RT_MANIFEST \"qemu-system-x86_64.exe.manifest\"",
+        "1 24 \"{}\"".format(manifest_file.basename),
+    ]
+    ctx.actions.write(output = manifest_rc_file, content = "\n".join(manifest_rc_content))
+
+    rc_toolchain = ctx.toolchains[TOOLCHAIN_TYPE].tool
+    return _windows_resources_shared(ctx, ctx.label, [manifest_rc_file], [manifest_file], rc_toolchain)
+
+windows_manifest_resource = rule(
+    implementation = _windows_manifest_resource_impl,
+    attrs = {"binary_filename": attr.string(mandatory = True)},
+    fragments = ["cpp"],
+    toolchains = [TOOLCHAIN_TYPE],
+    provides = [DefaultInfo, CcInfo],
+    exec_compatible_with = ["@platforms//os:windows"],
+    doc = """Creates a compiled Windows resource file containing a manifest that sets the codepage to UTF-8""",
 )

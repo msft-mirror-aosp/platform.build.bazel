@@ -11,6 +11,7 @@ load(
 )
 load("@rules_cc//cc:cc_toolchain_config_lib.bzl", "ArtifactNamePatternInfo")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+load("@rules_cc//cc/toolchains:cc_toolchain_config_info.bzl", "CcToolchainConfigInfo")
 load(":actions.bzl", "create_action_configs")
 load(":utils.bzl", "filter_none")
 

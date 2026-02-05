@@ -5,7 +5,9 @@
     "patch_strip": 1,
     "patches": {
         "adopt_bzlmod.patch": "sha256-d7z79/WSEiNTZiQ/A50HMbyqbZj3qIESa4H2n/yhlhA=",
-        "aemu_no-macos-universal-binary.patch": "",
-        "aemu_remove_upb-gen.patch": ""
+        "aemu_no-macos-universal-binary.patch": "sha256-6rVI85vDr1c7j1KaStTULW9+VUjulMujHvcSTSasd1E=",
+        "aemu_remove_upb-gen.patch": "sha256-L5Tg7r/V70zBKvau1yheRqAU+EZWO5Qh56tlLUvlTE0=",
+        "add_missing_algorithm_include.patch": "sha256-FfeOYCYGzTFRMNt2dIbufGrJ+5o7lNeT/+EJ90uBGc4=",
+        "add_missing_string_include.patch": "sha256-nM6WcxQwfBd0pU/jssEdG086NICkS5L1IIuM4UVUjcc="
     }
 }

@@ -1,0 +1,5 @@
+{
+  "type": "local_path",
+  "path": "prebuilts/android-emulator-build/common/x264",
+  "overlay_path": "overlay"
+}
