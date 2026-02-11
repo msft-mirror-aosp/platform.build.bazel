@@ -106,24 +106,6 @@ gcs_file(
 
 gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
 
-# BEGIN android_minigbm16k-x86_64
-gcs_archive(
-    name = "android_minigbm16k-x86_64",
-    build_file = "@goldfish//emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
-    sha256 = "2f98e9fdc3c1e51f302eff758de57a531911d725b86bfd0b608f364603992010",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
-)
-# END android_minigbm16-x86_64
-
-# BEGIN android_minigbm16k-arm64-v8a
-gcs_archive(
-    name = "android_minigbm16k-arm64-v8a",
-    build_file = "@goldfish//emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
-    sha256 = "3a8884d665b018a604fb2752364c883e531faec1fc315814f762490ada4e46c1",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
-)
-# END android_minigbm16-arm64-v8a
-
 # BEGIN android16k-x86_64
 gcs_archive(
     name = "android16k-x86_64",
