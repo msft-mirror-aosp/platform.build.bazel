@@ -83,20 +83,20 @@ gcs_file = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_file")
 
 gcs_file(
     name = "fishtank-linux",
-    sha256 = "c429aa2c43af5d086f504afdfbc03d757066f1a000fd826ad0c03fb243de7c3e",
-    url = "gs://emu-next-bazel/fishtank/14834605/FISHTANK-sdk-repo-linux-emu-14834605.zip",
+    sha256 = "22a76f1154e6ae0a719f688cdc4efea5dad807eaa2eb371a277744cf38082e85",
+    url = "gs://emu-next-bazel/fishtank/14863777/FISHTANK-sdk-repo-linux-emu-14863777.zip",
 )
 
 gcs_file(
     name = "fishtank-mac",
-    sha256 = "d029694034b9a5d63e54ff1fe50f33741369dc90a16072ade6aaad1185d31963",
-    url = "gs://emu-next-bazel/fishtank/14834605/FISHTANK-sdk-repo-darwin-emu-14834605.zip",
+    sha256 = "060b53d89d6b8c77b55233e287ddc5710497782a5ac637cec21947cb0fa90a88",
+    url = "gs://emu-next-bazel/fishtank/14863777/FISHTANK-sdk-repo-darwin_aarch64-emu-14863777.zip",
 )
 
 gcs_file(
     name = "fishtank-windows",
-    sha256 = "ce9d653af1eaf6342f0d0ccc494e217d5e8bace240c5dbef2cd50379b5f58cc5",
-    url = "gs://emu-next-bazel/fishtank/14834605/FISHTANK-sdk-repo-windows-emu-14834605.zip",
+    sha256 = "73d0675ff606e42bd6d388ec3269e96386a75f6296bc4495e918b25697a82625",
+    url = "gs://emu-next-bazel/fishtank/14863777/FISHTANK-sdk-repo-windows-emu-14863777.zip",
 )
 
 # List of system images, these are updated by running the script
@@ -105,24 +105,6 @@ gcs_file(
 # Do not remove the BEGIN/END markers, as that will break the fragile script.
 
 gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
-
-# BEGIN android_minigbm16k-x86_64
-gcs_archive(
-    name = "android_minigbm16k-x86_64",
-    build_file = "@goldfish//emulator/sdk/system_images/minigbm-x86_64:minigbm.BUILD",
-    sha256 = "2f98e9fdc3c1e51f302eff758de57a531911d725b86bfd0b608f364603992010",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
-)
-# END android_minigbm16-x86_64
-
-# BEGIN android_minigbm16k-arm64-v8a
-gcs_archive(
-    name = "android_minigbm16k-arm64-v8a",
-    build_file = "@goldfish//emulator/sdk/system_images/minigbm-arm64-v8a:minigbm.BUILD",
-    sha256 = "3a8884d665b018a604fb2752364c883e531faec1fc315814f762490ada4e46c1",
-    url = "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64_minigbm-userdebug/sdk-repo-linux-system-images-14339737.zip",
-)
-# END android_minigbm16-arm64-v8a
 
 # BEGIN android16k-x86_64
 gcs_archive(

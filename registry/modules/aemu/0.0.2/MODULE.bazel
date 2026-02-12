@@ -21,3 +21,12 @@ python.toolchain(
     is_default = True,
     python_version = "3.10",
 )
+
+pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
+pip.parse(
+    hub_name = "pypi_aemu",
+    python_version = "3.10",
+    requirements_lock = "//tools/libs_python:requirements_lock.txt",
+    requirements_windows = "//tools/libs_python:requirements_windows.txt",
+)
+use_repo(pip, "pypi_aemu")
