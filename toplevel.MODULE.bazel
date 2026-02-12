@@ -34,7 +34,6 @@ bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "breakpad", version = "0.0.1")
 bazel_dep(name = "pkg-config", version = "0.29.2")
 bazel_dep(name = "ninja", version = "1.12.1.bcr.1")
-bazel_dep(name = "protobuf", version = "32.1")
 bazel_dep(name = "boringssl", version = "0.20251124.0")
 bazel_dep(name = "abseil-cpp", version = "20260107.0")
 bazel_dep(name = "tink_cc", version = "2.5.0.aemu")
@@ -85,7 +84,7 @@ local_path_override(
     path = "prebuilts/android-emulator-build/qt",
 )
 
-bazel_dep(name = "goldfish_test", version = "0.0.1")
+bazel_dep(name = "goldfish_test", version = "0.0.2")
 bazel_dep(name = "rules_android", version = "0.6.6.aemu")
 
 android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
