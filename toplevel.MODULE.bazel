@@ -85,8 +85,8 @@ local_path_override(
 )
 
 bazel_dep(name = "goldfish_test", version = "0.0.2")
-bazel_dep(name = "rules_android", version = "0.7.1.aemu")
 
+# rules_android is imported by toolchain.MODULE.bazel
 android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
 android_sdk_repository_extension.configure(paths = {
     "linux": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/linux",
