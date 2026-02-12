@@ -85,7 +85,7 @@ local_path_override(
 )
 
 bazel_dep(name = "goldfish_test", version = "0.0.2")
-bazel_dep(name = "rules_android", version = "0.6.6.aemu")
+bazel_dep(name = "rules_android", version = "0.7.1.aemu")
 
 android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
 android_sdk_repository_extension.configure(paths = {
