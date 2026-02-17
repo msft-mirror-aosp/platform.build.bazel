@@ -14,8 +14,7 @@ bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "1.6.3")
 bazel_dep(name = "grpc-java", version = "1.75.0")
 bazel_dep(name = "grpc", version = "1.74.1")
-bazel_dep(name = "protobuf", version = "32.1")
-bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "protobuf", version = "33.4")
 
 # Enable Java gRPC compilation
 bazel_dep(name = "rules_jvm_external", version = "6.7")
