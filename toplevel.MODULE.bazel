@@ -34,9 +34,9 @@ bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "breakpad", version = "0.0.1")
 bazel_dep(name = "pkg-config", version = "0.29.2")
 bazel_dep(name = "ninja", version = "1.12.1.bcr.1")
-bazel_dep(name = "protobuf", version = "32.1")
-bazel_dep(name = "boringssl", version = "0.20250415.0")
-bazel_dep(name = "tink_cc", version = "2.4.0")
+bazel_dep(name = "boringssl", version = "0.20251124.0")
+bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "tink_cc", version = "2.5.0.aemu")
 
 # repo_name override needed by @grpc
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")
@@ -57,6 +57,15 @@ bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "aemu", version = "0.0.1")
 bazel_dep(name = "crosvm", version = "0.0.1")
 bazel_dep(name = "libpng", version = "0.0.1")
+bazel_dep(name = "libvpx", version = "1.7.0")
+bazel_dep(name = "libvpx_test_data", version = "0.0.1")
+bazel_dep(name = "nasm", version = "2.16.03.bcr.2")
+bazel_dep(name = "rules_nasm", version = "0.4.0")
+
+libvpx_test_data = use_extension("@libvpx_test_data//build/bazel/extensions:libvpx_test_data.bzl", "libvpx_test_data")
+use_repo(libvpx_test_data, "libvpx_test_vectors")
+
+register_toolchains("//build/bazel/toolchains:nasm_toolchain")
 
 # These are all deps of lavapipe?
 bazel_dep(name = "libdrm", version = "2.4.110")
@@ -75,7 +84,7 @@ local_path_override(
     path = "prebuilts/android-emulator-build/qt",
 )
 
-bazel_dep(name = "goldfish_test", version = "0.0.1")
+bazel_dep(name = "goldfish_test", version = "0.0.2")
 bazel_dep(name = "rules_android", version = "0.6.6.aemu")
 
 android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
@@ -84,7 +93,6 @@ android_sdk_repository_extension.configure(paths = {
     "macos": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/macosx",
     "windows": "$WORKSPACE_ROOT/prebuilts/android/android-sdk/windows",
 })
-use_repo(android_sdk_repository_extension, "androidsdk")
 
 # Enable Java gRPC compilation
 bazel_dep(name = "rules_jvm_external", version = "6.9")

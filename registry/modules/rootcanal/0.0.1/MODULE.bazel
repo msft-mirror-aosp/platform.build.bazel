@@ -9,7 +9,7 @@ bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_rust", version = "0.67.0")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "protobuf", version = "30.2")
-bazel_dep(name = "boringssl", version = "0.20241024.0")
+bazel_dep(name = "boringssl", version = "0.20251124.0")
 bazel_dep(name = "fmt", version = "11.1.0")
 bazel_dep(name = "goldfish_crates", version = "0.0.1")
 

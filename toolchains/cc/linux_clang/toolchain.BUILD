@@ -31,7 +31,7 @@ cc_features(
         "-fcolor-diagnostics",
     ],
     cxx_flags = [
-        "-std=c++20",
+        "-std=c++26",
         "-fno-exceptions",
     ],
     link_flags = [

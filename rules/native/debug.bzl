@@ -111,9 +111,9 @@ def _maybe_remap_to_new_binary(target, upstream, provider_remapper_fn):
         A list of depsets containing the remapped debug symbols, or the original upstream depsets if no
         remapping is possible.
     """
-    if target.files_to_run.executable or len(target.files.to_list()) == 1:
+    if target[DefaultInfo].files_to_run.executable or len(target[DefaultInfo].files.to_list()) == 1:
         if len(upstream) == 1 and len(upstream[0].to_list()) == 1:
-            executable_file = target.files_to_run.executable or target.files.to_list()[0]  # type: File
+            executable_file = target[DefaultInfo].files_to_run.executable or target[DefaultInfo].files.to_list()[0]  # type: File
             upstream = [depset([
                 provider_remapper_fn(upstream = upstream[0].to_list()[0], executable = executable_file),
             ])]
@@ -130,11 +130,11 @@ def _gen_dsym_aspect_impl(target, ctx):
         return []
 
     if hasattr(target.output_groups, "dsym_folder"):
-        executable_file = target.files_to_run.executable or target.files.to_list()[0]  # type: File
+        executable_file = target[DefaultInfo].files_to_run.executable or target[DefaultInfo].files.to_list()[0]  # type: File
         return [DebugSymbolsSetInfo(
             dsym = depset([AppleDsymInfo(
                 executable_file = executable_file,
-                dsym_bundle = target.output_groups.dsym_folder.to_list()[0],
+                dsym_bundle = target[DefaultInfo].output_groups.dsym_folder.to_list()[0],
                 original_executable_file = executable_file,
             )]),
         )]
@@ -299,10 +299,10 @@ def _gen_gnu_debug_aspect_impl(target, ctx):
     if not toolchain:
         fail("Flag", _DEBUG_PACKAGE_SWITCH_FLAG, "is gnu, but no toolchain is available for toolchain type", _OBJCOPY_TOOLCHAIN_TYPE)
     objcopy = toolchain.tool
-    if target.files_to_run.executable:
-        binaries = [target.files_to_run.executable]
+    if target[DefaultInfo].files_to_run.executable:
+        binaries = [target[DefaultInfo].files_to_run.executable]
     else:
-        binaries = [f for f in target.files.to_list() if is_elf_binary(f)]
+        binaries = [f for f in target[DefaultInfo].files.to_list() if is_elf_binary(f)]
 
     dwp_lookup = {}
     if FissionPackageSetInfo in target and target[FissionPackageSetInfo].fission_package:
@@ -312,8 +312,10 @@ def _gen_gnu_debug_aspect_impl(target, ctx):
     gnu = []
     empty_fission_package = FissionPackageInfo(dwp_file = None)
     for executable_file in binaries:
-        debug_file_name = executable_file.basename + ".debug"
-        output = ctx.actions.declare_file(debug_file_name, sibling = executable_file)
+        debug_file_name = str(
+            hash(executable_file.dirname),
+        ) + "/" + executable_file.basename + ".debug"
+        output = ctx.actions.declare_file(debug_file_name)
         ctx.actions.run(
             mnemonic = "GnuDebugInfo",
             progress_message = "Extracting Debug Info " + output.short_path,
@@ -359,9 +361,9 @@ def _collect_pdb_aspect_impl(target, ctx):
         return []
 
     if OutputGroupInfo in target and hasattr(target[OutputGroupInfo], "pdb_file"):
-        executable_file = target.files_to_run.executable or [
+        executable_file = target[DefaultInfo].files_to_run.executable or [
             f
-            for f in target.files.to_list()
+            for f in target[DefaultInfo].files.to_list()
             if f.extension in ["exe", "dll"]
         ][0]  # type: File
         pdb_file = target[OutputGroupInfo].pdb_file.to_list()[0]

@@ -94,7 +94,7 @@ cc_features(
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
     cxx_flags = [
-        "-std=c++20",
+        "-std=c++26",
         "-fno-exceptions",
     ],
     link_flags = [
@@ -210,7 +210,7 @@ cc_features(
         "//conditions:default": ["-fdebug-prefix-map={BAZEL_EXECUTION_ROOT}=."],
     }),
     cxx_flags = [
-        "-std=c++20",
+        "-std=c++26",
         "-fno-exceptions",
     ],
     link_flags = [

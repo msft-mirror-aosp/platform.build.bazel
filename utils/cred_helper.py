@@ -18,7 +18,7 @@ _HELPER_GOOGLE3_PATH = (
     "/google/src/head/depot/google3/devtools/blaze/bazel/credhelper/credhelper"
 )
 _GOOGLE_URI_RE = re.compile(
-    r"^https://[^.]+\.(googleapis\.com|pkg\.dev)(?:/.*)$"
+    r"^https://[^.]+\.((pa\.(sandbox\.)?)?googleapis\.com|pkg\.dev)(?:/.*)$"
 )
 _RFC3339_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 _QUOTA_PROJECT = "emulator-builds"

@@ -23,11 +23,12 @@ bazel_dep(name = "platforms", version = "1.0.0")
 bazel_dep(name = "rules_cc", version = "0.2.3")
 bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "rules_rust", version = "0.67.0")
-bazel_dep(name = "protobuf", version = "30.2")
-bazel_dep(name = "boringssl", version = "0.20241024.0")
+bazel_dep(name = "protobuf", version = "32.1")
+bazel_dep(name = "boringssl", version = "0.20251124.0")
 bazel_dep(name = "glib", version = "2.82.2.bcr.5.aemu")
 bazel_dep(name = "cxx.rs", version = "1.0.175")
 bazel_dep(name = "grpc", version = "1.74.1.aemu")
+bazel_dep(name = "grpc-java", version = "1.75.0")
 bazel_dep(name = "c-ares", version = "1.19.1.aemu")
 bazel_dep(name = "wpa_supplicant_8", version = "0.0.1")
 bazel_dep(name = "rootcanal", version = "0.0.1")
@@ -72,6 +73,7 @@ use_repo(
     "env_logger",
     "equivalent",
     "etherparse",
+    "fastrand",
     "flate2",
     "fnv",
     "foldhash",
@@ -95,6 +97,7 @@ use_repo(
     "hex",
     "http",
     "httparse",
+    "indexmap",
     "inout",
     "itoa",
     "libc",
@@ -134,7 +137,9 @@ use_repo(
     "predicates-tree",
     "prettyplease",
     "proc-macro2",
+    "protobuf-codegen",
     "protobuf-json-mapping",
+    "protobuf-parse",
     "protobuf-rust",
     "protobuf-support",
     "quote",
@@ -159,6 +164,7 @@ use_repo(
     "strsim",
     "subtle",
     "syn",
+    "tempfile",
     "termcolor",
     "termtree",
     "thiserror",
@@ -173,6 +179,7 @@ use_repo(
     "unicode-ident",
     "unicode-width",
     "utf-8",
+    "which",
     "winapi",
     "winapi-util",
     "winapi-x86_64-pc-windows-gnu",

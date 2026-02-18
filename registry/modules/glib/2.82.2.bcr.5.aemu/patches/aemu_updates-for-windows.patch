@@ -802,14 +802,14 @@ index 0000000..df76a17
 @@ -0,0 +1,13 @@
 +cc_library(
 +    name = "dirent",
-+    srcs = ["dirent.c"],
++    srcs = ["wdirent.c"],
 +    hdrs = [
 +        "dirent.h",
++        "dirent.c",
 +    ],
 +    includes = ["."],
 +    defines = [
-+        "UNICODE",
-+        "_UNICODE",
++
 +    ],
 +    visibility = ["//visibility:public"],
 +)

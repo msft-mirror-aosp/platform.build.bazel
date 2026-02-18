@@ -15,3 +15,10 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [requirement("PyYAML")],
 )
+
+py_binary(
+    name = "create_hermetic_packages",
+    srcs = ["create_hermetic_packages.py"],
+    main = "create_hermetic_packages.py",
+    visibility = ["//visibility:public"],
+)
