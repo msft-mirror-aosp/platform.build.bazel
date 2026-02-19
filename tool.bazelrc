@@ -1,5 +1,11 @@
 # Bazel tool configs
 build --host_platform='@host_platform//:host'
+# info has to be overriden due to https://github.com/bazelbuild/bazel/issues/25145
+info --host_platform='@platforms//host'
+
+# These flags are necessary for bazel v9.0.0 compatibility.
+# TODO(b/481315750): Fix the issues and remove these.
+build --incompatible_autoload_externally=+cc_library,+cc_binary,+cc_test,+proto_library,+objc_library,+cc_proto_library
 
 ## Native common
 build:linux --@goldfish_build//rules/native:generate_debug_package='gnu'
@@ -44,6 +50,10 @@ build --@rules_rust//rust/settings:extra_exec_rustc_env=RUSTC_BOOTSTRAP=1
 ## Protobuf
 build --proto_compiler=@protobuf//:protoc
 build --proto_toolchain_for_cc=@protobuf//:cc_toolchain
+# Use prebuilt protoc to save some build time.
+# This currently causes failures with GRPC on Windows.
+build:linux --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
+build:macos --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
 
 ## Python
 build --@rules_python//python/config_settings:bootstrap_impl=script

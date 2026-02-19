@@ -4,17 +4,17 @@ module(
 )
 
 bazel_dep(name = "abseil-cpp", version = "20250127.0")
-bazel_dep(name = "google_benchmark", version = "1.9.1")
+bazel_dep(name = "google_benchmark", version = "1.9.5")
 bazel_dep(name = "googletest", version = "1.15.2")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.0.14")
 bazel_dep(name = "rules_license", version = "1.0.0")
 bazel_dep(name = "rules_python", version = "1.6.3")
 bazel_dep(name = "lz4", version = "1.9.4")
-bazel_dep(name = "grpc-java", version = "1.75.0")
-bazel_dep(name = "grpc", version = "1.74.1.aemu")
+bazel_dep(name = "grpc-java", version = "1.78.0")
+bazel_dep(name = "grpc", version = "1.78.0.aemu")
 bazel_dep(name = "rules_proto", version = "7.1.0")
-bazel_dep(name = "protobuf", version = "32.1")
+bazel_dep(name = "protobuf", version = "33.4")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(

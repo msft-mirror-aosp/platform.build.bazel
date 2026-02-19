@@ -1,17 +1,17 @@
-From 233b9c82f9b79cbc16360ae90142122621c62139 Mon Sep 17 00:00:00 2001
+From a25c069c006ded1f64cf18b65c9b90216dc21ec4 Mon Sep 17 00:00:00 2001
 From: Kenneth Magic <kmagic@google.com>
-Date: Wed, 21 Jan 2026 12:59:17 -0800
+Date: Thu, 12 Feb 2026 18:22:04 +0000
 Subject: [PATCH] support multiple os paths
 
 ---
- rules/android_sdk_repository/rule.bzl | 20 ++++++++++++++------
- 1 file changed, 14 insertions(+), 6 deletions(-)
+ rules/android_sdk_repository/rule.bzl | 23 ++++++++++++++++-------
+ 1 file changed, 16 insertions(+), 7 deletions(-)
 
 diff --git a/rules/android_sdk_repository/rule.bzl b/rules/android_sdk_repository/rule.bzl
-index fe82242..d62476e 100644
+index cc06816..e6489a7 100644
 --- a/rules/android_sdk_repository/rule.bzl
 +++ b/rules/android_sdk_repository/rule.bzl
-@@ -92,7 +92,13 @@ def _find_system_images(repo_ctx, android_sdk_path):
+@@ -92,7 +92,14 @@ def _find_system_images(repo_ctx, android_sdk_path):
  
  def _android_sdk_repository_impl(repo_ctx):
      # Determine the SDK path to use, either from the attribute or the environment.
@@ -23,10 +23,11 @@ index fe82242..d62476e 100644
 +      android_sdk_path = repo_ctx.attr.paths.get("macos")
 +    elif "windows" in repo_ctx.os.name:
 +      android_sdk_path = repo_ctx.attr.paths.get("windows")
++
      if not android_sdk_path:
-         android_sdk_path = repo_ctx.os.environ.get("ANDROID_HOME")
+         android_sdk_path = repo_ctx.getenv("ANDROID_HOME")
      if not android_sdk_path:
-@@ -169,7 +175,7 @@ _android_sdk_repository = repository_rule(
+@@ -169,7 +176,7 @@ _android_sdk_repository = repository_rule(
      attrs = {
          "api_level": attr.int(default = 0),
          "build_tools_version": attr.string(),
@@ -35,7 +36,7 @@ index fe82242..d62476e 100644
      },
      environ = ["ANDROID_HOME"],
      local = True,
-@@ -177,7 +183,7 @@ _android_sdk_repository = repository_rule(
+@@ -177,7 +184,7 @@ _android_sdk_repository = repository_rule(
  
  def android_sdk_repository(
          name,
@@ -44,7 +45,13 @@ index fe82242..d62476e 100644
          api_level = 0,
          build_tools_version = ""):
      """Create a repository with Android SDK toolchains.
-@@ -194,7 +200,7 @@ def android_sdk_repository(
+@@ -189,12 +196,12 @@ def android_sdk_repository(
+       name: The repository name.
+       api_level: The SDK API level to use.
+       build_tools_version: The build_tools in the SDK to use.
+-      path: The path to the Android SDK.
++      paths: The paths dict keyed by OS to the Android SDK.
+     """
  
      _android_sdk_repository(
          name = name,
@@ -53,7 +60,7 @@ index fe82242..d62476e 100644
          api_level = api_level,
          build_tools_version = build_tools_version,
      )
-@@ -216,18 +222,20 @@ def _android_sdk_repository_extension_impl(module_ctx):
+@@ -216,18 +223,20 @@ def _android_sdk_repository_extension_impl(module_ctx):
      if module.tags.configure:
          kwargs["api_level"] = module.tags.configure[0].api_level
          kwargs["build_tools_version"] = module.tags.configure[0].build_tools_version
@@ -77,5 +84,5 @@ index fe82242..d62476e 100644
              "build_tools_version": attr.string(),
          }),
 -- 
-2.52.0.457.g6b5491de43-goog
+2.53.0.273.g2a3d683680-goog
 
