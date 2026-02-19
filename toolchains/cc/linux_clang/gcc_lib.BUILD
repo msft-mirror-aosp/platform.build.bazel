@@ -28,6 +28,9 @@ cc_toolchain_import(
         ":sysroot/usr/include",
         ":sysroot/usr/include/x86_64-linux-gnu",
     ],
+    lib_search_paths = [
+        ":x86_64-linux/lib64",
+    ],
     support_files = glob(
         [
             "sysroot/usr/include/*.h",
@@ -35,6 +38,9 @@ cc_toolchain_import(
             "sysroot/usr/include/x86_64-linux-gnu/**",
         ],
         allow_empty = True,
+        exclude = [
+            "sysroot/usr/include/i386-linux-gnu/**",
+        ],
     ) + [
         # keep sorted
         ":sysroot/usr/lib/libc.so",
@@ -59,6 +65,8 @@ cc_toolchain_import(
         ":sysroot/usr/lib/librt-2.17.so",
         ":sysroot/usr/lib/libutil.so",
         ":sysroot/usr/lib/libutil-2.17.so",
+        ":x86_64-linux/lib64/libgcc_s.so",
+        ":x86_64-linux/lib64/libgcc_s.so.1",
     ],
     deps = [":linker"],
 )

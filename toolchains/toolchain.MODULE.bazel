@@ -43,6 +43,14 @@ python.toolchain(
 
 rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
 rust.toolchain(
+    extra_target_triples = [
+        "aarch64-apple-darwin",
+        "aarch64-unknown-linux-gnu",
+        "aarch64-pc-windows-msvc",
+        "x86_64-unknown-linux-gnu",
+        "x86_64-pc-windows-msvc",
+    ],
+    rustfmt_version = TOOL_VERSIONS["rust"],
     versions = [TOOL_VERSIONS["rust"]],
 )
 
@@ -54,7 +62,7 @@ custom_toolchains.version_file(
     label = "@goldfish_build//toolchains:tool_versions.json",
 )
 
-bazel_dep(name = "buildifier_prebuilt", version = "8.0.3", dev_dependency = True)
+bazel_dep(name = "buildifier_prebuilt", version = "8.2.1.2", dev_dependency = True)
 
 host_platform_repository = use_repo_rule("@goldfish_build//platforms:host_platform.bzl", "host_platform_repository")
 

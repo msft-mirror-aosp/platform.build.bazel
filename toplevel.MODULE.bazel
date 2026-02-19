@@ -22,7 +22,6 @@ include("//build/bazel/toolchains:toolchain.MODULE.bazel")
 
 custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
 custom_toolchains.clang(root_path = "prebuilts/clang/host")
-custom_toolchains.rust(root_path = "prebuilts/rust")
 custom_toolchains.java(
     root_path = "prebuilts/studio/jdk",
     version = "jdk17",
