@@ -5,6 +5,7 @@ load(
     "cc_toolchain_dynamic_runtime",
     "cc_toolchain_static_runtime",
 )
+load("@rules_cc//cc/toolchains:cc_toolchain.bzl", "cc_toolchain")
 load(":features.bzl", "cc_features")
 
 package(default_visibility = ["//visibility:public"])
@@ -44,6 +45,9 @@ cc_features(
         "-fuse-ld=lld",
         "-rtlib=compiler-rt",
     ],
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
     toolchain_imports = _imports,
 )
 
@@ -67,6 +71,9 @@ cc_toolchain_config(
     compiler_name = "clang",
     identifier = "macos_clang_x64",
     sysroot = "@macos_sdk//:sdk",
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
     target_cpu = "k8",
     toolchain_imports = _imports,
 )
@@ -74,11 +81,17 @@ cc_toolchain_config(
 cc_toolchain_dynamic_runtime(
     name = "dynamic_runtime",
     libs = _imports,
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
 )
 
 cc_toolchain_static_runtime(
     name = "static_runtime",
     libs = _imports,
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
 )
 
 cc_toolchain(
@@ -139,6 +152,9 @@ cc_features(
         "-mmacos-version-min=11",
         "-fuse-ld=lld",
     ],
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
     toolchain_imports = _imports,
 )
 
@@ -155,6 +171,9 @@ cc_toolchain_config(
     compiler_name = "clang",
     identifier = "macos_clang_arm64",
     sysroot = "@macos_sdk//:sdk",
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
     target_cpu = "arm64",
     toolchain_imports = _imports,
 )
