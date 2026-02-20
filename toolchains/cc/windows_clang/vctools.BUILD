@@ -41,7 +41,7 @@ cc_toolchain_import(
             "msvc/include/**",
             "msvc/lib/x64/**",
             "msvc/atlmfc/include/**",
-            "msvc/atlmfc/lib/x64/mfc*.lib",
+            "msvc/atlmfc/lib/x64/*.lib",
         ],
         allow_empty = True,
         exclude = [

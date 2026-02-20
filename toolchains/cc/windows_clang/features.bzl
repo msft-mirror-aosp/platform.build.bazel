@@ -182,6 +182,7 @@ external_include_paths_feature = feature(
 
 generate_pdb_file_feature = feature(
     name = "generate_pdb_file",
+    enabled = True,
     flag_sets = [
         flag_set(
             actions = ASSEMBLE_ACTIONS,

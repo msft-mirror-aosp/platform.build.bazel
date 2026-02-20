@@ -4,9 +4,6 @@ import %workspace%/build/bazel/tool.bazelrc
 build --define grpc_no_xds=true
 build --define GRPC_ALLOW_EXCEPTIONS=0
 
-build:macos --xcode_version_config=@goldfish_build//toolchains/cc/mac_clang:host_xcodes
-build:macos --xcode_version=16.2
-
 build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
 build:release --compilation_mode=opt
 build:release-assert --config=release --copt=-UNDEBUG

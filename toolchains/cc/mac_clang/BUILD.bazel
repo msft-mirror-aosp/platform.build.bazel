@@ -7,6 +7,7 @@ package(default_visibility = ["//visibility:public"])
 bool_flag(
     name = "hermetic_xcode",
     build_setting_default = False,
+    scope = "universal",
 )
 
 xcode_version(
