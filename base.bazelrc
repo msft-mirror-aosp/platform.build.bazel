@@ -62,6 +62,7 @@ build:_remote_base --remote_local_fallback
 # Config to use hermetic SDKs
 build:hermetic --@goldfish_build//toolchains/cc/mac_clang:hermetic_xcode
 build:hermetic --@goldfish_build//toolchains/cc/windows_clang:hermetic_msvc
+build:hermetic --repo_env=CC_ALLOW_HOST_SDK=0
 
 # Java config
 build --java_language_version=17

@@ -12,7 +12,7 @@ load("@rules_cc//cc:defs.bzl", "cc_import", "cc_library")
 package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 filegroup(
-    name = "dlls",
+    name = "dlls_x64",
     srcs = glob(
         ["msvc/bin/Hostx64/x64/*.dll"],
         allow_empty = True,

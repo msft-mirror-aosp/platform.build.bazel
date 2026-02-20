@@ -81,7 +81,7 @@ def _toolchain_impl(ctx):
         )
 
         # Host SDKs
-        if ctx.os.name.lower().startswith("windows"):
+        if ctx.os.name.lower().startswith("windows") and ctx.getenv("CC_ALLOW_HOST_SDK", "1") in ("1", "true"):
             msvc_tools_repository(
                 name = "vctools",
                 build_file = "//toolchains/cc/windows_clang:vctools.BUILD",
@@ -106,7 +106,7 @@ def _toolchain_impl(ctx):
                 overlay_files = {"BUILD.bazel": "//toolchains/cc/windows_clang:sdk.BUILD"},
             )
 
-        if ctx.os.name.lower().startswith("mac"):
+        if ctx.os.name.lower().startswith("mac") and ctx.getenv("CC_ALLOW_HOST_SDK", "1") in ("1", "true"):
             xcode_tools_repository(
                 name = "xcode_tools",
                 build_file = "//toolchains/cc/mac_clang:xcode.BUILD",
