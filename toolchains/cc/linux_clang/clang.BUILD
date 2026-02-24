@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load("@goldfish_build//rules:simple_toolchain.bzl", "simple_toolchain")
 load(
@@ -124,13 +125,18 @@ cc_toolchain_import(
     deps = [":compiler_hdrs"],
 )
 
+copy_file(
+    name = "libunwind_as_libgcc",
+    src = ":lib/x86_64-unknown-linux-gnu/libunwind.a",
+    out = "lib_patch/x86_64-unknown-linux-gnu/libgcc_s.a",
+    visibility = ["//visibility:private"],
+)
+
 cc_toolchain_import(
     name = "libunwind",
-    lib_search_paths = [
-        ":lib/x86_64-unknown-linux-gnu",
-    ],
-    support_files = [
+    libs = [
         ":lib/x86_64-unknown-linux-gnu/libunwind.a",
+        ":libunwind_as_libgcc",
     ],
 )
 

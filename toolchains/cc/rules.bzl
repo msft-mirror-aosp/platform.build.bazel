@@ -100,7 +100,7 @@ CcToolchainImportInfo = provider(
 def _cc_toolchain_import_impl(ctx):
     include_paths = [p.path for p in ctx.files.include_paths]
     framework_paths = [p.path for p in ctx.files.framework_paths]
-    lib_search_paths = [p.path for p in ctx.files.lib_search_paths]
+    lib_search_paths = [p.path for p in ctx.files.lib_search_paths] + [p.dirname for p in ctx.files.libs]
     static_runtimes = ctx.files.static_mode_libs
     dynamic_runtimes = ctx.files.dynamic_mode_libs
 
@@ -157,6 +157,7 @@ def _cc_toolchain_import_impl(ctx):
             files = depset(
                 direct = ctx.files.dynamic_mode_libs +
                          ctx.files.static_mode_libs +
+                         ctx.files.libs +
                          ctx.files.support_files,
                 transitive = [dep[DefaultInfo].files for dep in ctx.attr.deps],
             ),
@@ -198,6 +199,13 @@ cc_toolchain_import = rule(
             doc = "Additional library search paths." +
                   "\n" +
                   "Useful to add search paths without always linking a lib.",
+            allow_files = True,
+        ),
+        "libs": attr.label_list(
+            default = [],
+            doc = "A short hand to include the lib in support_files and its " +
+                  "directory in lib_search_paths. Useful especially when you" +
+                  "can't reference a directory as a label.",
             allow_files = True,
         ),
         "support_files": attr.label_list(
