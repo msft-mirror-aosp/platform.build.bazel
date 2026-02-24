@@ -51,6 +51,10 @@ maven.install(
         "io.grpc:grpc-stub:1.75.0",
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
+        "com.github.oshi:oshi-core:6.10.0",
+        "junit:junit:4.13.2",
+        "net.java.dev.jna:jna:5.14.0",
+        "net.java.dev.jna:jna-platform:5.14.0",
     ],
     lock_file = ":maven_install.json",
     repositories = [
