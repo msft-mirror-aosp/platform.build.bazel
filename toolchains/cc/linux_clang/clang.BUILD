@@ -109,5 +109,6 @@ cc_toolchain_import(
     ],
     support_files = [
         ":lib/x86_64-unknown-linux-gnu/libunwind.a",
+        ":lib/x86_64-unknown-linux-gnu/libgcc_s.a",
     ],
 )
