@@ -35,6 +35,9 @@ cc_toolchain_import(
             "sysroot/usr/include/x86_64-linux-gnu/**",
         ],
         allow_empty = True,
+        exclude = [
+            "sysroot/usr/include/i386-linux-gnu/**",
+        ],
     ) + [
         # keep sorted
         ":sysroot/usr/lib/libc.so",

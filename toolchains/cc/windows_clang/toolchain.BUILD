@@ -47,6 +47,14 @@ alias(
 )
 
 alias(
+    name = "msvc_dlls_x64",
+    actual = select({
+        ":is_hermetic_msvc": "@vctools_hermetic//:dlls_x64",
+        "//conditions:default": "@vctools//:dlls_x64",
+    }),
+)
+
+alias(
     name = "sdk_libs_x64",
     actual = select({
         ":is_hermetic_msvc": "@windows_sdk_hermetic//:sdk_libs_x64",
