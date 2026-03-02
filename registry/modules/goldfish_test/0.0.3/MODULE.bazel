@@ -2,7 +2,7 @@
 
 module(
     name = "goldfish_test",
-    version = "0.0.2",
+    version = "0.0.3",
 )
 
 bazel_dep(name = "goldfish", version = "0.0.1")
@@ -14,19 +14,16 @@ bazel_dep(name = "rules_pkg", version = "1.1.0")
 bazel_dep(name = "rules_python", version = "1.6.3")
 bazel_dep(name = "grpc-java", version = "1.75.0")
 bazel_dep(name = "grpc", version = "1.74.1")
-bazel_dep(name = "protobuf", version = "32.1")
-bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "protobuf", version = "33.4")
+bazel_dep(name = "netsim", version = "0.0.1")
 
 # Enable Java gRPC compilation
 bazel_dep(name = "rules_jvm_external", version = "6.7")
 
 # Note: We expect the ANDROID_HOME variable to point to an actual android sdk
-bazel_dep(name = "rules_android", version = "0.6.6")
+bazel_dep(name = "rules_android", version = "0.7.1.aemu")
 
-remote_android_extensions = use_extension(
-    "@rules_android//bzlmod_extensions:android_extensions.bzl",
-    "remote_android_tools_extensions",
-)
+remote_android_extensions = use_extension("@rules_android//bzlmod_extensions:android_extensions.bzl", "remote_android_tools_extensions")
 use_repo(remote_android_extensions, "android_tools")
 
 android_sdk_repository_extension = use_extension("@rules_android//rules/android_sdk_repository:rule.bzl", "android_sdk_repository_extension")
@@ -54,6 +51,10 @@ maven.install(
         "io.grpc:grpc-stub:1.75.0",
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
+        "com.github.oshi:oshi-core:6.10.0",
+        "junit:junit:4.13.2",
+        "net.java.dev.jna:jna:5.14.0",
+        "net.java.dev.jna:jna-platform:5.14.0",
     ],
     lock_file = ":maven_install.json",
     repositories = [
@@ -87,8 +88,8 @@ local(name = "local")
 gcs_archive(
     name = "tradefed",
     build_file = "//deps/tradefed:tradefed.BUILD",
-    sha256 = "59d1f73d91ab1a12c93457db38d2d880bef3fcd042717fe3546b36b0150b7fa2",
-    url = "gs://emu-next-bazel/ab/tradefed/tradefed/14344819/tradefed.zip",
+    sha256 = "3f94672c0953e934e623953b3aa3fdc15fa3c4d1fcaf1a45bc33308c3bfeb990",
+    url = "gs://emu-next-bazel/ab/tradefed/tradefed/14843258/tradefed.zip",
 )
 
 # Generic BUILD.bazel file which exposes all files in the archive.

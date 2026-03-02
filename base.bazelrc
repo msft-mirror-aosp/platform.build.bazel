@@ -36,7 +36,6 @@ build:sponge --bes_backend=buildeventservice-pa.googleapis.com
 build:sponge --bes_results_url=https://fusion2.corp.google.com/invocations/
 build:sponge --bes_timeout=240s
 build:sponge --build_event_upload_max_retries=5
-build:sponge --build_event_publish_all_actions
 build:sponge --legacy_important_outputs
 
 build:no_sponge --bes_backend=
@@ -55,10 +54,14 @@ build:_remote_base --grpc_keepalive_time=30s
 build:_remote_base --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build:_remote_base --remote_instance_name=projects/emulator-builds/instances/default_instance
 build:_remote_base --jobs=100
+# remote_local_fallback allows bazel to continue if there are
+# network connectivity failures (e.g., offline)
+build:_remote_base --remote_local_fallback
 
 # Config to use hermetic SDKs
 build:hermetic --@goldfish_build//toolchains/cc/mac_clang:hermetic_xcode
 build:hermetic --@goldfish_build//toolchains/cc/windows_clang:hermetic_msvc
+build:hermetic --repo_env=CC_ALLOW_HOST_SDK=0
 
 # Java config
 build --java_language_version=17
@@ -68,9 +71,6 @@ build --java_runtime_version=jdk17
 # This avoids re-running cached actions.
 build:rcache --config=_remote_base
 build:rcache --noremote_upload_local_results
-# remote_local_fallback allows bazel to continue if there are
-# network connectivity failures (e.g., offline)
-build:rcache --remote_local_fallback
 
 # Configs for local builds with all online features
 build:connected --config=rcache
@@ -78,18 +78,23 @@ build:connected --config=hermetic
 build:connected --config=sponge
 
 # Configs for remote builds with RBE
-build:remote --config=connected
+build:remote --config=_remote_base
 build:remote --remote_executor=grpcs://remotebuildexecution.googleapis.com
-# This currently uses the studio pool - so the remote cache is not populated.
-# TODO(zachyu): migrate to RBE pool in the emulator-builds project.
-build:remote --remote_instance_name=projects/google.com:android-studio-alphasource/instances/default_instance
 build:remote --remote_timeout=3600
 build:remote --show_timestamps
 build:remote --jobs=200
 
+build:dynamic --config=remote
+build:dynamic --internal_spawn_scheduler
+build:dynamic --strategy=CppLink=dynamic
+build:dynamic --strategy=SymbolZip=dynamic
+build:dynamic --strategy=PackageZip=dynamic
+build:dynamic --strategy=PythonZipper=dynamic
+
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
 common:ci --lockfile_mode=error
+common:ci --remote_build_event_upload=all
 build:ci --config=_remote_base
 build:ci --config=sponge
 build:ci --config=hermetic

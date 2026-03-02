@@ -1,5 +1,0 @@
-alias(
-    name = "rust_linux_x64_toolchain",
-    actual = "@rust_linux//:linux_x64_toolchain",
-    visibility = ["//visibility:public"],
-)
