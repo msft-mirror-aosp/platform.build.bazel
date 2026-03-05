@@ -28,10 +28,8 @@ def _write_package_metadata_impl(ctx):
                 if pkg_info.spdx_json:
                     spdx_files.add(pkg_info.spdx_json)
     args = ctx.actions.args()
-    for f in spdx_files:
-        args.add("--spdx_json", f.path)
-    for f in third_party_library_files:
-        args.add("--third_party_libraries", f.path)
+    args.add_all("--spdx_json", list(spdx_files))
+    args.add_all("--third_party_libraries", list(third_party_library_files))
     args.add("--output", merged_output.path)
     ctx.actions.run(
         outputs = [merged_output],
