@@ -203,6 +203,20 @@ def get_sanitizer_feature(name, compile_flags, link_flags):
         ],
     )
 
+def get_warnings_as_errors_feature(flags = ["-Werror"]):
+    return feature(
+        name = "warnings_as_errors",
+        enabled = False,
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = flags),
+                ],
+            ),
+        ],
+    )
+
 def get_reproducible_build_feature(*, assembler_flags = None, compile_flags = None, link_flags = None):
     return feature(
         name = "reproducible_build",

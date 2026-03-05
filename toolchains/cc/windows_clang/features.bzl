@@ -29,6 +29,7 @@ load(
     "get_toolchain_compile_flags_feature",
     "get_toolchain_compiler_default_defines_flags",
     "get_toolchain_cxx_flags_feature",
+    "get_warnings_as_errors_feature",
     "linkstamps_feature",
     "no_legacy_features",
     "no_stripping_feature",
@@ -671,6 +672,7 @@ def _cc_features_impl(ctx):
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
+        get_warnings_as_errors_feature(flags = ["/WX"]),
         ### End flag ordering ##
         linker_param_file_feature,
         compiler_output_feature,

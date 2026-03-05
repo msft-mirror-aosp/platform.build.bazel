@@ -57,6 +57,9 @@ build:macos --@protobuf//bazel/toolchains:prefer_prebuilt_protoc
 
 ## Python
 build --@rules_python//python/config_settings:bootstrap_impl=script
+# On Windows the launch_emulator zip does not correctly support symlinks needed
+# by to make the launcher directory work correctly.
+build:windows --@rules_python//python/config_settings:build_python_zip=false
 
 # Default clang tidy config, use --config clang-tidy
 build:clang-tidy --aspects @goldfish_build//rules:clang_tidy.bzl%clang_tidy_aspect

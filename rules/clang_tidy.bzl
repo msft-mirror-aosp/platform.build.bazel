@@ -281,6 +281,11 @@ def _clang_tidy_aspect_impl(target, ctx):
         # b/477626338: Clang-tidy is disabled on Windows.
         return [ClangTidyInfo(fixes = depset())]
 
+    cc_toolchain = find_cpp_toolchain(ctx)
+    if cc_toolchain.compiler == "clang-cl":
+        # Disable clang-tidy when targeting Windows (cross-compiling)
+        return [ClangTidyInfo(fixes = depset())]
+
     # Check for excluded tags before collecting transitive state
     excluded_tags = ctx.attr._clang_tidy_exclude_tags[TidyExcludeTagsProviderInfo].tags
     target_tags = getattr(ctx.rule.attr, "tags", [])
@@ -429,7 +434,10 @@ clang_tidy_aspect = aspect(
     attr_aspects = ["implementation_deps", "deps", "srcs", "data"],
     attrs = {
         "_cc_toolchain": attr.label(default = Label("@bazel_tools//tools/cpp:current_cc_toolchain")),
-        "_run_tidy": attr.label(default = Label("//utils:run-clang-tidy")),
+        "_run_tidy": attr.label(
+            cfg = "exec",
+            default = Label("//utils:run-clang-tidy"),
+        ),
         "_allow_external_workspaces": attr.string_list(
             doc = "List of external workspace names (e.g., 'aemu') to include. The main workspace is always included.",
             default = [],
@@ -617,4 +625,8 @@ def clang_tidy_test(
         name = name,
         report_yaml = report_name,
         testonly = True,
+        target_compatible_with = select({
+            "@platforms//os:linux": [],
+            "//conditions:default": ["@platforms//:incompatible"],
+        }),
     )

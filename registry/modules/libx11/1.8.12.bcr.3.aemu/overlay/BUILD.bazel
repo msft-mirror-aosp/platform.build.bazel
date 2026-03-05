@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
 MODULES_LC = glob(["modules/lc/**/*.c"])
@@ -105,6 +106,8 @@ expand_template(
         "//conditions:default": {
             "#define BSD44SOCKETS 1": "/* #undef BSD44SOCKETS */",
             "#define HAVE_SYS_FILIO_H 1": "/* #undef HAVE_SYS_FILIO_H */",
+            "#define HAVE_STRLCPY 1": "/* #undef HAVE_STRLCPY */",
+            "#define HAS_STRLCPY 1": "/* #undef HAS_STRLCPY */",
         },
     }),
     template = "src/config.h.in",
