@@ -84,19 +84,27 @@ build:remote --remote_timeout=3600
 build:remote --show_timestamps
 build:remote --jobs=200
 
+# Configs to run certain actions dynamically
+# Used when network io is the main bottleneck
 build:dynamic --config=remote
 build:dynamic --internal_spawn_scheduler
 build:dynamic --strategy=CppLink=dynamic
 build:dynamic --strategy=SymbolZip=dynamic
-build:dynamic --strategy=PackageZip=dynamic
+build:dynamic --strategy=PackageZip=local
 build:dynamic --strategy=PythonZipper=dynamic
+build:dynamic --strategy=Strip=dynamic
+build:dynamic --strategy=GnuDebugInfo=dynamic
+build:dynamic --strategy=ExtractBreakpadSymbols=dynamic
 
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
 common:ci --lockfile_mode=error
 common:ci --remote_build_event_upload=all
+common:ci --experimental_collect_system_network_usage
 build:ci --config=_remote_base
 build:ci --config=sponge
 build:ci --config=hermetic
 # When targets are all cached the BES upload may take a long time.
 build:ci --bes_timeout=600s
+build:ci --experimental_enable_execution_graph_log
+build:ci --experimental_execution_graph_log_dep_type=all

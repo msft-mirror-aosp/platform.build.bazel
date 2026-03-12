@@ -20,7 +20,7 @@ platform(
     exec_properties = dicts.add(
         EXEC_PROPERTIES,
         create_rbe_exec_properties_dict(
-            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-linux@sha256:7eb603c6ea0f20e7477230253ef093ce6779f1419d660feae082041f83e1d97f",
+            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-linux@sha256:917a4c96fef65b71e59d028ffeda809b161f5d320bf21c96cb8191414273e1c9",
             docker_add_capabilities = "SYS_NICE",
             docker_network = "off",
             docker_privileged = True,  # This is required to support emulators/nested KVM.
@@ -75,11 +75,12 @@ platform(
     exec_properties = dicts.add(
         EXEC_PROPERTIES,
         create_rbe_exec_properties_dict(
-            container_image = "docker://us-central1-docker.pkg.dev/google.com/android-studio-alphasource/rbe/windows-2022-test@sha256:eaa19f67a1b92739a3d87e64bfa005bbedcbd217869efdd8c08d4070ac0ab52a",
+            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-windows@sha256:6c951ac07a9f18f1f4b8da6b9eab20d1c19a4b400dca1a5fe4919f7366050aa1",
             docker_network = "off",
             labels = {
                 "machine-size": "default",
-                "image-family": "2022",
+                "image-family": "windows-2022",
+                "has-virtualization": "false",
             },
             os_family = "Windows",
         ),
