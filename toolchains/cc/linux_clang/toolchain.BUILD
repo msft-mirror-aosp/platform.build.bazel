@@ -25,8 +25,6 @@ cc_features(
     b_prefix = "@gcc_lib//:lib/gcc/x86_64-linux/4.8.3",
     compile_flags = [
         "--target=x86_64-unknown-linux-gnu",
-        "-Wall",
-        "-Wthread-safety",
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ],

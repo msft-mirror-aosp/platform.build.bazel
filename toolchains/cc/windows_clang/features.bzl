@@ -24,12 +24,14 @@ load(
 load(
     "//toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
+    "get_disable_all_warnings_feature",
     "get_reproducible_build_feature",
     "get_toolchain_assembler_flags_feature",
     "get_toolchain_compile_flags_feature",
     "get_toolchain_compiler_default_defines_flags",
     "get_toolchain_cxx_flags_feature",
     "get_warnings_as_errors_feature",
+    "get_warnings_feature",
     "linkstamps_feature",
     "no_legacy_features",
     "no_stripping_feature",
@@ -672,6 +674,15 @@ def _cc_features_impl(ctx):
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
+        get_disable_all_warnings_feature(flags = ["/w"]),
+        get_warnings_feature(flags = [
+            "/W3",
+            "/wd4117",  # #pragma pragma should be at global scope
+            "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
+            "/wd4291",  # C++ exception specification used to terminate unexpected()
+            "/wd4250",  # base class '...' has virtual functions but is not virtual
+            "/wd4996",  # '...' is deprecated
+        ]),
         get_warnings_as_errors_feature(flags = ["/WX"]),
         ### End flag ordering ##
         linker_param_file_feature,
