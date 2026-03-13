@@ -71,7 +71,7 @@ alias(
 )
 
 _x64_imports = [
-    ":aemu_msvc_compat",
+    "@goldfish_build//toolchains/cc/windows_clang/compat:headers",
     "@clang_win_x64//:compiler_runtime",
     ":msvc_runtimes_x64",
     ":sdk_libs_x64",
