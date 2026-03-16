@@ -33,6 +33,7 @@ load(
     "get_toolchain_compile_flags_feature",
     "get_toolchain_cxx_flags_feature",
     "get_toolchain_link_flags_feature",
+    "get_warnings_as_errors_feature",
     "linkstamps_feature",
     "no_legacy_features",
     "static_link_cpp_runtimes_feature",
@@ -861,6 +862,7 @@ def _cc_features_impl(ctx):
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
+        get_warnings_as_errors_feature(),
         ### End flag ordering ##
         sysroot_feature,
         get_b_prefix_feature(ctx.file.b_prefix),
