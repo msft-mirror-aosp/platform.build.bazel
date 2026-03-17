@@ -1,0 +1,25 @@
+From 9bf00bed23080aeed569afc7af3ee855f34ec78e Mon Sep 17 00:00:00 2001
+From: Will Hollins <whollins@google.com>
+Date: Tue, 17 Mar 2026 22:33:53 +0000
+Subject: [PATCH] Only call std::function when it's not empty
+
+---
+ include/grpcpp/support/callback_common.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/grpcpp/support/callback_common.h b/include/grpcpp/support/callback_common.h
+index bc4f1623d3..b5a2449d45 100644
+--- a/include/grpcpp/support/callback_common.h
++++ b/include/grpcpp/support/callback_common.h
+@@ -232,7 +232,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
+           // nothing to return or change here, just don't crash the library
+         }
+ #else   // GRPC_ALLOW_EXCEPTIONS
+-  func_(ok);
++        if (func_) func_(ok);
+ #endif  // GRPC_ALLOW_EXCEPTIONS
+       });
+     }
+-- 
+2.53.0.851.ga537e3e6e9-goog
+
