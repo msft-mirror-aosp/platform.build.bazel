@@ -64,8 +64,6 @@ cc_features(
     compile_flags = [
         "--target=aarch64-none-linux-gnu",
         "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
-        "-Wall",
-        "-Wthread-safety",
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ],
@@ -89,8 +87,6 @@ cc_features(
     compile_flags = [
         "--target=aarch64-none-linux-gnu",
         "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
-        "-Wall",
-        "-Wthread-safety",
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ],

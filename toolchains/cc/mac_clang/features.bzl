@@ -20,6 +20,7 @@ load(
 load(
     "//toolchains/cc:features_common.bzl",
     "dynamic_linking_mode_feature",
+    "get_disable_all_warnings_feature",
     "get_reproducible_build_feature",
     "get_toolchain_assembler_flags_feature",
     "get_toolchain_cc_only_features",
@@ -27,6 +28,7 @@ load(
     "get_toolchain_cxx_flags_feature",
     "get_toolchain_link_flags_feature",
     "get_warnings_as_errors_feature",
+    "get_warnings_feature",
     "linkstamps_feature",
     "no_legacy_features",
     "static_link_cpp_runtimes_feature",
@@ -350,6 +352,8 @@ def _cc_features_impl(ctx):
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
+        get_disable_all_warnings_feature(),
+        get_warnings_feature(),
         get_warnings_as_errors_feature(),
         ### End flag ordering ##
         sysroot_feature,
