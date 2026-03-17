@@ -645,11 +645,16 @@ def _handle_generate(args: argparse.Namespace) -> None:
     ] + compiler_flags
 
     logging.debug("Running clang-tidy command: %s", " ".join(tidy_cmd))
-    subprocess.run(
+    res = subprocess.run(
         tidy_cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,  # suppress noise.
         text=True,
         check=False,
     )
+
+    if res.stdout:
+        sys.stdout.write(res.stdout)
 
     # Make sure an export with fixes exist.
     if not Path(args.fixes_file).exists():
