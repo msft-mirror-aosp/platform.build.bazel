@@ -1,4 +1,5 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_license//rules:license.bzl", "license")
 
 package(default_applicable_licenses = [":license"])
@@ -7,11 +8,14 @@ license(
     name = "license",
     package_name = "glib",
     license_kinds = ["@rules_license//licenses/spdx:LGPL-2.1-or-later"],
-    license_text = "COPYING",
+    license_text = "LICENSES/LGPL-2.1-or-later.txt",
     package_url = "https://docs.gtk.org/glib/",
 )
 
-exports_files(["COPYING"])
+exports_files([
+    "COPYING",
+    "LICENSES/LGPL-2.1-or-later.txt",
+])
 
 UPSTREAM_VERSION = module_version().split(".bcr.", 1)[0]
 
