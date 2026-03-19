@@ -84,8 +84,6 @@ cc_features(
     compile_flags = [
         "--target=x86_64-apple-darwin-macho",
         "-mmacos-version-min=10.15",
-        "-Wall",
-        "-Wthread-safety",
         "-Werror=unguarded-availability-new",  # API not available in the targetd OS version.
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
@@ -200,8 +198,6 @@ cc_features(
         "-D__DATE__=\"redacted\"",
         "-D__TIMESTAMP__=\"redacted\"",
         "-D__TIME__=\"redacted\"",
-        "-Wall",
-        "-Wthread-safety",
         "-Werror=unguarded-availability-new",  # API not available in the targetd OS version.
         "-fstack-protector-strong",
         "-fcolor-diagnostics",

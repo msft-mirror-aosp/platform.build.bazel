@@ -1,5 +1,21 @@
+load("@rules_license//rules:license.bzl", "license")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 load("//rules:clang_tidy.bzl", "tidy_exclude_tags_flag", "tidy_regex_flag", "tidy_source_flag")
+
+package(
+    default_applicable_licenses = [":license"],
+)
+
+license(
+    name = "license",
+    package_name = "goldfish_build",
+    copyright_notice = "Copyright 2024 - The Android Open Source Project",
+    license_kinds = ["@rules_license//licenses/spdx:Apache-2.0"],
+    license_text = "LICENSE",  # Using OWNERS as a placeholder text file since no LICENSE exists here
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["LICENSE"])
 
 test_suite(
     name = "sanity_checks",

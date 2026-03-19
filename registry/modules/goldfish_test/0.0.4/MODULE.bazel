@@ -2,7 +2,7 @@
 
 module(
     name = "goldfish_test",
-    version = "0.0.3",
+    version = "0.0.4",
 )
 
 bazel_dep(name = "goldfish", version = "0.0.1")
@@ -44,6 +44,7 @@ maven.install(
         # the lock_file if you change this list.
         "com.google.api.grpc:grpc-google-cloud-pubsub-v1:1.125.0",
         "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
+        "com.google.testparameterinjector:test-parameter-injector:1.21",
         "com.squareup.okhttp:okhttp:2.7.5",
         "com.squareup.okio:okio:2.10.0",
         "io.grpc:grpc-core:1.75.0",
@@ -51,6 +52,7 @@ maven.install(
         "io.grpc:grpc-stub:1.75.0",
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
+        "androidx.test.services:storage:1.6.0",
         "com.github.oshi:oshi-core:6.10.0",
         "junit:junit:4.13.2",
         "net.java.dev.jna:jna:5.14.0",
@@ -68,16 +70,16 @@ gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
 
 test_seq_ext = use_extension("//deps/test_seq:extension.bzl", "test_seq_extension")
 test_seq_ext.linux(
-    sha256 = "542631e3e65b294289ce9aae25ba3f1c48254ade84e908db2d8a0dd600045610",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260205_1307_RC00/test_seq_linux.zip",
+    sha256 = "e5f520219463c19bd22200552b04970fa4484db227cdd5378b9bdaa134ba0649",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260302_1206_RC00/test_seq_linux.zip",
 )
 test_seq_ext.macos(
-    sha256 = "af193288c8df5070e84dca430d21d93f460ea92011bc95ec9acc56859fd812ea",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260205_1307_RC00/test_seq_darwin_arm64.zip",
+    sha256 = "ad71a47ab9c78e559b57d0f6c041c60bc51089ad7f5265d76b2f36fb94c636a6",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260302_1206_RC00/test_seq_darwin_arm64.zip",
 )
 test_seq_ext.windows(
-    sha256 = "29c892cb076ec16c66c0bd70f6f4eea99fd68c3127afc9c1e11098fc1bf23736",
-    url = "gs://emu-next-bazel/test_seq/test_seq_20260205_1307_RC00/test_seq_windows.zip",
+    sha256 = "982a1a346b6274735dec1f8175b004afbf120836c6c6dfd828aa2c658b517cd9",
+    url = "gs://emu-next-bazel/test_seq/test_seq_20260302_1206_RC00/test_seq_windows.zip",
 )
 use_repo(test_seq_ext, "test_seq")
 

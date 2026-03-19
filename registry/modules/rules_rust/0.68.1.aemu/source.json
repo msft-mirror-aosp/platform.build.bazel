@@ -1,0 +1,10 @@
+{
+    "url": "https://github.com/bazelbuild/rules_rust/releases/download/0.68.1/rules_rust-0.68.1.tar.gz",
+    "integrity": "sha256-yKqAbPYGZnmsI0YyQe6ArWkiZdrQRl9RERy74wuJA1I=",
+    "strip_prefix": "",
+    "patches": {
+        "aemu_rustc-cdylib-fix.patch": "sha256-hY/t4CTuD8rJxnmM0lKQ1DdZS3mKiL+ooWC0saFGCF0=",
+        "aemu_windows-allocator.patch": "sha256-u601LnCkmQhkhshM5V0Te+B4M7vlMZnr1y9X5th1ZBo="
+    },
+    "patch_strip": 1
+}

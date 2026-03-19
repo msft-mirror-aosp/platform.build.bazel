@@ -57,6 +57,7 @@ bazel_dep(name = "libpng", version = "0.0.1")
 bazel_dep(name = "libvpx", version = "1.7.0")
 bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "tools_emulator", version = "0.0.1")
+bazel_dep(name = "libuuid", version = "2.41.2.aemu")
 
 # screen recording
 bazel_dep(name = "x264", version = "0.148")
@@ -83,20 +84,20 @@ gcs_file = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_file")
 
 gcs_file(
     name = "fishtank-linux",
-    sha256 = "12720e55037475122317d6e3d16ba144b0d2debd539c00e5ca6f61725da28e0a",
-    url = "gs://emu-next-bazel/fishtank/14953997/FISHTANK-sdk-repo-linux-emu-14953997.zip",
+    sha256 = "03a736a551df3555fa334967564473f818c7f6c379766bd40bd538a97c7df98e",
+    url = "gs://emu-next-bazel/fishtank/15010357/FISHTANK-sdk-repo-linux-emu-15010357.zip",
 )
 
 gcs_file(
     name = "fishtank-mac",
-    sha256 = "59e23e6cd6095e7163fac0e8d1de5bb5abc22c8a4c4c062c5d6e82337a2e357d",
-    url = "gs://emu-next-bazel/fishtank/14953997/FISHTANK-sdk-repo-darwin_aarch64-emu-14953997.zip",
+    sha256 = "f8512221f9229d8611385b7d83ab056e542ac7568caa5af8b3419471b5f80fc0",
+    url = "gs://emu-next-bazel/fishtank/15010357/FISHTANK-sdk-repo-darwin_aarch64-emu-15010357.zip",
 )
 
 gcs_file(
     name = "fishtank-windows",
-    sha256 = "462b0131f081a30438e2da98bc2494bc75a1168181af4a6d740a71d44f2b42a0",
-    url = "gs://emu-next-bazel/fishtank/14953997/FISHTANK-sdk-repo-windows-emu-14953997.zip",
+    sha256 = "7b1109909e315e5eee9812cb6a5ff6867c39864231640e9120aad7f4759b8cb8",
+    url = "gs://emu-next-bazel/fishtank/15010357/FISHTANK-sdk-repo-windows-emu-15010357.zip",
 )
 
 # List of system images, these are updated by running the script

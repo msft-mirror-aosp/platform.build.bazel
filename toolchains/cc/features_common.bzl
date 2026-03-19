@@ -7,6 +7,7 @@ load(
     "feature_set",
     "flag_group",
     "flag_set",
+    "with_feature_set",
 )
 load(
     ":actions.bzl",
@@ -206,6 +207,39 @@ def get_sanitizer_feature(name, compile_flags, link_flags):
 def get_warnings_as_errors_feature(flags = ["-Werror"]):
     return feature(
         name = "warnings_as_errors",
+        enabled = False,
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+                flag_groups = [
+                    flag_group(flags = flags),
+                ],
+            ),
+        ],
+    )
+
+def get_disable_all_warnings_feature(flags = ["-w"]):
+    return feature(
+        name = "disable_all_warnings",
+        enabled = True,
+        flag_sets = [
+            flag_set(
+                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+                flag_groups = [
+                    flag_group(
+                        flags = flags,
+                    ),
+                ],
+                with_features = [
+                    with_feature_set(not_features = ["warnings"]),
+                ],
+            ),
+        ],
+    )
+
+def get_warnings_feature(flags = ["-Wall"]):
+    return feature(
+        name = "warnings",
         enabled = False,
         flag_sets = [
             flag_set(

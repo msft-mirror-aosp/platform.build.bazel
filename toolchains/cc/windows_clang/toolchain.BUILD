@@ -84,13 +84,9 @@ cc_features(
         "/nologo",
     ],
     compile_flags = [
-        "/wd4117",  # #pragma pragma should be at global scope
-        "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
-        "/wd4291",  # C++ exception specification used to terminate unexpected()
-        "/wd4250",  # base class '...' has virtual functions but is not virtual
-        "/wd4996",  # '...' is deprecated
         "-Wno-macro-redefined",  # We force define a large set windows settings
         "--target=x86_64-pc-windows-msvc",
+        "/clang:-march=x86-64-v3",  # v2: SSE4.2 and Popcount, v3: AVX, AVX2, and BMI1/2
         # Disable exception handling
         # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
         "/EHs-",
