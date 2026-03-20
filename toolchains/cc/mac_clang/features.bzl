@@ -19,6 +19,7 @@ load(
 )
 load(
     "//toolchains/cc:features_common.bzl",
+    "MACOS_CLANG_WARNINGS",
     "dynamic_linking_mode_feature",
     "get_disable_all_warnings_feature",
     "get_reproducible_build_feature",
@@ -353,7 +354,7 @@ def _cc_features_impl(ctx):
         user_compile_flags_feature,
         reproducible_build_feature,
         get_disable_all_warnings_feature(),
-        get_warnings_feature(),
+        get_warnings_feature(flags = MACOS_CLANG_WARNINGS),
         get_warnings_as_errors_feature(),
         ### End flag ordering ##
         sysroot_feature,

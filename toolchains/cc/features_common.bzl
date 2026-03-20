@@ -218,6 +218,72 @@ def get_warnings_as_errors_feature(flags = ["-Werror"]):
         ],
     )
 
+COMMON_CLANG_WARNINGS = [
+    "-Wall",
+    "-Wno-deprecated-declarations",
+    "-Wno-initializer-overrides",
+    "-Wno-inconsistent-missing-override",
+    "-Wno-unused-value",
+    "-Wno-macro-redefined",
+    "-Wno-unused-const-variable",
+    "-Wno-ignored-attributes",
+    "-Wno-mismatched-tags",
+    "-Wno-writable-strings",
+    "-Wno-extern-c-compat",
+    "-Wno-unused-function",
+    "-Wno-unused-result",
+    "-Wno-unused-variable",
+    "-Wno-deprecated-non-prototype",
+    "-Wno-delete-non-abstract-non-virtual-dtor",
+    "-Wno-unused-private-field",
+    "-Wno-switch",
+    "-Wno-reorder-ctor",
+    "-Wno-implicit-function-declaration",
+    "-Wno-self-move",
+    "-Wno-unused-but-set-variable",
+    "-Wno-self-assign-overloaded",
+    "-Wno-c99-designator",
+]
+
+LINUX_CLANG_WARNINGS = COMMON_CLANG_WARNINGS + [
+    "-Wno-unknown-warning-option",
+    "-Wno-gnu-variable-sized-type-not-at-end",
+]
+
+MACOS_CLANG_WARNINGS = COMMON_CLANG_WARNINGS + [
+    "-Wno-format",
+    "-Wno-implicit-const-int-float-conversion",
+    "-Wno-unguarded-availability-new",
+]
+
+WINDOWS_CLANG_WARNINGS = [
+    "/W3",
+    "/wd4117",  # #pragma pragma should be at global scope
+    "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
+    "/wd4291",  # C++ exception specification used to terminate unexpected()
+    "/wd4250",  # base class '...' has virtual functions but is not virtual
+    "/wd4996",  # '...' is deprecated
+    "-Wno-initializer-overrides",
+    "-Wno-shift-negative-value",
+    "-Wno-unused-value",
+    "-Wno-unused-const-variable",
+    "-Wno-writable-strings",
+    "-Wno-unused-variable",
+    "-Wno-unused-function",
+    "-Wno-switch",
+    "-Wno-reorder-ctor",
+    "-Wno-format",
+    "-Wno-deprecated-non-prototype",
+    "-Wno-unused-result",
+    "-Wno-self-move",
+    "-Wno-missing-braces",
+    "-Wno-unused-but-set-variable",
+    "-Wno-uninitialized",
+    "-Wno-sometimes-uninitialized",
+    "-Wno-self-assign-overloaded",
+    "-Wno-c99-designator",
+]
+
 def get_disable_all_warnings_feature(flags = ["-w"]):
     return feature(
         name = "disable_all_warnings",

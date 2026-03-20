@@ -23,6 +23,7 @@ load(
 )
 load(
     "//toolchains/cc:features_common.bzl",
+    "WINDOWS_CLANG_WARNINGS",
     "dynamic_linking_mode_feature",
     "get_disable_all_warnings_feature",
     "get_reproducible_build_feature",
@@ -675,14 +676,7 @@ def _cc_features_impl(ctx):
         user_compile_flags_feature,
         reproducible_build_feature,
         get_disable_all_warnings_feature(flags = ["/w"]),
-        get_warnings_feature(flags = [
-            "/W3",
-            "/wd4117",  # #pragma pragma should be at global scope
-            "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
-            "/wd4291",  # C++ exception specification used to terminate unexpected()
-            "/wd4250",  # base class '...' has virtual functions but is not virtual
-            "/wd4996",  # '...' is deprecated
-        ]),
+        get_warnings_feature(flags = WINDOWS_CLANG_WARNINGS),
         get_warnings_as_errors_feature(flags = ["/WX"]),
         ### End flag ordering ##
         linker_param_file_feature,
