@@ -241,7 +241,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-implicit-function-declaration",
     "-Wno-self-move",
     "-Wno-unused-but-set-variable",
-    "-Wno-self-assign-overloaded",
     "-Wno-c99-designator",
 ]
 
@@ -280,7 +279,6 @@ WINDOWS_CLANG_WARNINGS = [
     "-Wno-unused-but-set-variable",
     "-Wno-uninitialized",
     "-Wno-sometimes-uninitialized",
-    "-Wno-self-assign-overloaded",
     "-Wno-c99-designator",
 ]
 
