@@ -594,6 +594,10 @@ def clang_tidy_test(
         tidy_config_file: The .clang-tidy configuration file to use.
         **kwargs: Additional arguments to pass to the underlying clang_tidy_report rule.
     """
+
+    # clang-tidy is disabled because it is making presubmits unacceptably slow.
+    # TODO(b/494605718): Fix performance issues and re-enable.
+    return
     repo = native.repository_name()
     substrings = []
     apply_fixes_in = ""
