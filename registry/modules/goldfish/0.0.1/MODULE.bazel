@@ -66,6 +66,7 @@ bazel_dep(name = "ffmpeg", version = "8.0.aemu")
 # modem_simulator
 bazel_dep(name = "jsoncpp", version = "1.9.6")
 bazel_dep(name = "tinyxml2", version = "10.0.0")
+bazel_dep(name = "utf8proc", version = "2.11.0")
 
 # On Windows we package some DLLs in the release zip..
 custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
