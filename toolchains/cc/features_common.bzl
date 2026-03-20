@@ -239,7 +239,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-switch",
     "-Wno-reorder-ctor",
     "-Wno-implicit-function-declaration",
-    "-Wno-self-move",
     "-Wno-c99-designator",
 ]
 
@@ -273,7 +272,6 @@ WINDOWS_CLANG_WARNINGS = [
     "-Wno-format",
     "-Wno-deprecated-non-prototype",
     "-Wno-unused-result",
-    "-Wno-self-move",
     "-Wno-missing-braces",
     "-Wno-uninitialized",
     "-Wno-sometimes-uninitialized",
