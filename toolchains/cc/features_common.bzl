@@ -226,7 +226,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-macro-redefined",
     "-Wno-unused-const-variable",
     "-Wno-ignored-attributes",
-    "-Wno-mismatched-tags",
     "-Wno-writable-strings",
     "-Wno-extern-c-compat",
     "-Wno-unused-function",
