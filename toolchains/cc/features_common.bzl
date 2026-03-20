@@ -233,7 +233,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-unused-function",
     "-Wno-unused-variable",
     "-Wno-deprecated-non-prototype",
-    "-Wno-delete-non-abstract-non-virtual-dtor",
     "-Wno-unused-private-field",
     "-Wno-switch",
     "-Wno-implicit-function-declaration",
