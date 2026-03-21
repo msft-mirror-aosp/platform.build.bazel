@@ -236,7 +236,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-delete-non-abstract-non-virtual-dtor",
     "-Wno-unused-private-field",
     "-Wno-switch",
-    "-Wno-reorder-ctor",
     "-Wno-implicit-function-declaration",
     "-Wno-c99-designator",
 ]
@@ -267,7 +266,6 @@ WINDOWS_CLANG_WARNINGS = [
     "-Wno-unused-variable",
     "-Wno-unused-function",
     "-Wno-switch",
-    "-Wno-reorder-ctor",
     "-Wno-format",
     "-Wno-deprecated-non-prototype",
     "-Wno-missing-braces",
