@@ -223,7 +223,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-deprecated-declarations",
     "-Wno-initializer-overrides",
     "-Wno-inconsistent-missing-override",
-    "-Wno-unused-value",
     "-Wno-macro-redefined",
     "-Wno-unused-const-variable",
     "-Wno-ignored-attributes",
@@ -260,7 +259,6 @@ WINDOWS_CLANG_WARNINGS = [
     "/wd4996",  # '...' is deprecated
     "-Wno-initializer-overrides",
     "-Wno-shift-negative-value",
-    "-Wno-unused-value",
     "-Wno-unused-const-variable",
     "-Wno-writable-strings",
     "-Wno-unused-variable",
