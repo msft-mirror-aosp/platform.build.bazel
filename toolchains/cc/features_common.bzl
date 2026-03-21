@@ -223,7 +223,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-character-conversion",
     "-Wno-deprecated-declarations",
     "-Wno-initializer-overrides",
-    "-Wno-inconsistent-missing-override",
     "-Wno-unused-const-variable",
     "-Wno-ignored-attributes",
     "-Wno-writable-strings",
