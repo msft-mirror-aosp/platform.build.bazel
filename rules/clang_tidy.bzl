@@ -626,6 +626,7 @@ def clang_tidy_test(
         report_yaml = report_name,
         testonly = True,
         target_compatible_with = select({
+            "@platforms//os:macos": [],
             "@platforms//os:linux": [],
             "//conditions:default": ["@platforms//:incompatible"],
         }),
