@@ -52,6 +52,7 @@ cc_toolchain_import(
         "include/um/Tlhelp32.h",
         "include/shared/SpecStrings.h",
         "include/um/OCIdl.h",
+        "include/um/Wbemidl.h",
     ],
 )
 
