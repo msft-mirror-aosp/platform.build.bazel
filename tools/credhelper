@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+unameOut="$(uname -s)"
+case "${unameOut}" in
+Linux*) machine=Linux ;;
+Darwin*) machine=Mac ;;
+*)
+  echo "UNSUPPORTED OS: ${unameOut}" 1>&2
+  exit 1
+  ;;
+esac
+
+if [[ "$machine" = "Linux" ]]; then
+  prebuilts/python/linux-x86/bin/python3 build/bazel/tools/credhelper.py $@ < /dev/stdin
+elif [[ "$machine" = "Mac" ]]; then
+  prebuilts/python/darwin-x86/bin/python3 build/bazel/tools/credhelper.py $@ < /dev/stdin
+fi
