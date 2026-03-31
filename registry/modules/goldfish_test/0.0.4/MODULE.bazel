@@ -53,6 +53,7 @@ maven.install(
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
         "androidx.test.services:storage:1.6.0",
+        "androidx.test.uiautomator:uiautomator:2.3.0",
         "com.github.oshi:oshi-core:6.10.0",
         "junit:junit:4.13.2",
         "net.java.dev.jna:jna:5.14.0",
@@ -67,6 +68,8 @@ maven.install(
 )
 
 gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
+
+gcs_file = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_file")
 
 test_seq_ext = use_extension("//deps/test_seq:extension.bzl", "test_seq_extension")
 test_seq_ext.linux(
@@ -86,6 +89,12 @@ use_repo(test_seq_ext, "test_seq")
 local = use_repo_rule("//deps/local:repo.bzl", "local")
 
 local(name = "local")
+
+gcs_file(
+    name = "animation_app",
+    sha256 = "24bdf05c3f87b2a9c4bb19e7d3cf3b2b0fc6e92a7367d5f7d4b625052d419c87",
+    url = "gs://emu-next-bazel/ab/git_emu-main-dev/emulator-linux_x64_gfxstream/15099533/app-debug.apk",
+)
 
 gcs_archive(
     name = "tradefed",
