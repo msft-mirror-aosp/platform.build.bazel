@@ -603,6 +603,7 @@ compiler_output_feature = feature(
 
 generate_debug_symbols_feature = feature(
     name = "generate_debug_symbols",
+    enabled = True,
     flag_sets = [
         flag_set(
             actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,

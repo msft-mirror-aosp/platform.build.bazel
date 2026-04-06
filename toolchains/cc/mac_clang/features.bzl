@@ -35,7 +35,6 @@ load(
     "static_link_cpp_runtimes_feature",
     "static_linking_mode_feature",
     "strip_flags_feature",
-    "supports_dynamic_linker_feature",
     "supports_pic_feature",
     "supports_start_end_lib_feature",
     "toolchain_import_configs",
@@ -313,7 +312,6 @@ def _cc_features_impl(ctx):
         dynamic_linking_mode_feature,
         static_linking_mode_feature,
         supports_start_end_lib_feature,
-        supports_dynamic_linker_feature,
         supports_pic_feature,
         static_link_cpp_runtimes_feature,
         # features for tool invocations
