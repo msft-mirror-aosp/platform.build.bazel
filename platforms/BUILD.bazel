@@ -10,39 +10,6 @@ package(default_visibility = ["//visibility:public"])
 # Change it to a new value when we want to create a new cache from scratch.
 EXEC_PROPERTIES = {"cache-silo-key": "20240813"}
 
-# Target-platform-specific flags.
-# These flags are dependent on target platform, not host platform. See bazelrc
-# files for host-platform-specific flags.
-FLAGS_LINUX_COMMON = [
-    # Native common
-    "--@goldfish_build//rules/native:generate_debug_package=gnu",
-    "--@goldfish_build//rules/native:allow_strip",
-
-    # C++
-    "--force_pic",
-
-    # Rust
-    "--@rules_rust//rust/settings:experimental_use_cc_common_link",
-]
-
-FLAGS_WINDOWS_COMMON = [
-    # Native common
-    "--@goldfish_build//rules/native:generate_debug_package=pdb",
-]
-
-FLAGS_MACOS_COMMON = [
-    # Native common
-    "--@goldfish_build//rules/native:generate_debug_package=dsym",
-
-    # C++
-    "--force_pic",
-    "--xcode_version_config=@goldfish_build//toolchains/cc/mac_clang:host_xcodes",
-    "--xcode_version=16.2",
-
-    # Rust
-    "--@rules_rust//rust/settings:experimental_use_cc_common_link",
-]
-
 platform(
     name = "linux_x64",
     constraint_values = [
@@ -53,7 +20,7 @@ platform(
     exec_properties = dicts.add(
         EXEC_PROPERTIES,
         create_rbe_exec_properties_dict(
-            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-linux@sha256:bc31047c28b82531cc4011cbe507b8f99674d28d88cdc8bd4688d108d30b4813",
+            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-linux@sha256:917a4c96fef65b71e59d028ffeda809b161f5d320bf21c96cb8191414273e1c9",
             docker_add_capabilities = "SYS_NICE",
             docker_network = "off",
             docker_privileged = True,  # This is required to support emulators/nested KVM.
@@ -66,7 +33,6 @@ platform(
             os_family = "Linux",
         ),
     ),
-    flags = FLAGS_LINUX_COMMON,
 )
 
 platform(
@@ -77,7 +43,6 @@ platform(
         "@bazel_tools//tools/cpp:clang",
     ],
     exec_properties = EXEC_PROPERTIES,
-    flags = FLAGS_LINUX_COMMON,
 )
 
 platform(
@@ -88,7 +53,6 @@ platform(
         "@bazel_tools//tools/cpp:clang",
     ],
     exec_properties = EXEC_PROPERTIES,
-    flags = FLAGS_MACOS_COMMON,
 )
 
 platform(
@@ -99,7 +63,6 @@ platform(
         "@bazel_tools//tools/cpp:clang",
     ],
     exec_properties = EXEC_PROPERTIES,
-    flags = FLAGS_MACOS_COMMON,
 )
 
 platform(
@@ -112,7 +75,7 @@ platform(
     exec_properties = dicts.add(
         EXEC_PROPERTIES,
         create_rbe_exec_properties_dict(
-            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-windows@sha256:d23527785d24085ba3247cbc809267ae7ff1673d7e3b03e0ca8c1d8a1a97e4d4",
+            container_image = "docker://us-central1-docker.pkg.dev/kokoro-container-bakery/android-devtools/emulator-windows@sha256:6c951ac07a9f18f1f4b8da6b9eab20d1c19a4b400dca1a5fe4919f7366050aa1",
             docker_network = "off",
             labels = {
                 "machine-size": "default",
@@ -122,5 +85,4 @@ platform(
             os_family = "Windows",
         ),
     ),
-    flags = FLAGS_WINDOWS_COMMON,
 )
