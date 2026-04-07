@@ -90,7 +90,8 @@ build:remote --show_timestamps
 build:remote --jobs=200
 
 # Configs to run certain actions dynamically
-# Used when network io is the main bottleneck
+# Used when big action running on RBE is the main bottleneck while local
+# resources are available.
 build:dynamic --config=remote
 build:dynamic --internal_spawn_scheduler
 build:dynamic --strategy=CppLink=dynamic
@@ -113,3 +114,24 @@ build:ci --config=hermetic
 build:ci --bes_timeout=600s
 build:ci --experimental_enable_execution_graph_log
 build:ci --experimental_execution_graph_log_dep_type=all
+
+
+# RBE-based cross-platform and multi-platform build configurations
+# Experimental and best-effort support only; NOT tested in CI builds.
+## (Any) -> Windows x64
+build:rbe-win-x64 --config=hermetic --config=remote --remote_local_fallback=false
+build:rbe-win-x64 --platforms=@goldfish_build//platforms:windows_x64
+build:rbe-win-x64 --extra_execution_platforms=@goldfish_build//platforms:windows_x64
+build:rbe-win-x64 --remote_upload_local_results=false
+
+## (Any) -> Linux x64
+build:rbe-linux-x64 --config=remote --remote_local_fallback=false
+build:rbe-linux-x64 --platforms=@goldfish_build//platforms:linux_x64
+build:rbe-linux-x64 --extra_execution_platforms=@goldfish_build//platforms:linux_x64
+build:rbe-linux-x64 --remote_upload_local_results=false
+
+## (Any) -> Linux aarch64 (cross-compiled on linux x64)
+build:rbe-linux-aarch64 --config=remote --remote_local_fallback=false
+build:rbe-linux-aarch64 --platforms=@goldfish_build//platforms:linux_aarch64
+build:rbe-linux-aarch64 --extra_execution_platforms=@goldfish_build//platforms:linux_x64
+build:rbe-linux-aarch64 --remote_upload_local_results=false

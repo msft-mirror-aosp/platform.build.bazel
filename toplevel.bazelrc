@@ -14,9 +14,6 @@ build:asan --dynamic_mode=off
 build:msan --features='msan'
 build:tsan --features='tsan'
 
-build:cirelease --config=ci
-build:cirelease --config=release
-
 build:citsan --config=ci
 build:citsan --config=debug
 build:citsan --config=tsan
