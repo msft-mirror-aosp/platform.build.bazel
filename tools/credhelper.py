@@ -56,7 +56,7 @@ def main(argv: Sequence[str]) -> Optional[int]:
   if "BUILD_NUMBER" in os.environ:
     result = subprocess.run(
         [
-            "prebuilts/python/linux-x86/bin/python3",
+            sys.executable,
             "build/bazel/tools/ci_credhelper.py",
             "get",
         ],
