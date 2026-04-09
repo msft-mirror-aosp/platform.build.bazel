@@ -29,6 +29,7 @@ custom_toolchains.java(
 use_repo(custom_toolchains, "gcc_lib")
 
 bazel_dep(name = "goldfish", version = "0.0.1")
+bazel_dep(name = "gfxstream", version = "0.0.1")
 bazel_dep(name = "qemu", version = "0.0.1")
 bazel_dep(name = "breakpad", version = "0.0.1")
 bazel_dep(name = "pkg-config", version = "0.29.2")
