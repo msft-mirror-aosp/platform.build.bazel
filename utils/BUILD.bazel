@@ -39,3 +39,18 @@ py_test(
         requirement("PyYAML"),
     ],
 )
+
+py_binary(
+    name = "cred_helper",
+    srcs = ["cred_helper.py"],
+    main = "cred_helper.py",
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "cred_helper_test",
+    srcs = ["cred_helper_test.py"],
+    deps = [
+        ":cred_helper",
+    ],
+)

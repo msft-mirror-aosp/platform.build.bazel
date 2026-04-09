@@ -1,5 +1,6 @@
 # Bazel-wide general configs
 common --enable_platform_specific_config
+common --downloader_config=build/bazel/utils/downloader.cfg
 
 # Note that file:/// needs 3 / to work with %workspace% on Windows.
 common --registry=file:///%workspace%/build/bazel/registry
@@ -33,6 +34,11 @@ build:windows --workspace_status_command="build\\bazel\\utils\\bazel_workspace.c
 common:linux --credential_helper="*.googleapis.com=%workspace%/build/bazel/utils/credential_helper.sh"
 common:macos --credential_helper="*.googleapis.com=%workspace%/build/bazel/utils/credential_helper.sh"
 common:windows --credential_helper="*.googleapis.com=%workspace%/build/bazel/utils/credential_helper.cmd"
+
+# googlesource
+common:linux --credential_helper="*.googlesource.com=%workspace%/build/bazel/utils/credential_helper.sh"
+common:macos --credential_helper="*.googlesource.com=%workspace%/build/bazel/utils/credential_helper.sh"
+common:windows --credential_helper="*.googlesource.com=%workspace%/build/bazel/utils/credential_helper.cmd"
 
 # Publish to the private BES backend.
 build:sponge --grpc_keepalive_time=30s
