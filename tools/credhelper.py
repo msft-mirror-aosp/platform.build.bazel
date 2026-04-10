@@ -53,7 +53,7 @@ def main(argv: Sequence[str]) -> Optional[int]:
     )
     print(result.stdout.decode("utf-8"), end="")
     return result.returncode
-  if "BUILD_NUMBER" in os.environ:
+  if os.environ.get("BUILD_NUMBER"):
     result = subprocess.run(
         [
             sys.executable,
@@ -83,10 +83,11 @@ def get_gcloud_token() -> str:
   result = subprocess.run(
       ["gcloud", "auth", "print-access-token"],
       capture_output=True,
+      text=True,
   )
   if result.returncode != 0:
     raise ValueError(f"Failed to get access token: {result.stderr}")
-  return result.stdout
+  return result.stdout.strip()
 
 
 def is_glinux() -> bool:
