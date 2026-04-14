@@ -220,6 +220,7 @@ def get_warnings_as_errors_feature(flags = ["-Werror"]):
 
 COMMON_CLANG_WARNINGS = [
     "-Wall",
+    "-Wno-character-conversion",
     "-Wno-deprecated-declarations",
     "-Wno-initializer-overrides",
     "-Wno-inconsistent-missing-override",

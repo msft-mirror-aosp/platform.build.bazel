@@ -2,7 +2,7 @@
 
 # Keep this version in sync with "tool_versions.json"
 TOOL_VERSIONS = {
-    "clang": "clang-r563880c",
+    "clang": "clang-r596125",
     "rust": "1.91.1",
 }
 
