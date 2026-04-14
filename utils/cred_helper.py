@@ -52,9 +52,9 @@ def _respond_google(request_json: Mapping[str, Any]) -> Optional[int]:
     return 0
   if _try_metadata_server():
     return 0
-  if _try_gcloud_cli():
-    return 0
   if _try_adc_file():
+    return 0
+  if _try_gcloud_cli():
     return 0
 
   raise CredentialError("All authentication methods failed.")
