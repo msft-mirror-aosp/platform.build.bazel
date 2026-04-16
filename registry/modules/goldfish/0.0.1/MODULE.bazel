@@ -92,6 +92,12 @@ gcs_file(
 )
 
 gcs_file(
+    name = "fishtank-linux_internal",
+    sha256 = "2ef2cf4c380428367b02c741cbe210c5699d54c0a6da9817d35a7026f95740f0",
+    url = "gs://emu-next-bazel/fishtank/15174931/internal/FISHTANK-sdk-repo-linux-emu-15174931.zip",
+)
+
+gcs_file(
     name = "fishtank-mac",
     sha256 = "c3d64ca4737146cbf566d1a0fbc2c1ca339104e2b2669f2efb87d98537d4aa13",
     url = "gs://emu-next-bazel/fishtank/15174931/FISHTANK-sdk-repo-darwin_aarch64-emu-15174931.zip",
