@@ -92,8 +92,8 @@ local(name = "local")
 
 gcs_file(
     name = "animation_app",
-    sha256 = "24bdf05c3f87b2a9c4bb19e7d3cf3b2b0fc6e92a7367d5f7d4b625052d419c87",
-    url = "gs://emu-next-bazel/ab/git_emu-main-dev/emulator-linux_x64_gfxstream/15099533/app-debug.apk",
+    sha256 = "c35cff1a11e49801a0983273c9cb4fab3da87861c1f18946977e7068be3fe494",
+    url = "gs://emu-next-bazel/ab/git_emu-main-dev/emulator-linux_x64_gfxstream/15241783/app-debug.apk",
 )
 
 gcs_archive(
