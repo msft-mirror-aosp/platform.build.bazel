@@ -74,6 +74,7 @@ ALL_FRAMEWORKS = [
     "QuartzCore",
     "Security",
     "Symbols",
+    "SystemConfiguration",
     "VideoToolbox",
     "vmnet",
 ]

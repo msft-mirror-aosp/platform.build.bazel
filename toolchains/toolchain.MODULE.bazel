@@ -3,7 +3,7 @@
 # Keep this version in sync with "tool_versions.json"
 TOOL_VERSIONS = {
     "clang": "clang-r596125",
-    "rust": "1.91.1",
+    "rust": "1.94.1",
 }
 
 bazel_dep(name = "goldfish_build", version = "0.0.3")
@@ -24,7 +24,7 @@ bazel_dep(name = "rules_shell", version = "0.6.1")
 bazel_dep(name = "rules_go", version = "0.60.0")
 bazel_dep(name = "rules_java", version = "9.3.0")
 bazel_dep(name = "rules_kotlin", version = "2.2.2")
-bazel_dep(name = "rules_rust", version = "0.68.1.aemu")
+bazel_dep(name = "rules_rust", version = "0.69.0")
 bazel_dep(name = "gazelle", version = "0.47.0")
 
 # rules_proto is deprecated by protobuf
