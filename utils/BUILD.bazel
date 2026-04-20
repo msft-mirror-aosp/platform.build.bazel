@@ -24,23 +24,6 @@ py_binary(
 )
 
 py_binary(
-    name = "generate_vfs",
-    srcs = ["generate_vfs.py"],
-    main = "generate_vfs.py",
-    visibility = ["//visibility:public"],
-    deps = [requirement("PyYAML")],
-)
-
-py_test(
-    name = "generate_vfs_test",
-    srcs = ["generate_vfs_test.py"],
-    deps = [
-        ":generate_vfs",
-        requirement("PyYAML"),
-    ],
-)
-
-py_binary(
     name = "cred_helper",
     srcs = ["cred_helper.py"],
     main = "cred_helper.py",
