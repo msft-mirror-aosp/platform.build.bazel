@@ -8,11 +8,16 @@ build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
 build:release --compilation_mode=opt
 build:release-assert --config=release --copt=-UNDEBUG
 
+build:linux --test_env=LLVM_SYMBOLIZER=prebuilts/clang/host/linux-x86/clang-r596125/bin/llvm-symbolizer
+build:macos --test_env=LLVM_SYMBOLIZER=prebuilts/clang/host/darwin-x86/clang-r596125/bin/llvm-symbolizer
+
 build:asan --features='asan'
 # ASAN hits ODR violations with shared linkage due to rules_proto.
 build:asan --dynamic_mode=off
+build:asan --test_env=LSAN_OPTIONS=suppressions=hardware/generic/goldfish/leak_suppressions.txt
 build:msan --features='msan'
 build:tsan --features='tsan'
+build:tsan --test_env=TSAN_OPTIONS=second_deadlock_stack=1,suppressions=hardware/generic/goldfish/tsan_suppressions.txt
 
 build:citsan --config=ci
 build:citsan --config=debug
