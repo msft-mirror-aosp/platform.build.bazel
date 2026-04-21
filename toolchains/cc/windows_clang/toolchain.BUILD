@@ -2,18 +2,11 @@ load(
     "@goldfish_build//toolchains/cc:rules.bzl",
     "cc_artifact_name",
     "cc_toolchain_config",
-    "cc_toolchain_import",
 )
 load("@goldfish_build//toolchains/cc/windows_clang:features.bzl", "cc_features")
 load("@rules_cc//cc:defs.bzl", "cc_toolchain")
 
 package(default_visibility = ["//visibility:public"])
-
-cc_toolchain_import(
-    name = "aemu_msvc_compat",
-    include_paths = ["@aemu//windows:includes"],
-    support_files = ["@aemu//windows:compat-includes"],
-)
 
 config_setting(
     name = "is_hermetic_msvc",
