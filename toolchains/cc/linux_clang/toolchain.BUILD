@@ -43,7 +43,7 @@ cc_features(
         "-Wl,--no-as-needed",
         "-l:libunwind.a",
     ],
-    toolchain_imports = _x64_imports,
+    toolchain_imports = _x64_imports + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
 )
 
 cc_toolchain_config(
@@ -59,7 +59,7 @@ cc_toolchain_config(
     identifier = "linux_clang_x64",
     sysroot = "@gcc_lib//:sysroot",
     target_cpu = "k8",
-    toolchain_imports = _x64_imports,
+    toolchain_imports = _x64_imports + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
 )
 
 cc_toolchain_dynamic_runtime(

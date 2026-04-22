@@ -14,10 +14,10 @@ build:macos --test_env=LLVM_SYMBOLIZER=prebuilts/clang/host/darwin-x86/clang-r59
 build:asan --features='asan'
 # ASAN hits ODR violations with shared linkage due to rules_proto.
 build:asan --dynamic_mode=off
-build:asan --test_env=LSAN_OPTIONS=suppressions=hardware/generic/goldfish/leak_suppressions.txt
+build:asan --test_env=LSAN_OPTIONS=suppressions=external/goldfish_build/toolchains/cc/leak_suppressions.txt
 build:msan --features='msan'
 build:tsan --features='tsan'
-build:tsan --test_env=TSAN_OPTIONS=second_deadlock_stack=1,suppressions=hardware/generic/goldfish/tsan_suppressions.txt
+build:tsan --test_env=TSAN_OPTIONS=second_deadlock_stack=1,suppressions=external/goldfish_build/toolchains/cc/tsan_suppressions.txt
 
 build:citsan --config=ci
 build:citsan --config=debug
