@@ -17,6 +17,12 @@ _x64_imports = [
     "@gcc_lib//:libs",
 ]
 
+_arm64_imports = [
+    "@arm_sysroot//:libstdcxx",
+    "@arm_sysroot//:libs",
+    "@clang_linux_x64//:compiler_hdrs",
+]
+
 cc_features(
     name = "x64_features",
     assembler_flags = [
@@ -44,6 +50,21 @@ cc_features(
         "-l:libunwind.a",
     ],
     toolchain_imports = _x64_imports,
+    warning_flags = [
+        "-Wall",
+        "-Wno-character-conversion",
+        "-Wno-deprecated-declarations",
+        "-Wno-initializer-overrides",
+        "-Wno-unused-const-variable",
+        "-Wno-ignored-attributes",
+        "-Wno-writable-strings",
+        "-Wno-extern-c-compat",
+        "-Wno-unused-function",
+        "-Wno-unused-variable",
+        "-Wno-c99-designator",
+        "-Wno-unknown-warning-option",
+        "-Wno-gnu-variable-sized-type-not-at-end",
+    ],
 )
 
 cc_toolchain_config(
@@ -100,6 +121,86 @@ toolchain(
         "@platforms//os:linux",
     ],
     toolchain = ":x64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
+cc_features(
+    name = "arm64_features",
+    assembler_flags = [
+        "--target=aarch64-none-linux-gnu",
+    ],
+    cc_only_link_flags = ["-lstdc++"],
+    compile_flags = [
+        "--target=aarch64-none-linux-gnu",
+        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
+        "-fstack-protector-strong",
+        "-fcolor-diagnostics",
+    ],
+    cxx_flags = [
+        "-std=c++26",
+    ],
+    link_flags = [
+        "--target=aarch64-none-linux-gnu",
+        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
+        "-fuse-ld=lld",
+        "-Wno-unused-command-line-argument",
+        "-Wl,--as-needed",
+        "-lm",
+        "-ldl",
+        "-Wl,--no-as-needed",
+    ],
+    toolchain_imports = _arm64_imports,
+    warning_flags = ["-Wall"],
+)
+
+cc_toolchain_config(
+    name = "arm64_config",
+    cc_features = ":arm64_features",
+    cc_tools = [
+        "@clang_linux_x64//:clang",
+        "@clang_linux_x64//:archiver",
+        "@clang_linux_x64//:strip",
+    ],
+    compiler_name = "clang",
+    identifier = "linux_clang_arm64",
+    sysroot = "@arm_sysroot//:arm_sysroot",
+    target_cpu = "aarch64",
+    toolchain_imports = _arm64_imports,
+)
+
+cc_toolchain_dynamic_runtime(
+    name = "arm64_dynamic_runtime",
+    libs = _arm64_imports,
+)
+
+cc_toolchain(
+    name = "arm64",
+    all_files = ":arm64_config",
+    ar_files = "@clang_linux_x64//:archiver",
+    as_files = "@clang_linux_x64//:clang",
+    compiler_files = ":arm64_config",
+    dwp_files = "@goldfish_build//toolchains/cc:empty",
+    dynamic_runtime_lib = ":arm64_dynamic_runtime",
+    linker_files = ":arm64_config",
+    objcopy_files = "@goldfish_build//toolchains/cc:empty",
+    static_runtime_lib = "@goldfish_build//toolchains/cc:empty",
+    strip_files = "@clang_linux_x64//:strip",
+    supports_param_files = True,
+    toolchain_config = ":arm64_config",
+)
+
+toolchain(
+    name = "arm64_toolchain",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+        "@bazel_tools//tools/cpp:clang",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:arm64",
+        "@platforms//os:linux",
+    ],
+    toolchain = ":arm64",
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 

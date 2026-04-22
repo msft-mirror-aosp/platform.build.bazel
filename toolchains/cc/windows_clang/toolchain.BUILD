@@ -70,12 +70,28 @@ _x64_imports = [
     ":sdk_libs_x64",
 ]
 
+_x64_defines = [
+    # Improves compatibility with older or embedded systems where atomics might not be supported or efficient.
+    "/D__STDC_NO_ATOMICS__",
+    "/DCOMPILER_MSVC",  # Identify as MSVC cl
+    "/DNOMINMAX",  # Disables the min/max macros defined in <windows.h>.
+    "/DWIN32_LEAN_AND_MEAN",  # Excludes less frequently used headers from <windows.h>.
+    "/D_WIN32_WINNT=0x0A00",  # Sets the target Windows version to Windows 10.
+    "/DWINVER=0x0A00",
+    "/DNTDDI_VERSION=0x0A000006",  # NTDDI_WIN10_RS5 (EOL October 14, 2025)
+    # We no longer define UNICODE but we also don't undef it here as some of our deps define it locally.
+    "/D_CRT_SECURE_NO_DEPRECATE",  # Suppresses warnings about using deprecated CRT functions.
+    "/D_CRT_SECURE_NO_WARNINGS",  # Suppresses warnings related to potentially insecure CRT functions (e.g., strcpy).
+    # https://stackoverflow.com/questions/79195142/recent-msvc-versions-dont-treat-nan-as-constant-workaround
+    "/D_UCRT_NOISY_NAN",
+]
+
 cc_features(
     name = "x64_features",
     archive_flags = ["/ignore:4221"],
     assembler_flags = [
         "/nologo",
-    ],
+    ] + _x64_defines,
     compile_flags = [
         "-Wno-macro-redefined",  # We force define a large set windows settings
         "--target=x86_64-pc-windows-msvc",
@@ -85,25 +101,30 @@ cc_features(
         "/EHs-",
         "/EHc-",
         "/EHa-",
-    ],
-    compiler_defines_flags = [
-        # Improves compatibility with older or embedded systems where atomics might not be supported or efficient.
-        "/D__STDC_NO_ATOMICS__",
-        "/DCOMPILER_MSVC",  # Identify as MSVC cl
-        "/DNOMINMAX",  # Disables the min/max macros defined in <windows.h>.
-        "/DWIN32_LEAN_AND_MEAN",  # Excludes less frequently used headers from <windows.h>.
-        "/D_WIN32_WINNT=0x0A00",  # Sets the target Windows version to Windows 10.
-        "/DWINVER=0x0A00",
-        "/DNTDDI_VERSION=0x0A000006",  # NTDDI_WIN10_RS5 (EOL October 14, 2025)
-        # We no longer define UNICODE but we also don't undef it here as some of our deps define it locally.
-        "/D_CRT_SECURE_NO_DEPRECATE",  # Suppresses warnings about using deprecated CRT functions.
-        "/D_CRT_SECURE_NO_WARNINGS",  # Suppresses warnings related to potentially insecure CRT functions (e.g., strcpy).
-        # https://stackoverflow.com/questions/79195142/recent-msvc-versions-dont-treat-nan-as-constant-workaround
-        "/D_UCRT_NOISY_NAN",
-    ],
+    ] + _x64_defines,
     cxx_flags = ["/std:c++latest"],
     link_flags = ["/ignore:4070"],
     toolchain_imports = _x64_imports,
+    warning_flags = [
+        "/W3",
+        "/wd4117",  # #pragma pragma should be at global scope
+        "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
+        "/wd4291",  # C++ exception specification used to terminate unexpected()
+        "/wd4250",  # base class '...' has virtual functions but is not virtual
+        "/wd4996",  # '...' is deprecated
+        "-Wno-initializer-overrides",
+        "-Wno-shift-negative-value",
+        "-Wno-unused-const-variable",
+        "-Wno-writable-strings",
+        "-Wno-unused-variable",
+        "-Wno-ignored-attributes",
+        "-Wno-unused-function",
+        "-Wno-format",
+        "-Wno-missing-braces",
+        "-Wno-uninitialized",
+        "-Wno-sometimes-uninitialized",
+        "-Wno-c99-designator",
+    ],
 )
 
 cc_artifact_name(

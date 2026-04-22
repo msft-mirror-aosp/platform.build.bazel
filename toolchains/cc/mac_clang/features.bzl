@@ -19,7 +19,6 @@ load(
 )
 load(
     "//toolchains/cc:features_common.bzl",
-    "MACOS_CLANG_WARNINGS",
     "dynamic_linking_mode_feature",
     "get_disable_all_warnings_feature",
     "get_reproducible_build_feature",
@@ -351,9 +350,9 @@ def _cc_features_impl(ctx):
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
-        get_disable_all_warnings_feature(),
-        get_warnings_feature(flags = MACOS_CLANG_WARNINGS),
-        get_warnings_as_errors_feature(),
+        get_disable_all_warnings_feature(flags = ["-w"]),
+        get_warnings_feature(flags = ctx.attr.warning_flags),
+        get_warnings_as_errors_feature(flags = ["-Werror"]),
         ### End flag ordering ##
         sysroot_feature,
         linker_param_file_feature,
@@ -376,6 +375,10 @@ cc_features = rule(
         ),
         "cxx_flags": attr.string_list(
             doc = "Flags always added to c++ actions.",
+            default = [],
+        ),
+        "warning_flags": attr.string_list(
+            doc = "Flags controlling compiler warnings.",
             default = [],
         ),
         "link_flags": attr.string_list(

@@ -24,7 +24,6 @@ load(
 )
 load(
     "//toolchains/cc:features_common.bzl",
-    "LINUX_CLANG_WARNINGS",
     "dynamic_linking_mode_feature",
     "get_b_prefix_feature",
     "get_disable_all_warnings_feature",
@@ -118,12 +117,6 @@ def get_toolchain_lib_search_paths_feature(import_config):
             ),
         ],
     )
-
-# TODO(zachyu) remove when host stdlibs are no longer needed.
-no_implicit_libs_feature = feature(
-    name = "no_implicit_libs",
-    enabled = True,
-)
 
 # https://cs.opensource.google/bazel/bazel/+/master:src/main/java/com/google/devtools/build/lib/rules/cpp/CppActionConfigs.java;l=98;drc=6d03a2ecf25ad596446c296ef1e881b60c379812
 dependency_file_feature = feature(
@@ -829,7 +822,6 @@ def _cc_features_impl(ctx):
         supports_pic_feature,
         static_link_cpp_runtimes_feature,
         # features for tool invocations
-        no_implicit_libs_feature,
         dependency_file_feature,
         random_seed_feature,
         pic_feature,
@@ -857,7 +849,7 @@ def _cc_features_impl(ctx):
         tsan_feature,
         msan_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
-        get_toolchain_cc_only_features([]),
+        get_toolchain_cc_only_features(ctx.attr.cc_only_link_flags),
         get_toolchain_assembler_flags_feature(ctx.attr.assembler_flags),
         user_link_flags_feature,
         force_pic_feature,
@@ -866,9 +858,9 @@ def _cc_features_impl(ctx):
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
-        get_disable_all_warnings_feature(),
-        get_warnings_feature(flags = LINUX_CLANG_WARNINGS),
-        get_warnings_as_errors_feature(),
+        get_disable_all_warnings_feature(flags = ["-w"]),
+        get_warnings_feature(flags = ctx.attr.warning_flags),
+        get_warnings_as_errors_feature(flags = ["-Werror"]),
         ### End flag ordering ##
         sysroot_feature,
         get_b_prefix_feature(ctx.file.b_prefix),
@@ -899,8 +891,16 @@ cc_features = rule(
             doc = "Flags always added to c++ actions.",
             default = [],
         ),
+        "warning_flags": attr.string_list(
+            doc = "Flags controlling compiler warnings.",
+            default = [],
+        ),
         "link_flags": attr.string_list(
             doc = "Flags always added to link actions.",
+            default = [],
+        ),
+        "cc_only_link_flags": attr.string_list(
+            doc = "Flags added to link actions only when linking cc binaries.",
             default = [],
         ),
         "toolchain_imports": attr.label_list(

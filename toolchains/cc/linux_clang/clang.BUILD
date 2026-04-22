@@ -96,17 +96,10 @@ cc_toolchain_import(
 cc_toolchain_import(
     name = "compiler_hdrs",
     include_paths = glob(
-        [
-            "lib/clang/*/include",
-        ],
+        ["lib/clang/*/include"],
         exclude_directories = 0,
     ),
-    support_files = glob(
-        [
-            "lib/clang/*/include/**",
-            "lib/clang/*/share/**",
-        ],
-    ),
+    support_files = glob(["lib/clang/*/include/**"]),
 )
 
 cc_toolchain_import(

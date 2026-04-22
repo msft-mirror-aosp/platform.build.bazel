@@ -23,13 +23,11 @@ load(
 )
 load(
     "//toolchains/cc:features_common.bzl",
-    "WINDOWS_CLANG_WARNINGS",
     "dynamic_linking_mode_feature",
     "get_disable_all_warnings_feature",
     "get_reproducible_build_feature",
     "get_toolchain_assembler_flags_feature",
     "get_toolchain_compile_flags_feature",
-    "get_toolchain_compiler_default_defines_flags",
     "get_toolchain_cxx_flags_feature",
     "get_warnings_as_errors_feature",
     "get_warnings_feature",
@@ -671,13 +669,12 @@ def _cc_features_impl(ctx):
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
         get_toolchain_compile_flags_feature(ctx.attr.compile_flags),
-        get_toolchain_compiler_default_defines_flags(ctx.attr.compiler_defines_flags),
         get_toolchain_assembler_flags_feature(ctx.attr.assembler_flags),
         get_toolchain_cxx_flags_feature(ctx.attr.cxx_flags),
         user_compile_flags_feature,
         reproducible_build_feature,
         get_disable_all_warnings_feature(flags = ["/w"]),
-        get_warnings_feature(flags = WINDOWS_CLANG_WARNINGS),
+        get_warnings_feature(flags = ctx.attr.warning_flags),
         get_warnings_as_errors_feature(flags = ["/WX"]),
         ### End flag ordering ##
         linker_param_file_feature,
@@ -698,16 +695,16 @@ cc_features = rule(
             doc = "Flags always added to compile actions.",
             default = [],
         ),
-        "compiler_defines_flags": attr.string_list(
-            doc = "Flags of defines added to compile and assembler actions.",
-            default = [],
-        ),
         "assembler_flags": attr.string_list(
             doc = "Flags always added to assembler actions.",
             default = [],
         ),
         "cxx_flags": attr.string_list(
             doc = "Flags always added to c++ compile actions.",
+            default = [],
+        ),
+        "warning_flags": attr.string_list(
+            doc = "Flags controlling compiler warnings.",
             default = [],
         ),
         "link_flags": attr.string_list(

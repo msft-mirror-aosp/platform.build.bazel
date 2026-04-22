@@ -69,6 +69,23 @@ _imports = [
     ":xcode_frameworks",
 ]
 
+_warning_flags = [
+    "-Wall",
+    "-Wno-character-conversion",
+    "-Wno-deprecated-declarations",
+    "-Wno-initializer-overrides",
+    "-Wno-unused-const-variable",
+    "-Wno-ignored-attributes",
+    "-Wno-writable-strings",
+    "-Wno-extern-c-compat",
+    "-Wno-unused-function",
+    "-Wno-unused-variable",
+    "-Wno-c99-designator",
+    "-Wno-format",
+    "-Wno-implicit-const-int-float-conversion",
+    "-Wno-unguarded-availability-new",
+]
+
 cc_features(
     name = "x64_features",
     assembler_flags = [
@@ -105,6 +122,7 @@ cc_features(
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
     }),
     toolchain_imports = _imports,
+    warning_flags = _warning_flags,
 )
 
 cc_artifact_name(
@@ -218,6 +236,7 @@ cc_features(
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
     }),
     toolchain_imports = _imports,
+    warning_flags = _warning_flags,
 )
 
 cc_toolchain_config(

@@ -31,7 +31,6 @@ register_toolchains(
     "@toolchain_hub//cc/linux_clang:all",
     "@toolchain_hub//cc/mac_clang:all",
     "@toolchain_hub//cc/windows_clang:all",
-    "@toolchain_hub//cc/linux_arm64_clang:all",
     "@toolchain_hub//java/linux:all",
     "@toolchain_hub//java/mac_arm64:all",
     "@toolchain_hub//java/windows:all",

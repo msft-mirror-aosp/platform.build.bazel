@@ -65,9 +65,9 @@ def _toolchain_impl(ctx):
 
         gcs_archive(
             name = "arm_sysroot",
-            build_file = "//toolchains/cc/linux_arm64_clang:sysroot.BUILD",
+            build_file = "//toolchains/cc/linux_clang:gcc_arm64.BUILD",
             patch_strip = 1,
-            patches = ["//toolchains/cc/linux_arm64_clang/patches:Resolve-libc-relative-to-sysroot-aarch64_none_linux_gnu.patch"],
+            patches = ["//toolchains/cc/linux_clang/patches:Resolve-libc-relative-to-sysroot-aarch64_none_linux_gnu.patch"],
             sha256 = "12fcdf13a7430655229b20438a49e8566e26551ba08759922cdaf4695b0d4e23",
             strip_prefix = "arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu",
             # We could also use an http_archive with the following URL for open-source:
@@ -142,7 +142,6 @@ def _toolchain_impl(ctx):
         "cc/linux_clang/BUILD.bazel": "//toolchains/cc/linux_clang:toolchain.BUILD" if clang_tag else None,
         "cc/mac_clang/BUILD.bazel": "//toolchains/cc/mac_clang:toolchain.BUILD" if clang_tag else None,
         "cc/windows_clang/BUILD.bazel": "//toolchains/cc/windows_clang:toolchain.BUILD" if clang_tag else None,
-        "cc/linux_arm64_clang/BUILD.bazel": "//toolchains/cc/linux_arm64_clang:toolchain.BUILD" if clang_tag else None,
         "java/linux/BUILD.bazel": "//toolchains/java:linux_toolchain.BUILD" if java_tag else None,
         "java/mac_arm64/BUILD.bazel": "//toolchains/java:mac_arm64_toolchain.BUILD" if java_tag else None,
         "java/windows/BUILD.bazel": "//toolchains/java:windows_toolchain.BUILD" if java_tag else None,

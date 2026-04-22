@@ -79,20 +79,6 @@ def get_toolchain_compile_flags_feature(flags):
         ],
     )
 
-def get_toolchain_compiler_default_defines_flags(flags):
-    return feature(
-        name = "toolchain_compiler_default_defines_flags",
-        enabled = True,
-        flag_sets = [
-            flag_set(
-                actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + ASSEMBLE_ACTIONS,
-                flag_groups = filter_none([
-                    check_args(len, flag_group, flags = flags),
-                ]),
-            ),
-        ],
-    )
-
 def get_toolchain_assembler_flags_feature(flags):
     return feature(
         name = "toolchain_assembler_flags",
@@ -204,7 +190,7 @@ def get_sanitizer_feature(name, compile_flags, link_flags):
         ],
     )
 
-def get_warnings_as_errors_feature(flags = ["-Werror"]):
+def get_warnings_as_errors_feature(flags):
     return feature(
         name = "warnings_as_errors",
         enabled = False,
@@ -218,53 +204,7 @@ def get_warnings_as_errors_feature(flags = ["-Werror"]):
         ],
     )
 
-COMMON_CLANG_WARNINGS = [
-    "-Wall",
-    "-Wno-character-conversion",
-    "-Wno-deprecated-declarations",
-    "-Wno-initializer-overrides",
-    "-Wno-unused-const-variable",
-    "-Wno-ignored-attributes",
-    "-Wno-writable-strings",
-    "-Wno-extern-c-compat",
-    "-Wno-unused-function",
-    "-Wno-unused-variable",
-    "-Wno-c99-designator",
-]
-
-LINUX_CLANG_WARNINGS = COMMON_CLANG_WARNINGS + [
-    "-Wno-unknown-warning-option",
-    "-Wno-gnu-variable-sized-type-not-at-end",
-]
-
-MACOS_CLANG_WARNINGS = COMMON_CLANG_WARNINGS + [
-    "-Wno-format",
-    "-Wno-implicit-const-int-float-conversion",
-    "-Wno-unguarded-availability-new",
-]
-
-WINDOWS_CLANG_WARNINGS = [
-    "/W3",
-    "/wd4117",  # #pragma pragma should be at global scope
-    "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
-    "/wd4291",  # C++ exception specification used to terminate unexpected()
-    "/wd4250",  # base class '...' has virtual functions but is not virtual
-    "/wd4996",  # '...' is deprecated
-    "-Wno-initializer-overrides",
-    "-Wno-shift-negative-value",
-    "-Wno-unused-const-variable",
-    "-Wno-writable-strings",
-    "-Wno-unused-variable",
-    "-Wno-ignored-attributes",
-    "-Wno-unused-function",
-    "-Wno-format",
-    "-Wno-missing-braces",
-    "-Wno-uninitialized",
-    "-Wno-sometimes-uninitialized",
-    "-Wno-c99-designator",
-]
-
-def get_disable_all_warnings_feature(flags = ["-w"]):
+def get_disable_all_warnings_feature(flags):
     return feature(
         name = "disable_all_warnings",
         enabled = True,
