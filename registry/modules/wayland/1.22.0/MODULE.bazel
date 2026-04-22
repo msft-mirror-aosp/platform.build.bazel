@@ -3,7 +3,7 @@ module(
     version = "1.22.0",
 )
 
-bazel_dep(name = "libexpat", version = "2.7.1.aemu")
+bazel_dep(name = "libexpat", version = "2.7.1.bcr.1")
 bazel_dep(name = "libffi", version = "3.4.7.bcr.3.aemu")
 bazel_dep(name = "rules_cc", version = "0.0.14")
 bazel_dep(name = "rules_python", version = "1.6.3")
