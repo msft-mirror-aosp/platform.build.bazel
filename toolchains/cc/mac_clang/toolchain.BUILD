@@ -104,7 +104,7 @@ cc_features(
         "@goldfish_build//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
     }),
-    toolchain_imports = _imports + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
+    toolchain_imports = _imports,
 )
 
 cc_artifact_name(
@@ -130,7 +130,7 @@ cc_toolchain_config(
     identifier = "macos_clang_x64",
     sysroot = ":xcode_sdk",
     target_cpu = "k8",
-    toolchain_imports = _imports + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
+    toolchain_imports = _imports,
 )
 
 cc_toolchain_dynamic_runtime(
@@ -217,7 +217,7 @@ cc_features(
         "@goldfish_build//toolchains/cc:is_bootstrap": [],
         "//conditions:default": ["-Wl,-oso_prefix,{BAZEL_EXECUTION_ROOT}/"],
     }),
-    toolchain_imports = _imports + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
+    toolchain_imports = _imports,
 )
 
 cc_toolchain_config(
@@ -236,7 +236,7 @@ cc_toolchain_config(
     identifier = "macos_clang_arm64",
     sysroot = ":xcode_sdk",
     target_cpu = "arm64",
-    toolchain_imports = _imports + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
+    toolchain_imports = _imports,
 )
 
 cc_toolchain(

@@ -62,7 +62,7 @@ cc_features(
         "-ldl",
         "-Wl,--no-as-needed",
     ],
-    toolchain_imports = _all_imports_for_linux + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
+    toolchain_imports = _all_imports_for_linux,
 )
 
 ## -- Linux variant --
@@ -80,7 +80,7 @@ cc_toolchain_config(
     identifier = "linux_clang_arm64",
     sysroot = "@arm_sysroot//:arm_sysroot",
     target_cpu = "aarch64",
-    toolchain_imports = _all_imports_for_linux + ["@goldfish_build//toolchains/cc:sanitizer_suppressions"],
+    toolchain_imports = _all_imports_for_linux,
 )
 
 cc_toolchain(

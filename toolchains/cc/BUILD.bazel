@@ -1,20 +1,10 @@
 load("@bazel_skylib//rules:common_settings.bzl", "bool_setting")
 load(":bootstrap.bzl", "cc_bootstrap_binary")
-load(":rules.bzl", "cc_toolchain_import")
 
 filegroup(
     name = "empty",
     srcs = [],
     visibility = ["@toolchain_hub//:__subpackages__"],
-)
-
-cc_toolchain_import(
-    name = "sanitizer_suppressions",
-    support_files = [
-        "leak_suppressions.txt",
-        "tsan_suppressions.txt",
-    ],
-    visibility = ["//visibility:public"],
 )
 
 bool_setting(
