@@ -85,29 +85,31 @@ new_local_repository(
 
 gcs_file = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_file")
 
+# BEGIN upload_fishtank
 gcs_file(
     name = "fishtank-linux",
-    sha256 = "62e97e955031b60297f909afc96f62226a0bda05d5c4b2cdc24a302daaa0f85f",
-    url = "gs://emu-next-bazel/fishtank/15174931/FISHTANK-sdk-repo-linux-emu-15174931.zip",
+    sha256 = "6f880af87026787a936cc3157d07b079edae58e78bd3e7fa8f4952ae45514f4e",
+    url = "gs://emu-next-bazel/fishtank/15253823/FISHTANK-sdk-repo-linux-emu-15253823.zip",
 )
 
 gcs_file(
     name = "fishtank-linux_internal",
-    sha256 = "2ef2cf4c380428367b02c741cbe210c5699d54c0a6da9817d35a7026f95740f0",
-    url = "gs://emu-next-bazel/fishtank/15174931/internal/FISHTANK-sdk-repo-linux-emu-15174931.zip",
+    sha256 = "d70bb3f7d439275864fd402c0235c62a1d0e030af04e0d585488198801f94c01",
+    url = "gs://emu-next-bazel/fishtank/15253823/internal/FISHTANK-sdk-repo-linux-emu-15253823.zip",
 )
 
 gcs_file(
     name = "fishtank-mac",
-    sha256 = "c3d64ca4737146cbf566d1a0fbc2c1ca339104e2b2669f2efb87d98537d4aa13",
-    url = "gs://emu-next-bazel/fishtank/15174931/FISHTANK-sdk-repo-darwin_aarch64-emu-15174931.zip",
+    sha256 = "ab87c79468a5a5cb1bd108cd54ad4231bef15b19326ae3cdfa0dab20a49b2576",
+    url = "gs://emu-next-bazel/fishtank/15253823/FISHTANK-sdk-repo-darwin_aarch64-emu-15253823.zip",
 )
 
 gcs_file(
     name = "fishtank-windows",
-    sha256 = "08d54ee4d51df61fdef308da84ed4aa580f326b8555b7af91b63024286ad4741",
-    url = "gs://emu-next-bazel/fishtank/15174931/FISHTANK-sdk-repo-windows-emu-15174931.zip",
+    sha256 = "87b45ceb2935fb8670befff111c9c068c44d98673a6c3b6be28d84cd3210c673",
+    url = "gs://emu-next-bazel/fishtank/15253823/FISHTANK-sdk-repo-windows-emu-15253823.zip",
 )
+# END upload_fishtank
 
 # List of system images, these are updated by running the script
 # ./util/update_mingbm_image.sh -b <bid>
