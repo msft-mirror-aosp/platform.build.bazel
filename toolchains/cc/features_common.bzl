@@ -229,7 +229,6 @@ COMMON_CLANG_WARNINGS = [
     "-Wno-extern-c-compat",
     "-Wno-unused-function",
     "-Wno-unused-variable",
-    "-Wno-deprecated-non-prototype",
     "-Wno-c99-designator",
 ]
 
@@ -259,7 +258,6 @@ WINDOWS_CLANG_WARNINGS = [
     "-Wno-ignored-attributes",
     "-Wno-unused-function",
     "-Wno-format",
-    "-Wno-deprecated-non-prototype",
     "-Wno-missing-braces",
     "-Wno-uninitialized",
     "-Wno-sometimes-uninitialized",
