@@ -280,6 +280,21 @@ opt_feature = feature(
     ],
 )
 
+no_ndebug_feature = feature(
+    name = "no_ndebug",
+    enabled = False,
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags = ["-UNDEBUG"],
+                ),
+            ],
+        ),
+    ],
+)
+
 reproducible_build_feature = get_reproducible_build_feature(
     assembler_flags = [
         # Force the timestamps to a fixed value.
@@ -339,6 +354,7 @@ def _cc_features_impl(ctx):
         opt_feature,
         dbg_feature,
         fastbuild_feature,
+        no_ndebug_feature,
         asan_feature,
         tsan_feature,
         libraries_to_link_feature,

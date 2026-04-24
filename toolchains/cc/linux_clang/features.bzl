@@ -745,6 +745,21 @@ fastbuild_feature = feature(
     ],
 )
 
+no_ndebug_feature = feature(
+    name = "no_ndebug",
+    enabled = False,
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags = ["-UNDEBUG"],
+                ),
+            ],
+        ),
+    ],
+)
+
 asan_feature = get_sanitizer_feature(
     name = "asan",
     compile_flags = [
@@ -844,6 +859,7 @@ def _cc_features_impl(ctx):
         opt_feature,
         dbg_feature,
         fastbuild_feature,
+        no_ndebug_feature,
         libraries_to_link_feature,
         asan_feature,
         tsan_feature,
