@@ -258,6 +258,8 @@ opt_feature = feature(
                     "-O3",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
+                    "-DNDEBUG",
+                    "-D_GLIBCXX_NO_ASSERTIONS",
                     # Allow removal of unused sections at link time.
                     "-ffunction-sections",
                     "-fdata-sections",

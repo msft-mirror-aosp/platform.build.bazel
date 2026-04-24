@@ -691,10 +691,10 @@ opt_feature = feature(
                 flag_group(flags = [
                     # Let's go very aggressive
                     "-O3",
-                    # No debug symbols.
-                    "-g0",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
+                    "-DNDEBUG",
+                    "-D_GLIBCXX_NO_ASSERTIONS",
                     # Allow removal of unused sections and code folding at link
                     # time.
                     "-ffunction-sections",

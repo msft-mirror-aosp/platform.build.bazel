@@ -515,6 +515,7 @@ opt_feature = feature(
                     # time.
                     "/Gy",
                     "/Gw",
+                    "/DNDEBUG",
                     # Disable security checks, "we know what we are doing"
                     "/GS-",
                     "/GR",
