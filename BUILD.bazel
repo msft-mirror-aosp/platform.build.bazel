@@ -15,7 +15,10 @@ license(
     visibility = ["//visibility:public"],
 )
 
-exports_files(["LICENSE"])
+exports_files([
+    "LICENSE",
+    "registry/modules/goldfish/0.0.1/MODULE.bazel",
+])
 
 test_suite(
     name = "sanity_checks",
