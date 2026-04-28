@@ -691,10 +691,10 @@ opt_feature = feature(
                 flag_group(flags = [
                     # Let's go very aggressive
                     "-O3",
-                    # No debug symbols.
-                    "-g0",
                     # Buffer overrun detection.
                     "-D_FORTIFY_SOURCE=1",
+                    "-DNDEBUG",
+                    "-D_GLIBCXX_NO_ASSERTIONS",
                     # Allow removal of unused sections and code folding at link
                     # time.
                     "-ffunction-sections",
@@ -740,6 +740,21 @@ fastbuild_feature = feature(
                 flag_group(flags = [
                     "-O1",
                 ]),
+            ],
+        ),
+    ],
+)
+
+no_ndebug_feature = feature(
+    name = "no_ndebug",
+    enabled = False,
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags = ["-UNDEBUG"],
+                ),
             ],
         ),
     ],
@@ -844,6 +859,7 @@ def _cc_features_impl(ctx):
         opt_feature,
         dbg_feature,
         fastbuild_feature,
+        no_ndebug_feature,
         libraries_to_link_feature,
         asan_feature,
         tsan_feature,

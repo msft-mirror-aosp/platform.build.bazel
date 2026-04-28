@@ -515,6 +515,7 @@ opt_feature = feature(
                     # time.
                     "/Gy",
                     "/Gw",
+                    "/DNDEBUG",
                     # Disable security checks, "we know what we are doing"
                     "/GS-",
                     "/GR",
@@ -530,6 +531,21 @@ opt_feature = feature(
                     "/OPT:REF",
                     "/OPT:ICF",
                 ]),
+            ],
+        ),
+    ],
+)
+
+no_ndebug_feature = feature(
+    name = "no_ndebug",
+    enabled = False,
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags = ["/UNDEBUG"],
+                ),
             ],
         ),
     ],
@@ -665,6 +681,7 @@ def _cc_features_impl(ctx):
         # flags override each other.
         opt_feature,
         dbg_feature,
+        no_ndebug_feature,
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         user_link_flags_feature,
