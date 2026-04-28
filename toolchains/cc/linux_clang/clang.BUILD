@@ -79,18 +79,12 @@ cc_toolchain_import(
         ":lib/x86_64-unknown-linux-gnu/libc++.so",
         ":lib/x86_64-unknown-linux-gnu/libc++abi.so",
     ],
-    include_paths = [
-        ":include/c++/v1",
-    ],
+    include_paths = [":include/c++/v1"],
     static_mode_libs = [
         ":lib/x86_64-unknown-linux-gnu/libc++.a",
         ":lib/x86_64-unknown-linux-gnu/libc++abi.a",
     ],
-    support_files = glob(
-        [
-            "include/c++/v1/**",
-        ],
-    ),
+    support_files = glob(["include/c++/v1/**"]),
 )
 
 cc_toolchain_import(
@@ -99,22 +93,19 @@ cc_toolchain_import(
         ["lib/clang/*/include"],
         exclude_directories = 0,
     ),
-    support_files = glob(["lib/clang/*/include/**"]),
+    support_files = glob([
+        "lib/clang/*/include/**",
+        "lib/clang/*/share/**",
+    ]),
 )
 
 cc_toolchain_import(
     name = "compiler_rt",
     lib_search_paths = glob(
-        [
-            "lib/clang/*/lib/x86_64-unknown-linux-gnu",
-        ],
+        ["lib/clang/*/lib/x86_64-unknown-linux-gnu"],
         exclude_directories = 0,
     ),
-    support_files = glob(
-        [
-            "lib/clang/*/lib/x86_64-unknown-linux-gnu/*",
-        ],
-    ),
+    support_files = glob(["lib/clang/*/lib/x86_64-unknown-linux-gnu/*"]),
     deps = [":compiler_hdrs"],
 )
 
