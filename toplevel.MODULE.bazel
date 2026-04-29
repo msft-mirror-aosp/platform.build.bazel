@@ -69,7 +69,7 @@ register_toolchains("//build/bazel/toolchains:nasm_toolchain")
 
 # These are all deps of lavapipe?
 bazel_dep(name = "libdrm", version = "2.4.110")
-bazel_dep(name = "libexpat", version = "2.7.1.bcr.1")
+bazel_dep(name = "libexpat", version = "2.7.1.aemu")
 bazel_dep(name = "libffi", version = "3.4.7.bcr.3.aemu")
 bazel_dep(name = "libjpeg_turbo", version = "2.1.91")
 bazel_dep(name = "libx11", version = "1.8.12.bcr.3.aemu")
