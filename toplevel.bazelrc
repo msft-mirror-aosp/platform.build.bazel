@@ -7,6 +7,7 @@ build --define GRPC_ALLOW_EXCEPTIONS=0
 build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
 build:release --compilation_mode=opt
 build:release-assert --config=release --copt=-UNDEBUG
+build:debug_symbols --features='generate_debug_symbols'
 
 build:asan --features='asan'
 # ASAN hits ODR violations with shared linkage due to rules_proto.
