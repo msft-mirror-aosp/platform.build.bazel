@@ -75,8 +75,6 @@ _warning_flags = [
     "-Wthread-safety-analysis",
     "-Wthread-safety-attributes",
     "-Wthread-safety-beta",
-    "-Wthread-safety-negative",
-    "-Wno-error=thread-safety-negative",
     "-Wthread-safety-pointer",
     "-Wthread-safety-precise",
     "-Wthread-safety-reference",
