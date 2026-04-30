@@ -11,11 +11,16 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Perfettor overrides for emu-dev."""
 
-# buildifier: disable=unused-variable
-def _noop_override(**kwargs):
-    """Noop function used to override rules we don't want to support in standalone."""
+"""This file is an overlay of `bazel/standalone/perfetto_cfg.bzl` from the Perfetto repository.
+
+We modified it to:
+1. Set `java_lite_proto_library = _noop_override` to avoid pulling in Java rules which are not supported in our host build.
+2. Clear `default_cxxopts` as we have proper defaults set elsewhere.
+"""
+
+# Noop function used to override rules we don't want to support in standalone.
+def _noop_override(**_kwargs):
     pass
 
 PERFETTO_CONFIG = struct(
@@ -45,8 +50,8 @@ PERFETTO_CONFIG = struct(
         # Target exposing platform-specific functionality for base. This is
         # overriden in Google internal builds.
         base_platform = ["//:perfetto_base_default_platform"],
-        zlib = ["@zlib"],
-        jsoncpp = ["@jsoncpp"],
+        zlib = ["@perfetto_dep_zlib//:zlib"],
+        expat = ["@perfetto_dep_expat//:expat"],
         linenoise = ["@perfetto_dep_linenoise//:linenoise"],
         sqlite = ["@perfetto_dep_sqlite//:sqlite"],
         sqlite_ext_percentile = ["@perfetto_dep_sqlite_src//:percentile_ext"],
@@ -55,6 +60,14 @@ PERFETTO_CONFIG = struct(
         protobuf_lite = ["@com_google_protobuf//:protobuf_lite"],
         protobuf_full = ["@com_google_protobuf//:protobuf"],
         protobuf_descriptor_proto = ["@com_google_protobuf//:descriptor_proto"],
+        open_csd = ["@perfetto_dep_open_csd//:open_csd"],
+        android_test_common = [
+            "@perfetto_maven//:androidx_test_runner",
+            "@perfetto_maven//:androidx_test_monitor",
+            "@perfetto_maven//:junit_junit",
+            "@perfetto_maven//:com_google_truth_truth",
+            "@perfetto_maven//:androidx_test_ext_junit",
+        ],
 
         # The Python targets are empty on the standalone build because we assume
         # any relevant deps are installed on the system or are not applicable.
@@ -84,12 +97,12 @@ PERFETTO_CONFIG = struct(
     # initialized with the Perfetto build files (i.e. via perfetto_deps()).
     deps_copts = struct(
         zlib = [],
-        jsoncpp = [],
+        expat = [],
         linenoise = [],
         sqlite = [],
         llvm_demangle = [],
+        open_csd = [],
     ),
-
     # Allow Bazel embedders to change the visibility of "public" targets.
     # This variable has been introduced to limit the change to Bazel and avoid
     # making the targets fully public in the google internal tree.
@@ -122,16 +135,20 @@ PERFETTO_CONFIG = struct(
         # Supporting java rules pulls in the JDK and generally is not something
         # we need for most embedders.
         java_proto_library = _noop_override,
-        java_lite_proto_library = _noop_override,
+        java_lite_proto_library = _noop_override,  # Modified from None to _noop_override
         py_binary = None,
         py_library = None,
         py_proto_library = None,
         go_proto_library = None,
         jspb_proto_library = None,
+        android_binary = None,
+        android_library = None,
+        android_jni_library = None,
+        android_instrumentation_test = None,
     ),
 
-    # The default copts which we use to compile C++ code.
-    default_copts = [
-        "-std=c++20",
-    ],
+    # The default opts which we use to compile C/C++ code.
+    default_copts = [],
+    # The default opts which we use to compile C++ code.
+    default_cxxopts = [],
 )

@@ -1,0 +1,10 @@
+{
+  "url": "https://github.com/google/perfetto/archive/refs/tags/v54.0.zip",
+  "integrity": "sha256-WLEQUtrcfG3yQ+MxreqsDxeJrJVqD4tpL7EXHaxGMeE=",
+  "strip_prefix": "perfetto-54.0",
+  "overlay": {
+    "bazel/proto_gen.bzl": "sha256-NzMB8aj8JCkpItiL0lezmktDuDcd1X/DDgTe1kI13CY=",
+    "bazel/rules.bzl": "sha256-v262gaZmvjy7tTf7xww/TBI9hsH+lIpDe0pNq2Z4Tt0=",
+    "bazel/standalone/perfetto_cfg.bzl": "sha256-9vWuYQN0KWQlv416ZsrTFT66ECQzN+lbi2QOfDU/h2E="
+  }
+}
