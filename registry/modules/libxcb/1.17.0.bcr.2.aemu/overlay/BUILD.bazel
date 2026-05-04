@@ -160,6 +160,7 @@ cc_shared_library(
     visibility = ["//visibility:public"],
     deps = [
         ":xcb_lib",
+        "@libxau",
     ],
 )
 

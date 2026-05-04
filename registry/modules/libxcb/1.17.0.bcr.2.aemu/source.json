@@ -4,7 +4,7 @@
     "url": "https://github.com/gitlab-freedesktop-mirrors/libxcb/archive/refs/tags/libxcb-1.17.0.tar.gz",
     "patch_strip": 0,
     "overlay": {
-        "BUILD.bazel": "sha256-6moXjHDxf3tRENjIORQ/bY0XLbCKega8vFYKMf78JVY=",
+        "BUILD.bazel": "sha256-q82w+a8itlePs12vQDZ0c3Ba33Jm0y4EIG/UX6Khfs4=",
         "MODULE.bazel": "sha256-HmZB0OZzcfu+05w/eLIuAh9WjB91E6RW5WpSacARndc=",
         "src/config.h.in": "sha256-uyBWngCnRn6xrJlW59dej3tO/9HOhU3K99ScTOKXi2k="
     }
