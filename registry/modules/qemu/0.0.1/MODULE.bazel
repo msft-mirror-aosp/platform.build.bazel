@@ -8,6 +8,7 @@ bazel_dep(name = "goldfish_build", version = "0.0.3")
 custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
 use_repo(custom_toolchains, "gcc_lib")
 
+bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "rules_cc", version = "0.0.14")
 bazel_dep(name = "rules_pkg", version = "1.1.0")
