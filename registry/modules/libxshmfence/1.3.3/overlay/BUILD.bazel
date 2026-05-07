@@ -15,5 +15,6 @@ cc_library(
    name = 'xshmfence',
    srcs = ['platform/linux-x86_64/config.h', 'src/xshmfence.h', 'src/xshmfence_alloc.c', 'src/xshmfence_futex.c', 'src/xshmfence_futex.h', 'src/xshmfenceint.h'],
    strip_include_prefix = 'src',
+   visibility = ["//visibility:public"],
 )
 

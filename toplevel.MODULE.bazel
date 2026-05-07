@@ -136,3 +136,6 @@ local_path_override(
     module_name = "lavapipe_bazel_deps",
     path = "prebuilts/android-emulator-build/common/vulkan/linux-x86_64/lavapipe-bazel-deps",
 )
+
+bazel_dep(name = "mesa3d", version = "0.0.1")
+bazel_dep(name = "wayland-protocols", version = "1.41")
