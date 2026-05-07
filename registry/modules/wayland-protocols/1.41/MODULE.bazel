@@ -1,0 +1,4 @@
+module(
+    name = "wayland-protocols",
+    version = "1.41",
+)

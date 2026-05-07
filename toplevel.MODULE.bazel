@@ -138,3 +138,4 @@ local_path_override(
 )
 
 bazel_dep(name = "mesa3d", version = "0.0.1")
+bazel_dep(name = "wayland-protocols", version = "1.41")
