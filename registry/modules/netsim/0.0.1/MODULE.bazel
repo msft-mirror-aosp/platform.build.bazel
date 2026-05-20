@@ -132,6 +132,7 @@ use_repo(
     "clap_derive",
     "clap_lex",
     "codespan-reporting",
+    "command-fds",
     "cpufeatures",
     "crc32fast",
     "crossbeam-utils",
