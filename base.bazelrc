@@ -121,6 +121,12 @@ build:ci --bes_timeout=600s
 build:ci --experimental_enable_execution_graph_log
 build:ci --experimental_execution_graph_log_dep_type=all
 
+# Reduce log spam
+build:ci --ui_event_filters=-info
+build:ci --ui_event_filters=-debug
+build:ci --noshow_progress
+build:ci --noshow_loading_progress
+
 
 # RBE-based cross-platform and multi-platform build configurations
 # Experimental and best-effort support only; NOT tested in CI builds.
