@@ -148,7 +148,7 @@ multisource_repo.archive(
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
     goog = {
         "sha256": "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
-        "url": "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-15505217.zip",
     },
 )
 # END android16k-x86_64
@@ -163,7 +163,7 @@ multisource_repo.archive(
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
     goog = {
         "sha256": "8eabc9496ac08362110d3393dd50e0af7add066d14bf10938aac3a30a4ea1444",
-        "url": "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_arm64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-15505217.zip",
     },
 )
 # END android16k-arm64-v8a
