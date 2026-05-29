@@ -526,7 +526,7 @@
   "moduleExtensions": {
     "@@bazel_jar_jar+//internal:non_module_deps.bzl%non_module_deps": {
       "general": {
-        "bzlTransitiveDigest": "mYa+a+BY/8yH46+GjHiVHQU1HYRDFZl7PbVpOnsvg+k=",
+        "bzlTransitiveDigest": "AmLBC0rwcgnK2TzIFvDEdUnWLqMA8WsS/lBNIcIvZU8=",
         "usagesDigest": "0cqG328nvLYdXkfUuIegxenzKIceWAKGYbAyO7wNVC4=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
@@ -793,6 +793,86 @@
               ],
               "sha256": "443fe177aba0cef8c17b7a48905c925c67b09005b10dd70ff12cd9f729a72d51",
               "strip_prefix": "toolshed-bazel-v0.2.2/bazel"
+            }
+          }
+        }
+      }
+    },
+    "@@goldfish_build+//extensions:multisource_repo.bzl%multisource_repo": {
+      "general": {
+        "bzlTransitiveDigest": "BOEWrHIAgExAfTsXXEQXhWL5VC5mU3d/o+dz4FJa1QU=",
+        "usagesDigest": "AIie7PaGmabAT1b65OO3OF08ieTqgoqBrp4JlC8D55c=",
+        "recordedInputs": [
+          "REPO_MAPPING:goldfish+,goldfish goldfish+",
+          "REPO_MAPPING:goldfish_build+,bazel_tools bazel_tools",
+          "REPO_MAPPING:goldfish_build+,rules_gcs rules_gcs+",
+          "ENV:MULTISOURCE_REPO_TYPE \\0"
+        ],
+        "generatedRepoSpecs": {
+          "arm_sysroot": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
+            "attributes": {
+              "url": "gs://emu-next-bazel/arm-toolchain/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz",
+              "sha256": "12fcdf13a7430655229b20438a49e8566e26551ba08759922cdaf4695b0d4e23",
+              "build_file": "@@goldfish_build+//toolchains/cc/linux_clang:gcc_arm64.BUILD",
+              "build_file_content": "",
+              "strip_prefix": "arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu",
+              "patch_strip": 1,
+              "patches": [
+                "@@goldfish_build+//toolchains/cc/linux_clang/patches:Resolve-libc-relative-to-sysroot-aarch64_none_linux_gnu.patch"
+              ]
+            }
+          },
+          "android16k-x86_64": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
+            "attributes": {
+              "url": "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+              "sha256": "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
+              "build_file": "@@goldfish+//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
+              "build_file_content": "",
+              "strip_prefix": "",
+              "patch_strip": 0,
+              "patches": []
+            }
+          },
+          "android16k-arm64-v8a": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
+            "attributes": {
+              "url": "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_arm64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+              "sha256": "8eabc9496ac08362110d3393dd50e0af7add066d14bf10938aac3a30a4ea1444",
+              "build_file": "@@goldfish+//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
+              "build_file_content": "",
+              "strip_prefix": "",
+              "patch_strip": 0,
+              "patches": []
+            }
+          },
+          "fishtank-linux": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "attributes": {
+              "url": "gs://emu-next-bazel/fishtank/15444716/FISHTANK-sdk-repo-linux-emu-15444716.zip",
+              "sha256": "5ad85819fd54fd522427bd68d1ea51a7bcf2b5c6d0770bc0bb7af5f2a2bbb513"
+            }
+          },
+          "fishtank-linux_internal": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "attributes": {
+              "url": "gs://emu-next-bazel/fishtank/15444716/internal/FISHTANK-sdk-repo-linux-emu-15444716.zip",
+              "sha256": "ae9c49965130016abe5a6ffc48ed95cdb0a7c81ac3b128bb7ecfffcce0352faf"
+            }
+          },
+          "fishtank-mac": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "attributes": {
+              "url": "gs://emu-next-bazel/fishtank/15444716/FISHTANK-sdk-repo-darwin_aarch64-emu-15444716.zip",
+              "sha256": "d0b0f10ddb50632124519c38a484ef7af0edf1811e88134a8cf3de30bdbbf4d7"
+            }
+          },
+          "fishtank-windows": {
+            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_file.bzl%gcs_file",
+            "attributes": {
+              "url": "gs://emu-next-bazel/fishtank/15444716/FISHTANK-sdk-repo-windows-emu-15444716.zip",
+              "sha256": "8c196d6c557af18f1157d563e2edd17d3a9488f416de4d836f0e68af1f3261df"
             }
           }
         }
@@ -1281,7 +1361,7 @@
     },
     "@@rules_rust+//crate_universe/private:internal_extensions.bzl%cu_nr": {
       "general": {
-        "bzlTransitiveDigest": "Ge+KjZy8QMnoPMgIt4mv81panpzekkGwL/0JbLaYjGY=",
+        "bzlTransitiveDigest": "tygGsrsE40VpdowTtZ/OI6wAZvpf7O2qDeGUcy+jkbk=",
         "usagesDigest": "tG3p3Nb5XxC7vWY/bcKdb//g0HoAxpxxH3F5/jBVlk4=",
         "recordedInputs": [
           "REPO_MAPPING:bazel_features+,bazel_features_globals bazel_features++version_extension+bazel_features_globals",
