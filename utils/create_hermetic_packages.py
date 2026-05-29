@@ -21,7 +21,9 @@ except ImportError:
 # --- Configuration & Constants ---
 
 
-DEFAULT_GCS_BUCKET = "gs://emu-next-bazel/hermetic-msvc"
+DEFAULT_GCS_BUCKET = os.environ.get(
+    "HERMETIC_MSVC_GCS_PATH", "gs://emu-next-bazel/hermetic-msvc"
+)
 BAZEL_FILE_REL_PATH = Path("../extensions/toolchain.bzl")
 
 # --- Generic Helper Functions ---
@@ -59,13 +61,13 @@ def calculate_sha256(file_path):
 
 def upload_to_gcs(local_file_path, gcs_bucket_path):
     """Uploads a file to Google Cloud Storage."""
-    gsutil_path = shutil.which("gsutil")
-    if not gsutil_path:
-        logging.error("'gsutil' command not found. Cannot upload to GCS.")
+    gcloud_path = shutil.which("gcloud")
+    if not gcloud_path:
+        logging.error("'gcloud' command not found. Cannot upload to GCS.")
         return False
 
     destination = f"{gcs_bucket_path}/{Path(local_file_path).name}"
-    command = [gsutil_path, "cp", str(local_file_path), destination]
+    command = [gcloud_path, "storage", "cp", str(local_file_path), destination]
 
     logging.info(f"Uploading to GCS: {' '.join(command)}")
     try:
@@ -169,9 +171,9 @@ def check_prerequisites(args, command_name):
     logging.info("Checking prerequisites...")
 
     if args.upload:
-        if not shutil.which("gsutil"):
+        if not shutil.which("gcloud"):
             logging.error(
-                "'gsutil' is required for uploading but was not found in PATH."
+                "'gcloud' is required for uploading but was not found in PATH."
             )
             return False
 

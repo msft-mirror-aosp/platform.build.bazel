@@ -42,3 +42,18 @@ py_test(
         ":cred_helper",
     ],
 )
+
+py_binary(
+    name = "update_sysimage",
+    srcs = ["update_sysimage.py"],
+    main = "update_sysimage.py",
+    visibility = ["//visibility:public"],
+)
+
+py_test(
+    name = "update_sysimage_test",
+    srcs = ["update_sysimage_test.py"],
+    deps = [
+        ":update_sysimage",
+    ],
+)

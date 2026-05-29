@@ -129,7 +129,7 @@ gcs_archive(
     sha256 = "6626b3889e2e204863908840b5ce85d37f29282e4ad7c1ce128a22240b9ea047",
     url = "gs://emu-next-bazel/ab/git_26Q2-beta-release/sdk_gphone16k_x86_64-userdebug/15181570/sdk-repo-linux-system-images-15181570.zip",
 )
-# END android16-x86_64
+# END android16k-x86_64
 
 # BEGIN android16k-arm64-v8a
 gcs_archive(
@@ -138,4 +138,4 @@ gcs_archive(
     sha256 = "767bc55ae7883ca62c87dd669bab6e8f610de97e634496544be1ba24f2f31152",
     url = "gs://emu-next-bazel/ab/git_26Q2-beta-release/sdk_gphone16k_arm64-userdebug/15181570/sdk-repo-linux-system-images-15181570.zip",
 )
-# END android16-arm64-v8a
+# END android16k-arm64-v8a
