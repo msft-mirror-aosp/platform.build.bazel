@@ -1,0 +1,18 @@
+# This is the AOSP vendor module, containing dependencies only needed for AOSP builds.
+#
+# CRITICAL: 'vendor.MODULE.bazel' must be a symlink pointing to this file in the AOSP checkout.
+#
+# Why this is done:
+# 1. The main 'toplevel.MODULE.bazel' (which root 'MODULE.bazel' symlinks to) includes
+#    '//build/bazel:vendor.MODULE.bazel'.
+# 2. Bazel requires all included files to be present and resolvable within the workspace
+#    during the loading phase. It needs to "see the whole thing".
+# 3. By using a symlink ('vendor.MODULE.bazel') that points to different files in different
+#    environments (this file for AOSP, 'goog.MODULE.bazel' for Google internal), we can
+#    keep 'toplevel.MODULE.bazel' identical across environments while customizing dependencies.
+# 4. In AOSP, pointing to this file ensures we don't attempt to load Google-internal
+#    dependencies (such as 'goldfish_test') which are not present in AOSP.
+#    - 'goldfish_test' (Emulator Test Suite / ETS) is omitted here because it contains
+#      integration tests that rely on Google-specific infrastructure (such as Test Sequencer,
+#      Test Fusion, and internal Tradefed setups) and is only used for internal CI/CD.
+#      It is not required to build or run the core emulator in AOSP.
