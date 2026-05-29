@@ -141,7 +141,7 @@ cc_features(
     cc_only_link_flags = ["-lstdc++"],
     compile_flags = [
         "--target=aarch64-none-linux-gnu",
-        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
+        "--gcc-toolchain=external/goldfish_build++multisource_repo+arm_sysroot",
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
     ],
@@ -150,7 +150,7 @@ cc_features(
     ],
     link_flags = [
         "--target=aarch64-none-linux-gnu",
-        "--gcc-toolchain=external/goldfish_build++toolchain+arm_sysroot",
+        "--gcc-toolchain=external/goldfish_build++multisource_repo+arm_sysroot",
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
         "-Wl,--as-needed",

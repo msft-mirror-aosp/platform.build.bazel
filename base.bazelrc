@@ -148,3 +148,5 @@ build:rbe-linux-aarch64 --config=remote --remote_local_fallback=false
 build:rbe-linux-aarch64 --platforms=@goldfish_build//platforms:linux_aarch64
 build:rbe-linux-aarch64 --extra_execution_platforms=@goldfish_build//platforms:linux_x64
 build:rbe-linux-aarch64 --remote_upload_local_results=false
+
+build:aosp --repo_env=MULTISOURCE_REPO_TYPE=aosp

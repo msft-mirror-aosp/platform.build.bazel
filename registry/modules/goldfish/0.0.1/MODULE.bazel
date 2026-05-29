@@ -88,31 +88,48 @@ new_local_repository(
     path = "tools/analytics-library/protos/src/main/proto",
 )
 
-gcs_file = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_file")
+multisource_repo = use_extension("@goldfish_build//extensions:multisource_repo.bzl", "multisource_repo")
 
 # BEGIN upload_fishtank
-gcs_file(
+multisource_repo.file(
     name = "fishtank-linux",
-    sha256 = "9ce1f6a20a2945f6bca9b71ab3aed6c49b163333a4a24eb60828ef99af1449b1",
-    url = "gs://emu-next-bazel/fishtank/15531226/FISHTANK-sdk-repo-linux-emu-15531226.zip",
+    aosp = {
+        "local_file": "@goldfish_build//utils:empty.zip",
+    },
+    goog = {
+        "sha256": "9ce1f6a20a2945f6bca9b71ab3aed6c49b163333a4a24eb60828ef99af1449b1",
+        "url": "gs://emu-next-bazel/fishtank/15531226/FISHTANK-sdk-repo-linux-emu-15531226.zip",
+    },
 )
-
-gcs_file(
+multisource_repo.file(
     name = "fishtank-linux_internal",
-    sha256 = "776f7e1fa73e0e5cc86dbe9207f84e47381aeccb584a4aba973a7a31c6b7ef36",
-    url = "gs://emu-next-bazel/fishtank/15531226/internal/FISHTANK-sdk-repo-linux-emu-15531226.zip",
+    aosp = {
+        "local_file": "@goldfish_build//utils:empty.zip",
+    },
+    goog = {
+        "sha256": "776f7e1fa73e0e5cc86dbe9207f84e47381aeccb584a4aba973a7a31c6b7ef36",
+        "url": "gs://emu-next-bazel/fishtank/15531226/internal/FISHTANK-sdk-repo-linux-emu-15531226.zip",
+    },
 )
-
-gcs_file(
+multisource_repo.file(
     name = "fishtank-mac",
-    sha256 = "ff2294291193b326830fef9dbea94a4d16872302a6240f125cfebfac3402def2",
-    url = "gs://emu-next-bazel/fishtank/15531226/FISHTANK-sdk-repo-darwin_aarch64-emu-15531226.zip",
+    aosp = {
+        "local_file": "@goldfish_build//utils:empty.zip",
+    },
+    goog = {
+        "sha256": "ff2294291193b326830fef9dbea94a4d16872302a6240f125cfebfac3402def2",
+        "url": "gs://emu-next-bazel/fishtank/15531226/FISHTANK-sdk-repo-darwin_aarch64-emu-15531226.zip",
+    },
 )
-
-gcs_file(
+multisource_repo.file(
     name = "fishtank-windows",
-    sha256 = "88c20fc7b64036785dec0a458e45bcb5c56b644bd112341a8c1348355fa8bc2a",
-    url = "gs://emu-next-bazel/fishtank/15531226/FISHTANK-sdk-repo-windows-emu-15531226.zip",
+    aosp = {
+        "local_file": "@goldfish_build//utils:empty.zip",
+    },
+    goog = {
+        "sha256": "88c20fc7b64036785dec0a458e45bcb5c56b644bd112341a8c1348355fa8bc2a",
+        "url": "gs://emu-next-bazel/fishtank/15531226/FISHTANK-sdk-repo-windows-emu-15531226.zip",
+    },
 )
 # END upload_fishtank
 
@@ -121,22 +138,42 @@ gcs_file(
 # Please run that script if you wish to update the default system image used
 # Do not remove the BEGIN/END markers, as that will break the fragile script.
 
-gcs_archive = use_repo_rule("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive")
-
 # BEGIN android16k-x86_64
-gcs_archive(
+multisource_repo.archive(
     name = "android16k-x86_64",
+    aosp = {
+        "sha256": "6626b3889e2e204863908840b5ce85d37f29282e4ad7c1ce128a22240b9ea047",
+        "url": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-37.0_r04.zip",
+    },
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-    sha256 = "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
-    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+    goog = {
+        "sha256": "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
+        "url": "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+    },
 )
 # END android16k-x86_64
 
 # BEGIN android16k-arm64-v8a
-gcs_archive(
+multisource_repo.archive(
     name = "android16k-arm64-v8a",
+    aosp = {
+        "sha256": "767bc55ae7883ca62c87dd669bab6e8f610de97e634496544be1ba24f2f31152",
+        "url": "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-ps16k-37.0_r04.zip",
+    },
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
-    sha256 = "8eabc9496ac08362110d3393dd50e0af7add066d14bf10938aac3a30a4ea1444",
-    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_arm64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+    goog = {
+        "sha256": "8eabc9496ac08362110d3393dd50e0af7add066d14bf10938aac3a30a4ea1444",
+        "url": "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_arm64-userdebug/15505217/sdk-repo-linux-system-images-15505217.zip",
+    },
 )
 # END android16k-arm64-v8a
+
+use_repo(
+    multisource_repo,
+    "android16k-arm64-v8a",
+    "android16k-x86_64",
+    "fishtank-linux",
+    "fishtank-linux_internal",
+    "fishtank-mac",
+    "fishtank-windows",
+)
