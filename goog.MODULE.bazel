@@ -1,0 +1,18 @@
+# Dependencies that are only needed for testing and should not ship to AOSP.
+#
+# CRITICAL: 'vendor.MODULE.bazel' must be a symlink pointing to this file in Google internal checkouts.
+#
+# Why this is done:
+# 1. The main 'toplevel.MODULE.bazel' (which root 'MODULE.bazel' symlinks to) includes
+#    '//build/bazel:vendor.MODULE.bazel'.
+# 2. Bazel requires all included files to be present and resolvable within the workspace
+#    during the loading phase. It needs to "see the whole thing".
+# 3. By using a symlink ('vendor.MODULE.bazel') that points to different files in different
+#    environments (this file for Google internal, 'aosp.MODULE.bazel' for AOSP), we can
+#    keep 'toplevel.MODULE.bazel' identical across environments while customizing dependencies.
+# 4. In Google internal builds, pointing to this file allows us to include internal-only
+#    dependencies (like 'goldfish_test') for testing. 'goldfish_test' (Emulator Test
+#    Suite / ETS) is internal-only as it defines integration tests that rely on
+#    Google-specific infrastructure (such as Test Sequencer, Test Fusion, and internal
+#    Tradefed setups) and is used for CI/CD validation rather than core emulator functionality.
+bazel_dep(name = "goldfish_test", version = "0.0.4")
