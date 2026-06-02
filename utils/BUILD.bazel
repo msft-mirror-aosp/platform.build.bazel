@@ -1,6 +1,11 @@
 load("@goldfish-build-pypi//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 
+exports_files(
+    ["empty.zip"],
+    visibility = ["//visibility:public"],
+)
+
 py_binary(
     name = "gen-cc-snippet",
     srcs = ["gen_cc_snippet.py"],
