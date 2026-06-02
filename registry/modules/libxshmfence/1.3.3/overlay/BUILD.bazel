@@ -3,18 +3,32 @@
 # Using the experimental bazel build plugin.
 # It targets linux-x86_64
 
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 cc_library(
-   copts = ['-Wno-implicit-function-declaration'],
-   defines = ['HAVE_CONFIG_H', '_FILE_OFFSET_BITS=64'],
-   deps = ['@xorgproto//:xorgproto'],
-   hdrs = ['src/xshmfence.h'],
-   include_prefix = 'X11',
-   # buildifier: leave-alone
-   includes = ['src', '.', 'platform/linux-x86_64'],
-   name = 'xshmfence',
-   srcs = ['platform/linux-x86_64/config.h', 'src/xshmfence.h', 'src/xshmfence_alloc.c', 'src/xshmfence_futex.c', 'src/xshmfence_futex.h', 'src/xshmfenceint.h'],
-   strip_include_prefix = 'src',
-   visibility = ["//visibility:public"],
+    name = "xshmfence",
+    srcs = [
+        "platform/linux-x86_64/config.h",
+        "src/xshmfence.h",
+        "src/xshmfence_alloc.c",
+        "src/xshmfence_futex.c",
+        "src/xshmfence_futex.h",
+        "src/xshmfenceint.h",
+    ],
+    hdrs = ["src/xshmfence.h"],
+    copts = ["-Wno-implicit-function-declaration"],
+    defines = [
+        "HAVE_CONFIG_H",
+        "_FILE_OFFSET_BITS=64",
+    ],
+    include_prefix = "X11",
+    # buildifier: leave-alone
+    includes = [
+        "src",
+        ".",
+        "platform/linux-x86_64",
+    ],
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+    deps = ["@xorgproto"],
 )
-

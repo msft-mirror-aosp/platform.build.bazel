@@ -1,4 +1,5 @@
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_test")
 
 package(default_applicable_licenses = ["//:license"])
 
@@ -153,7 +154,10 @@ INCLUDE_PREFIX = REPO_ROOT if REPO_ROOT else "."
 [cc_test(
     name = test_name,
     size = "small",
-    srcs = [test_name + ".c", "testutils.h"] + [
+    srcs = [
+        test_name + ".c",
+        "testutils.h",
+    ] + [
         "//glib:all_hdrs",
     ],
     copts = [

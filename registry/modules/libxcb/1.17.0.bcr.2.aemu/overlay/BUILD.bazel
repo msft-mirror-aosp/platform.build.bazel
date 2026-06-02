@@ -105,7 +105,7 @@ expand_template(
         "@platforms//os:windows": {
             "#define HAVE_UNISTD_H 1": "/* #undef HAVE_UNISTD_H */",
         },
-	"//conditions:default": {
+        "//conditions:default": {
             "#define HAVE_SOCKADDR_SUN_LEN 1": "/* #undef HAVE_SOCKADDR_SUN_LEN */",
         },
     }),
@@ -115,8 +115,8 @@ expand_template(
 cc_library(
     name = "xcb_headers",
     hdrs = ["{}.h".format(x) for x in EXTENSIONS],
-    visibility = ["//visibility:public"],
     include_prefix = "xcb",
+    visibility = ["//visibility:public"],
 )
 
 cc_library(
@@ -148,15 +148,15 @@ cc_library(
     strip_include_prefix = "src",
     visibility = ["//visibility:public"],
     deps = [
-        "@libxau",
         ":xcb_headers",
+        "@libxau",
     ],
 )
 
 cc_shared_library(
     name = "libxcb_shared",
-    user_link_flags = ["-Wl,-soname=libxcb-aemu.so"],
     shared_lib_name = "libxcb-aemu.so",
+    user_link_flags = ["-Wl,-soname=libxcb-aemu.so"],
     visibility = ["//visibility:public"],
     deps = [
         ":xcb_lib",
