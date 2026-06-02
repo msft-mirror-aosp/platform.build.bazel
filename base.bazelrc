@@ -110,6 +110,7 @@ build:dynamic --strategy=ExtractBreakpadSymbols=dynamic
 
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
+startup:ci --experimental_remote_repo_contents_cache
 common:ci --lockfile_mode=error
 common:ci --remote_build_event_upload=all
 common:ci --experimental_collect_system_network_usage
