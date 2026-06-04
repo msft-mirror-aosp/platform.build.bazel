@@ -33,7 +33,7 @@ class CredhelperTest(absltest.TestCase):
 
         # Verify gcloud was actually called
         mock_run.assert_called_once_with(
-            ["gcloud", "auth", "print-access-token"],
+            ["gcloud", "auth", "application-default", "print-access-token"],
             capture_output=True,
             text=True,
         )
@@ -56,7 +56,7 @@ class CredhelperTest(absltest.TestCase):
 
         # Verify it called ci_credhelper.py
         args = mock_run.call_args[0][0]
-        self.assertIn("build/bazel/tools/ci_credhelper.py", args)
+        self.assertIn("build/bazel/tools/ci_credhelper.py", " ".join(args))
 
   @mock.patch("sys.stdin.read")
   @mock.patch("subprocess.run")
@@ -110,7 +110,7 @@ class CredhelperTest(absltest.TestCase):
 
     self.assertEqual(token, "token-from-gcloud")
     mock_run.assert_called_once_with(
-        ["gcloud", "auth", "print-access-token"],
+        ["gcloud", "auth", "application-default", "print-access-token"],
         capture_output=True,
         text=True,
     )

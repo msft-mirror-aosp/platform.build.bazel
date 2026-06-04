@@ -81,7 +81,7 @@ def main(argv: Sequence[str]) -> Optional[int]:
 def get_gcloud_token() -> str:
   """Returns an access token from gcloud."""
   result = subprocess.run(
-      ["gcloud", "auth", "print-access-token"],
+      ["gcloud", "auth", "application-default", "print-access-token"],
       capture_output=True,
       text=True,
   )
