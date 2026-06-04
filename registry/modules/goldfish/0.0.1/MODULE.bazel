@@ -77,7 +77,7 @@ bazel_dep(name = "utf8proc", version = "2.11.0")
 
 # On Windows we package some DLLs in the release zip..
 custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
-use_repo(custom_toolchains, "toolchain_hub")
+use_repo(custom_toolchains, "dism_adk", "toolchain_hub")
 
 # For studio_stats.proto
 new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
