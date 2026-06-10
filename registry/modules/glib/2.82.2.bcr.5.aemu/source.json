@@ -13,7 +13,7 @@
         "glib/BUILD.bazel": "sha256-skO+IjENV+WdLiFM0DKeXlc3rIFhzTI6/Ad81nU8qF0=",
         "glib/glibconfig.h.in-posix": "sha256-7p3GwTRBI8JYr4sitZcW1WYxu5iHGzbJtmfQq5o2++M=",
         "glib/stub_libintl/libintl.h": "sha256-PM2cAOL/zslqWpFdHUDyhWGIfCaplAanHYJ3Zuj8HB8=",
-        "glib/tests/BUILD.bazel": "sha256-4tBtd89czoFL8tek95ECTwKVF4qauXoDV2XXAvmWDco=",
+        "glib/tests/BUILD.bazel": "sha256-3Y4ibbh1YWpzHt/VrhvreSu1SUcQX1zMm9l1WwUUSzg=",
         "gmodule/BUILD.bazel": "sha256-BT0u3MNtuZ602/OlzG0ZZf2tuj9g5ku/amnFUpDv+58=",
         "gobject/BUILD.bazel": "sha256-rqQJOfdHQ9NAj/C8tMz5stTQGYCbU+FSQGPh2fjrM70=",
         "gobject/gobject.bzl": "sha256-nE0jIS5URs/FTrP1OwkPj6YutQAmo63reTBm6TPQHb4=",
