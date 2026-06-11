@@ -33,6 +33,7 @@ FLAGS_WINDOWS_COMMON = [
 FLAGS_MACOS_COMMON = [
     # Native common
     "--@goldfish_build//rules/native:generate_debug_package=dsym",
+    "--@goldfish_build//rules/native:allow_strip",
 
     # C++
     "--force_pic",
