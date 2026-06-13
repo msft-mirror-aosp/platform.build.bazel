@@ -45,4 +45,7 @@ build:clang-tidy --output_groups=tidy_fixes
 build:clang-tidy "--@goldfish_build//:clang_tidy_config=@goldfish//:clang_tidy_config"
 build:clang-tidy "--@goldfish_build//:clang_tidy_regex=s/m_//g"
 
+# Always enable debug info and symbols on linux and macos.
+build:macos --features='generate_debug_symbols'
+build:linux --features='generate_debug_symbols'
 
