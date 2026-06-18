@@ -127,6 +127,13 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "android16k-x86_64-user",
+    build_file_content = _generic_build,
+    sha256 = "b5f61dc3b49667c63d7c4430fd8019508c07e7c31212653f6a8b83b0d3a837ca",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-user-cts/15611780/signed-x86_64-sdk-repo-linux-system-images-15611780.zip",
+)
+
+gcs_archive(
     name = "build-tools-linux",
     build_file_content = _generic_build,
     sha256 = "321e687caa570210bf4acd80e8cfbe901d17368d83f51976ccbba3656093fe2b",
