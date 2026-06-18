@@ -53,8 +53,7 @@ load(
 )
 
 # A feature set that is satisfied when the driving mode should be MSVC.
-# rules_rust would disable this mode because we link rust with mingw instead.
-MODE_MSVC = feature_set(features = ["rules_rust_unsupported_feature"])
+MODE_MSVC = feature_set(features = ["msvc_mode"])
 WITH_MODE_MSVC = with_feature_set(features = MODE_MSVC.features)
 WITH_MODE_GNU = with_feature_set(not_features = MODE_MSVC.features)
 
@@ -588,6 +587,11 @@ preprocessor_defines_feature = feature(
     ],
 )
 
+msvc_mode_feature = feature(
+    name = "msvc_mode",
+    enabled = True,
+)
+
 rules_rust_unsupported_feature = feature(
     name = "rules_rust_unsupported_feature",
     enabled = True,
@@ -651,6 +655,7 @@ def _cc_features_impl(ctx):
         windows_export_all_symbols_feature,
         no_windows_export_all_symbols_feature,
         # features for tool invocations
+        msvc_mode_feature,
         rules_rust_unsupported_feature,
         preprocessor_defines_feature,
         parse_showincludes_feature,

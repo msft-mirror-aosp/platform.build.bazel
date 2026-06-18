@@ -12,7 +12,7 @@ import sys
 from typing import List, Optional, Sequence
 
 
-_GOOGLE_URI_RE = re.compile(r"^https://[^.]+\.(pkg\.dev)(?:/.*)$")
+_GOOGLE_URI_RE = re.compile(r"^https://[^.]+\.(?:pkg\.dev|googleapis\.com)(?:/.*)$")
 _RFC3339_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
