@@ -3,7 +3,7 @@ load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_license//rules:license.bzl", "license")
-load(":libffi.bzl", "substitutions")
+load(":libffi.bzl", "cc_asm_library", "substitutions")
 
 package(default_applicable_licenses = [":license"])
 
@@ -26,6 +26,14 @@ config_setting(
     ],
 )
 
+config_setting(
+    name = "windows_x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+    ],
+)
+
 expand_template(
     name = "ffi_h",
     out = "ffi.h",
@@ -35,6 +43,12 @@ expand_template(
             "@TARGET@": "AARCH64",
             "@HAVE_LONG_DOUBLE@": "0",
             "@FFI_EXEC_TRAMPOLINE_TABLE@": "1",
+        },
+        ":windows_x86_64": {
+            "@VERSION@": module_version(),
+            "@TARGET@": "X86_WIN64",
+            "@HAVE_LONG_DOUBLE@": "1",
+            "@FFI_EXEC_TRAMPOLINE_TABLE@": "0",
         },
         ("@platforms//cpu:x86_32", "@platforms//cpu:x86_64"): {
             "@VERSION@": module_version(),
@@ -72,6 +86,26 @@ expand_template(
             "LIBFFI_GNU_SYMBOL_VERSIONING": None,
             "SIZEOF_LONG_DOUBLE": "16",
             "SYMBOL_UNDERSCORE": "1",
+            "HAVE_ALLOCA_H": "1",
+            "HAVE_DLFCN_H": "1",
+            "HAVE_UNISTD_H": "1",
+            "HAVE_HIDDEN_VISIBILITY_ATTRIBUTE": "1",
+        }),
+        ":windows_x86_64": substitutions({
+            "FFI_EXEC_STATIC_TRAMP": None,
+            "FFI_EXEC_TRAMPOLINE_TABLE": None,
+            "FFI_MMAP_EXEC_WRIT": None,
+            "HAVE_AS_X86_64_UNWIND_SECTION_TYPE": "1",
+            "HAVE_AS_X86_PCREL": "1",
+            "HAVE_LONG_DOUBLE": "1",
+            "HAVE_MEMFD_CREATE": None,
+            "LIBFFI_GNU_SYMBOL_VERSIONING": None,
+            "SIZEOF_LONG_DOUBLE": "16",
+            "SYMBOL_UNDERSCORE": None,
+            "HAVE_ALLOCA_H": None,
+            "HAVE_DLFCN_H": None,
+            "HAVE_UNISTD_H": None,
+            "HAVE_HIDDEN_VISIBILITY_ATTRIBUTE": None,
         }),
         "@platforms//cpu:aarch64": substitutions({
             "FFI_EXEC_STATIC_TRAMP": None,
@@ -84,6 +118,10 @@ expand_template(
             "LIBFFI_GNU_SYMBOL_VERSIONING": None,
             "SIZEOF_LONG_DOUBLE": "8",
             "SYMBOL_UNDERSCORE": "1",
+            "HAVE_ALLOCA_H": "1",
+            "HAVE_DLFCN_H": "1",
+            "HAVE_UNISTD_H": "1",
+            "HAVE_HIDDEN_VISIBILITY_ATTRIBUTE": "1",
         }),
         ("@platforms//cpu:x86_32", "@platforms//cpu:x86_64"): substitutions({
             "FFI_EXEC_STATIC_TRAMP": "1",
@@ -96,12 +134,17 @@ expand_template(
             "LIBFFI_GNU_SYMBOL_VERSIONING": "1",
             "SIZEOF_LONG_DOUBLE": "16",
             "SYMBOL_UNDERSCORE": None,
+            "HAVE_ALLOCA_H": "1",
+            "HAVE_DLFCN_H": "1",
+            "HAVE_UNISTD_H": "1",
+            "HAVE_HIDDEN_VISIBILITY_ATTRIBUTE": "1",
         }),
         "//conditions:default": {},
     }),
     template = "fficonfig.h.in",
 )
 
+# Virtual include repository for public ffi configuration headers.
 cc_library(
     name = "libffi_include_headers",
     hdrs = [
@@ -114,24 +157,108 @@ cc_library(
     visibility = ["//visibility:private"],
 )
 
+# Explicit collection of architecture-specific internal headers and memory allocators.
 cc_library(
     name = "libffi_src_headers",
-    hdrs = ["src/dlmalloc.c"],
+    hdrs = [
+        "src/aarch64/ffitarget.h",
+        "src/aarch64/internal.h",
+        "src/alpha/ffitarget.h",
+        "src/alpha/internal.h",
+        "src/arc/ffitarget.h",
+        "src/arm/ffitarget.h",
+        "src/arm/internal.h",
+        "src/avr32/ffitarget.h",
+        "src/bfin/ffitarget.h",
+        "src/cris/ffitarget.h",
+        "src/csky/ffitarget.h",
+        "src/dlmalloc.c",
+        "src/frv/ffitarget.h",
+        "src/ia64/ffitarget.h",
+        "src/ia64/ia64_flags.h",
+        "src/kvx/asm.h",
+        "src/kvx/ffitarget.h",
+        "src/loongarch64/ffitarget.h",
+        "src/m32r/ffitarget.h",
+        "src/m68k/ffitarget.h",
+        "src/m88k/ffitarget.h",
+        "src/metag/ffitarget.h",
+        "src/microblaze/ffitarget.h",
+        "src/mips/ffitarget.h",
+        "src/moxie/ffitarget.h",
+        "src/or1k/ffitarget.h",
+        "src/pa/ffitarget.h",
+        "src/powerpc/asm.h",
+        "src/powerpc/ffi_powerpc.h",
+        "src/powerpc/ffitarget.h",
+        "src/riscv/ffitarget.h",
+        "src/s390/ffitarget.h",
+        "src/s390/internal.h",
+        "src/sh/ffitarget.h",
+        "src/sh64/ffitarget.h",
+        "src/sparc/ffitarget.h",
+        "src/sparc/internal.h",
+        "src/tile/ffitarget.h",
+        "src/vax/ffitarget.h",
+        "src/wasm32/ffitarget.h",
+        "src/x86/asmnames.h",
+        "src/x86/ffitarget.h",
+        "src/x86/internal.h",
+        "src/x86/internal64.h",
+        "src/xtensa/ffitarget.h",
+    ],
     strip_include_prefix = "src",
     visibility = ["//visibility:private"],
 )
 
+# Custom assembly compilation target for Windows x64.
+# The assembly files are in AT&T syntax and hence cannot be cosumed by msvc's ml64, masm or nasm.
+cc_asm_library(
+    name = "win64_asm",
+    srcs = ["src/x86/win64.S"],
+    hdrs = [
+        "ffi.h",
+        "ffitarget.h",
+        "include/ffi_cfi.h",
+        "include/ffi_common.h",
+        "include/fficonfig.h",
+        "src/x86/asmnames.h",
+    ],
+    copts = [
+        "/clang:-x",
+        "/clang:assembler-with-cpp",
+    ],
+    includes = [
+        "external/libffi+",
+        "external/libffi+/include",
+        "external/libffi+/src/x86",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":libffi_include_headers",
+        ":libffi_src_headers",
+    ],
+)
+
+# Primary libffi C library target.
+# Dynamically links the pre-assembled win64_asm object file on Windows x64 and establishes
+# clean shared library exporting boundaries (FFI_BUILDING, FFI_BUILDING_DLL).
 cc_library(
     name = "ffi",
     srcs = [
         "src/closures.c",
-        "src/debug.c",
         "src/java_raw_api.c",
         "src/prep_cif.c",
         "src/raw_api.c",
         "src/tramp.c",
         "src/types.c",
     ] + selects.with_or({
+        ":windows_x86_64": [
+            "src/x86/asmnames.h",
+            "src/x86/ffiw64.c",
+            "src/x86/internal64.h",
+            ":win64_asm",
+        ],
         "@platforms//cpu:aarch64": [
             "src/aarch64/ffi.c",
             "src/aarch64/internal.h",
@@ -154,11 +281,18 @@ cc_library(
         "ffi.h",
         "ffitarget.h",
     ],
-    copts = ["-Wno-implicit-function-declaration"],
+    copts = select({
+        ":windows_x86_64": [],
+        "//conditions:default": ["-Wno-implicit-function-declaration"],
+    }),
     implementation_deps = [
         ":libffi_include_headers",
         ":libffi_src_headers",
     ],
     includes = ["."],
+    local_defines = [
+        "FFI_BUILDING",
+        "FFI_BUILDING_DLL",
+    ],
     visibility = ["//visibility:public"],
 )
