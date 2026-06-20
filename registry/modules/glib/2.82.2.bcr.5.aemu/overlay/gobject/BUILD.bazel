@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_shared_library")
 load("@rules_python//python:defs.bzl", "py_binary")
 load(":gobject.bzl", "mkenums")
 
@@ -125,7 +126,7 @@ cc_library(
     ],
     implementation_deps = [
         "//:config_h",
-        "@libffi",
+        "@libffi//:ffi",
     ] + select({
         "@platforms//os:linux": [],
         "//conditions:default": ["//glib:stub_intl"],
@@ -138,4 +139,11 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = ["//glib"],
+)
+
+cc_shared_library(
+    name = "gobject_shared",
+    dynamic_deps = ["//glib:glib_shared"],
+    visibility = ["//visibility:public"],
+    deps = [":gobject"],
 )
