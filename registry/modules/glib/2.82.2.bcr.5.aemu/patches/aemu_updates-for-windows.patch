@@ -391,7 +391,7 @@ index 4672823..f806cf3 100644
 +
  
  GLIB_INTERNAL_TEXTUAL_HDRS = [
-@@ -255,6 +257,359 @@ REPO_ROOT = package_relative_label(":BUILD.bazel").workspace_root
+@@ -255,6 +257,360 @@ REPO_ROOT = package_relative_label(":BUILD.bazel").workspace_root
  
  INCLUDE_PREFIX = REPO_ROOT if REPO_ROOT else "."
  
@@ -746,6 +746,7 @@ index 4672823..f806cf3 100644
 +        ":config_mathlib_h",
 +        "//:config_h",
 +    ],
++    visibility = ["//visibility:public"],
 +)
 +
  cc_library(
