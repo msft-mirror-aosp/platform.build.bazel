@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_shared_library")
 load("//gobject:gobject.bzl", "mkenums")
 
 package(default_applicable_licenses = ["//:license"])
@@ -229,6 +230,12 @@ GIO_WIN32_SRCS = [
     "gwin32notificationbackend.c",
     "gwin32sid.c",
     "gwin32sid.h",
+    "win32/gwin32filemonitor.c",
+    "win32/gwin32fsmonitorutils.c",
+    "win32/gwinhttpfile.c",
+    "win32/gwinhttpfileinputstream.c",
+    "win32/gwinhttpfileoutputstream.c",
+    "win32/gwinhttpvfs.c",
 ]
 
 GIO_BASE_SOURCES = [
@@ -484,6 +491,12 @@ PUBLIC_HDRS = GIO_HDRS + GIO_APPLICATION_HDRS + GIO_SETTINGS_HDRS + GIO_GDBUS_HD
 
 PUBLIC_HDRS_OSX = ["gosxappinfo.h"]
 
+PUBLIC_HDRS_WIN32 = [
+    "gwin32inputstream.h",
+    "gwin32outputstream.h",
+    "gwin32appinfo.h",
+]
+
 INTERNAL_HDRS = [
     "gappinfoprivate.h",
     "gapplicationimpl.h",
@@ -547,11 +560,13 @@ INTERNAL_HDRS = [
     "gtrashportal.h",
     "gunionvolumemonitor.h",
     "thumbnail-verify.h",
-]
-
-INTERNAL_HDRS_UNIX = [
-    "gdesktopappinfo.h",
     "gfiledescriptorbased.h",
+    "giowin32-afunix.h",
+    "giowin32-priv.h",
+    "win32/gwinhttpvfs.h",
+    "win32/gwin32fsmonitorutils.h",
+    "gregistrysettingsbackend.h",
+    "gdesktopappinfo.h",
     "giounix-private.h",
     "gunixfdmessage.h",
     "gunixinputstream.h",
@@ -560,7 +575,27 @@ INTERNAL_HDRS_UNIX = [
     "gunixoutputstream.h",
     "gunixvolume.h",
     "gunixvolumemonitor.h",
+    "gwin32api-application-activation-manager.h",
+    "gwin32api-iterator.h",
+    "gwin32api-misc.h",
+    "gwin32api-package.h",
+    "gwin32api-storage.h",
+    "gwin32file-sync-stream.h",
+    "gwin32mount.h",
+    "gwin32networkmonitor.h",
+    "gwin32packageparser.h",
+    "gwin32registrykey.h",
+    "gwin32sid.h",
+    "gwin32volumemonitor.h",
+    "win32/gwin32filemonitor.h",
+    "win32/gwinhttpfile.h",
+    "win32/gwinhttpfileinputstream.h",
+    "win32/gwinhttpfileoutputstream.h",
+    "win32/winhttp.h",
+    "giowin32-private.c",
 ]
+
+INTERNAL_HDRS_UNIX = []
 
 INTERNAL_HDRS_LINUX = [
     "gnetworkmonitornetlink.h",
@@ -590,6 +625,7 @@ run_binary(
         name = "glib_mkenums_for_%s" % out.replace(".", "_"),
         srcs = ["gnetworking.h"] + PUBLIC_HDRS + select({
             "@platforms//os:macos": PUBLIC_HDRS_OSX,
+            "@platforms//os:windows": PUBLIC_HDRS_WIN32,
             "//conditions:default": [],
         }),
         out = out,
@@ -609,7 +645,7 @@ run_binary(
 ) for hdr in (PUBLIC_HDRS + [
     "gioenumtypes.h",
     "gnetworking.h",
-] + PUBLIC_HDRS_OSX)]
+] + PUBLIC_HDRS_OSX + PUBLIC_HDRS_WIN32)]
 
 cc_library(
     name = "gio_internal_textual_hdrs",
@@ -638,9 +674,13 @@ cc_library(
         "//conditions:default": [],
     }) + GIO_APPLICATION_SRCS + GIO_SETTINGS_SRCS + GIO_GDBUS_SRCS + select({
         "@platforms//os:windows": [],
-        "//conditions:default": GIO_PORTAL_SRCS,
+        "//conditions:default": GIO_PORTAL_SRCS + [
+            "xdp-dbus.c",
+            "xdp-dbus.h",
+        ],
     }) + GIO_LOCAL_SRCS + PUBLIC_HDRS + select({
         "@platforms//os:macos": PUBLIC_HDRS_OSX,
+        "@platforms//os:windows": PUBLIC_HDRS_WIN32,
         "//conditions:default": [],
     }) + select({
         "@platforms//os:linux": glob([
@@ -660,8 +700,6 @@ cc_library(
         "gioenumtypes.c",
         "gioenumtypes.h",
         "gnetworking.h",
-        "xdp-dbus.c",
-        "xdp-dbus.h",
         "//subprojects/gvdb",
     ],
     hdrs = [":public_hdr_" + hdr for hdr in (PUBLIC_HDRS + [
@@ -670,6 +708,7 @@ cc_library(
            ])] +
            select({
                "@platforms//os:macos": [":public_hdr_" + hdr for hdr in PUBLIC_HDRS_OSX],
+               "@platforms//os:windows": [":public_hdr_" + hdr for hdr in PUBLIC_HDRS_WIN32],
                "//conditions:default": [],
            }) + [
         ":gio-visibility_h",
@@ -677,6 +716,7 @@ cc_library(
     copts = [
         "-I" + INCLUDE_PREFIX,
         "-I%s/gio" % (INCLUDE_PREFIX,),
+        "-I%s/gio/win32" % (INCLUDE_PREFIX,),
         "-I%s/glib" % (INCLUDE_PREFIX,),
         "-I%s/subprojects/gvdb" % (INCLUDE_PREFIX,),
         "-I$(BINDIR)/%s" % (INCLUDE_PREFIX,),
@@ -685,9 +725,11 @@ cc_library(
     implementation_deps = [
         ":gio_internal_textual_hdrs",
         "//:config_h",
-        "//gio/xdgmime",
         "@zlib",
     ] + select({
+        "@platforms//os:windows": [],
+        "//conditions:default": ["//gio/xdgmime"],
+    }) + select({
         "@platforms//os:linux": [],
         "//conditions:default": ["//glib:stub_intl"],
     }),
@@ -703,6 +745,9 @@ cc_library(
         "GIO_MODULE_DIR='\"/usr/lib/glib/gio/modules\"'",
         "LOCALSTATEDIR='\"\"'",
         "GIO_COMPILATION",
+        "UNICODE",
+        "_UNICODE",
+        "NTSTATUS=LONG",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -710,4 +755,29 @@ cc_library(
         "//gmodule",
         "//gobject",
     ],
+)
+
+cc_shared_library(
+    name = "gio_shared",
+    dynamic_deps = [
+        "//glib:glib_shared",
+        "//gmodule:gmodule_shared",
+        "//gobject:gobject_shared",
+    ],
+    user_link_flags = select({
+        "@platforms//os:windows": [
+            "advapi32.lib",
+            "shell32.lib",
+            "shlwapi.lib",
+            "user32.lib",
+            "ole32.lib",
+            "oleaut32.lib",
+            "dnsapi.lib",
+            "iphlpapi.lib",
+            "ws2_32.lib",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [":gio"],
 )

@@ -1,6 +1,7 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_shared_library")
 
 package(default_applicable_licenses = ["//:license"])
 
@@ -314,4 +315,29 @@ cc_library(
         "GLIB_CHARSETALIAS_DIR='\"/usr/lib\"'",
     ],
     visibility = ["//visibility:public"],
+)
+
+cc_shared_library(
+    name = "glib_shared",
+    user_link_flags = select({
+        "@platforms//os:windows": [
+            "/export:g_timeout_funcs",
+            "/export:g_child_watch_funcs",
+            "/export:g_idle_funcs",
+            "/export:g_io_watch_funcs",
+            "/export:g_ascii_table",
+            "/export:g_utf8_skip",
+            "/export:g_thread_use_default_impl",
+            "/export:g_test_config_vars",
+            "/export:glib_major_version",
+            "/export:glib_minor_version",
+            "/export:glib_micro_version",
+            "/export:glib_binary_age",
+            "/export:glib_interface_age",
+            "/export:glib_mem_profiler_table",
+        ],
+        "//conditions:default": [],
+    }),
+    visibility = ["//visibility:public"],
+    deps = [":glib"],
 )
