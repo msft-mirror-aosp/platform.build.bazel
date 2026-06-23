@@ -26,6 +26,6 @@
     "patches": {
         "test_portability.patch": "sha256-k+rcpufDHmQHEgKLJ1KW9b5JqItxVU0i05Xb1XwHHfM=",
         "gdatetime_test.patch": "sha256-wPymcl315IdiYkWxaxgboRuUEfsdE52fy9bKjVUpT8g=",
-        "aemu_updates-for-windows.patch": "sha256-m8aw23c8XfKPFYXOd+2BYveNvBxcWm32yIxVpsUtPPE="
+        "aemu_updates-for-windows.patch": "sha256-EJaSpJKvtJgRwxEGtgqqsdQx5sJubW9/1m3xHSei8T4="
     }
 }
