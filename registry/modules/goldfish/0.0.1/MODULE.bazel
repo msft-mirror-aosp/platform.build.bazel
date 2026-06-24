@@ -88,6 +88,12 @@ new_local_repository(
     path = "tools/analytics-library/protos/src/main/proto",
 )
 
+new_local_repository(
+    name = "prebuilt_python_windows",
+    build_file = "//:python_windows.BUILD",
+    path = "prebuilts/python/windows-x86",
+)
+
 multisource_repo = use_extension("@goldfish_build//extensions:multisource_repo.bzl", "multisource_repo")
 
 # BEGIN upload_fishtank
