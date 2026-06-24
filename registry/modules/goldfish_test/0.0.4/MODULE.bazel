@@ -100,6 +100,7 @@ gcs_file(
 gcs_archive(
     name = "tradefed",
     build_file = "//deps/tradefed:tradefed.BUILD",
+    patches = ["//deps/tradefed:patches/prepend-classpath.patch"],
     sha256 = "3f94672c0953e934e623953b3aa3fdc15fa3c4d1fcaf1a45bc33308c3bfeb990",
     url = "gs://emu-next-bazel/ab/tradefed/tradefed/14843258/tradefed.zip",
 )
