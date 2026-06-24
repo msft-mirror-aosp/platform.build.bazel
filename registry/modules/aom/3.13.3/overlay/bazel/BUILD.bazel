@@ -1,0 +1,2 @@
+# No targets needed here as stdout_to_file has been deprecated in favor of Python rtcd.py output parameter redirection
+exports_files(["rtcd.py"])
