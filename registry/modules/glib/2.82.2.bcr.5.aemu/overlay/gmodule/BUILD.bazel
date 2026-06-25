@@ -1,7 +1,7 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
-load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_shared_library")
+load("//:glib.bzl", "cc_import_library")
 
 package(default_applicable_licenses = ["//:license"])
 
@@ -50,7 +50,7 @@ REPO_ROOT = package_relative_label(":BUILD.bazel").workspace_root
 
 INCLUDE_PREFIX = REPO_ROOT if REPO_ROOT else "."
 
-cc_library(
+cc_import_library(
     name = "gmodule",
     srcs = [
         "gmodule.c",
@@ -78,18 +78,27 @@ cc_library(
         "G_LOG_DOMAIN='\"GModule\"'",
         "GMODULE_COMPILATION",
     ],
+    shared_defines = select({
+        "@platforms//os:windows": ["GLIB_DLL"],
+        "//conditions:default": [],
+    }),
+    shared_import_deps = ["//glib:glib_import"],
+    static_defines = select({
+        "@platforms//os:windows": ["GMODULE_STATIC_COMPILATION"],
+        "//conditions:default": [],
+    }),
+    static_deps = ["//glib"],
     textual_hdrs = [
         "gmodule-ar.c",
         "gmodule-dl.c",
         "gmodule-win32.c",
     ],
     visibility = ["//visibility:public"],
-    deps = ["//glib"],
 )
 
 cc_shared_library(
     name = "gmodule_shared",
     dynamic_deps = ["//glib:glib_shared"],
     visibility = ["//visibility:public"],
-    deps = [":gmodule"],
+    deps = [":gmodule_import"],
 )

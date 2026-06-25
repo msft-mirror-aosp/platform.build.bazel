@@ -194,7 +194,7 @@ INCLUDE_PREFIX = REPO_ROOT if REPO_ROOT else "."
     target_compatible_with = TEST_PLATFORMS.get(test_name, []),
     deps = [
         "//:config_h",
-        "//glib",
+        "//glib:glib_import",
     ] + select({
         "@platforms//os:linux": [],
         "//conditions:default": ["//glib:stub_intl"],

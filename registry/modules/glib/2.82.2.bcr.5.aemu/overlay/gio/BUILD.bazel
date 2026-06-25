@@ -2,6 +2,7 @@ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@bazel_skylib//rules:run_binary.bzl", "run_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_shared_library")
+load("//:glib.bzl", "cc_import_library")
 load("//gobject:gobject.bzl", "mkenums")
 
 package(default_applicable_licenses = ["//:license"])
@@ -660,7 +661,7 @@ REPO_ROOT = package_relative_label(":BUILD.bazel").workspace_root
 
 INCLUDE_PREFIX = REPO_ROOT if REPO_ROOT else "."
 
-cc_library(
+cc_import_library(
     name = "gio",
     srcs = GIO_BASE_SOURCES + select({
         "@platforms//os:linux": ["gcontenttype-fdo.c"],
@@ -749,12 +750,25 @@ cc_library(
         "_UNICODE",
         "NTSTATUS=LONG",
     ],
-    visibility = ["//visibility:public"],
-    deps = [
+    shared_defines = select({
+        "@platforms//os:windows": ["GLIB_DLL"],
+        "//conditions:default": [],
+    }),
+    shared_import_deps = [
+        "//glib:glib_import",
+        "//gmodule:gmodule_import",
+        "//gobject:gobject_import",
+    ],
+    static_defines = select({
+        "@platforms//os:windows": ["GIO_STATIC_COMPILATION"],
+        "//conditions:default": [],
+    }),
+    static_deps = [
         "//glib",
         "//gmodule",
         "//gobject",
     ],
+    visibility = ["//visibility:public"],
 )
 
 cc_shared_library(
@@ -779,5 +793,5 @@ cc_shared_library(
         "//conditions:default": [],
     }),
     visibility = ["//visibility:public"],
-    deps = [":gio"],
+    deps = [":gio_import"],
 )
