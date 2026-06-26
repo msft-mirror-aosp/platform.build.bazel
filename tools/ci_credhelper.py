@@ -6,14 +6,15 @@ import datetime
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
-from typing import List, Optional, Sequence
+from typing import Dict, Optional, Sequence
+import urllib.error
+import urllib.request
 
 
 _GOOGLE_URI_RE = re.compile(r"^https://[^.]+\.(?:pkg\.dev|googleapis\.com)(?:/.*)$")
 _RFC3339_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+_TIMEOUT = 60
 
 
 class CredentialError(Exception):
@@ -46,23 +47,21 @@ def _respond_google() -> Optional[int]:
   metadata_server = "metadata.google.internal"
   if os.getenv("GCE_METADATA_HOST"):
     metadata_server = os.getenv("GCE_METADATA_HOST")
-  result = _curl(
-      "GET",
-      ["Metadata-Flavor: Google"],
-      f"http://{metadata_server}/computeMetadata/v1/instance/service-accounts/default/token?alt=json",
-  )
-  if result.returncode != 0:
-    raise CredentialError(
-        f"Failed to fetch token from metadata server: {result.stderr}"
+  try:
+    response_str = _request(
+        "GET",
+        {"Metadata-Flavor": "Google"},
+        f"http://{metadata_server}/computeMetadata/v1/instance/service-accounts/default/token?alt=json",
     )
+  except (urllib.error.HTTPError, urllib.error.URLError) as e:
+    raise CredentialError("Failed to read token from metadata server") from e
 
   try:
-    response = json.loads(result.stdout)
+    response = json.loads(response_str)
     token, expires_in = response["access_token"], response["expires_in"]
-  except (json.JSONDecodeError, KeyError):
-    raise CredentialError(
-        f"Failed to read token from metadata server: {result.stdout}"
-    ) from None
+  except (json.JSONDecodeError, KeyError) as e:
+    raise CredentialError(f"Failed to parse response from metadata server: {response_str}") from e
+
   expires = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(
       seconds=expires_in
   )
@@ -84,24 +83,20 @@ def _print_response(
   print(json.dumps(response))
 
 
-def _curl(
+def _request(
     method: Optional[str],
-    headers: List[str],
+    headers: Dict[str, str],
     url: str,
-    *args: str,
-    check: bool = False,
-) -> subprocess.CompletedProcess[str]:
-  """Makes a curl request and returns the response."""
-  cmd = [shutil.which("curl"), "-L"]
-  if method:
-    cmd.extend(["-X", method])
-  for header in headers:
-    cmd.extend(["-H", header])
-  cmd.extend(args)
-  cmd.append(url)
-  return subprocess.run(cmd, capture_output=True, encoding="utf-8", check=check)
+) -> str:
+  """Makes an HTTP request and returns the response body."""
+  req = urllib.request.Request(
+      url,
+      headers=headers,
+      method=method,
+  )
+  with urllib.request.urlopen(req, timeout=_TIMEOUT) as resp:
+    return resp.read().decode("utf-8")
 
 
 if __name__ == "__main__":
-  sys.tracebacklimit = 0
   sys.exit(main(sys.argv[1:]))
