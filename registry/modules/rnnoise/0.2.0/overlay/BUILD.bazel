@@ -1,0 +1,34 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    license_kinds = [
+        "@rules_license//licenses/spdx:BSD-3-Clause",
+    ],
+    license_text = "COPYING",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "rnn_vad",
+    srcs = [
+        "src/rnn_activations.h",
+        "src/rnn_vad_weights.cc",
+        "src/rnn_vad_weights.h",
+    ],
+    hdrs = [
+        "src/rnn_activations.h",
+        "src/rnn_vad_weights.h",
+    ],
+)
+
+alias(
+    name = "rnnoise",
+    actual = ":rnn_vad",
+)

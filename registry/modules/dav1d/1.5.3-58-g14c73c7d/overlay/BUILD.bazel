@@ -1,0 +1,573 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_license//rules:license.bzl", "license")
+load("@rules_nasm//nasm:defs.bzl", "nasm_library")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    package_name = "dav1d",
+    license_kinds = ["@rules_license//licenses/spdx:BSD-2-Clause"],
+    license_text = "COPYING",
+)
+
+config_setting(
+    name = "cpu_aarch64",
+    constraint_values = ["@platforms//cpu:aarch64"],
+)
+
+config_setting(
+    name = "cpu_armv7",
+    constraint_values = ["@platforms//cpu:armv7"],
+)
+
+config_setting(
+    name = "cpu_x86_32",
+    constraint_values = ["@platforms//cpu:x86_32"],
+)
+
+config_setting(
+    name = "cpu_x86_64",
+    constraint_values = ["@platforms//cpu:x86_64"],
+)
+
+config_setting(
+    name = "os_windows",
+    constraint_values = ["@platforms//os:windows"],
+)
+
+config_setting(
+    name = "os_macos",
+    constraint_values = ["@platforms//os:macos"],
+)
+
+config_setting(
+    name = "os_linux",
+    constraint_values = ["@platforms//os:linux"],
+)
+
+config_setting(
+    name = "macos_x86_64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "macos_aarch64",
+    constraint_values = [
+        "@platforms//os:macos",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "windows_x86_64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "windows_aarch64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "linux_x86_32",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_32",
+    ],
+)
+
+config_setting(
+    name = "linux_x86_64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "linux_aarch64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:aarch64",
+    ],
+)
+
+config_setting(
+    name = "linux_armv7",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:armv7",
+    ],
+)
+
+x86_asm_srcs = [
+    "src/x86/cdef16_avx2.asm",
+    "src/x86/cdef16_avx512.asm",
+    "src/x86/cdef16_sse.asm",
+    "src/x86/cdef_avx2.asm",
+    "src/x86/cdef_avx512.asm",
+    "src/x86/cdef_sse.asm",
+    "src/x86/cpuid.asm",
+    "src/x86/filmgrain16_avx2.asm",
+    "src/x86/filmgrain16_avx512.asm",
+    "src/x86/filmgrain16_sse.asm",
+    "src/x86/filmgrain_avx2.asm",
+    "src/x86/filmgrain_avx512.asm",
+    "src/x86/filmgrain_sse.asm",
+    "src/x86/ipred16_avx2.asm",
+    "src/x86/ipred16_avx512.asm",
+    "src/x86/ipred16_sse.asm",
+    "src/x86/ipred_avx2.asm",
+    "src/x86/ipred_avx512.asm",
+    "src/x86/ipred_sse.asm",
+    "src/x86/itx16_avx2.asm",
+    "src/x86/itx16_avx512.asm",
+    "src/x86/itx16_sse.asm",
+    "src/x86/itx_avx2.asm",
+    "src/x86/itx_avx512.asm",
+    "src/x86/itx_sse.asm",
+    "src/x86/loopfilter16_avx2.asm",
+    "src/x86/loopfilter16_avx512.asm",
+    "src/x86/loopfilter16_sse.asm",
+    "src/x86/loopfilter_avx2.asm",
+    "src/x86/loopfilter_avx512.asm",
+    "src/x86/loopfilter_sse.asm",
+    "src/x86/looprestoration16_avx2.asm",
+    "src/x86/looprestoration16_avx512.asm",
+    "src/x86/looprestoration16_sse.asm",
+    "src/x86/looprestoration_avx2.asm",
+    "src/x86/looprestoration_avx512.asm",
+    "src/x86/looprestoration_sse.asm",
+    "src/x86/mc16_avx2.asm",
+    "src/x86/mc16_avx512.asm",
+    "src/x86/mc16_sse.asm",
+    "src/x86/mc_avx2.asm",
+    "src/x86/mc_avx512.asm",
+    "src/x86/mc_sse.asm",
+    "src/x86/msac.asm",
+    "src/x86/pal.asm",
+    "src/x86/refmvs.asm",
+]
+
+armv7_asm_srcs = [
+    "src/arm/32/cdef.S",
+    "src/arm/32/cdef16.S",
+    "src/arm/32/filmgrain.S",
+    "src/arm/32/filmgrain16.S",
+    "src/arm/32/ipred.S",
+    "src/arm/32/ipred16.S",
+    "src/arm/32/itx.S",
+    "src/arm/32/itx16.S",
+    "src/arm/32/loopfilter.S",
+    "src/arm/32/loopfilter16.S",
+    "src/arm/32/looprestoration.S",
+    "src/arm/32/looprestoration16.S",
+    "src/arm/32/looprestoration_common.S",
+    "src/arm/32/mc.S",
+    "src/arm/32/mc16.S",
+    "src/arm/32/msac.S",
+    "src/arm/32/refmvs.S",
+]
+
+arm64_asm_srcs = [
+    "src/arm/64/cdef.S",
+    "src/arm/64/cdef16.S",
+    "src/arm/64/filmgrain.S",
+    "src/arm/64/filmgrain16.S",
+    "src/arm/64/ipred.S",
+    "src/arm/64/ipred16.S",
+    "src/arm/64/itx.S",
+    "src/arm/64/itx16.S",
+    "src/arm/64/loopfilter.S",
+    "src/arm/64/loopfilter16.S",
+    "src/arm/64/looprestoration.S",
+    "src/arm/64/looprestoration16.S",
+    "src/arm/64/looprestoration_common.S",
+    "src/arm/64/mc.S",
+    "src/arm/64/mc16.S",
+    "src/arm/64/mc16_sve.S",
+    "src/arm/64/mc_dotprod.S",
+    "src/arm/64/msac.S",
+    "src/arm/64/refmvs.S",
+]
+
+tmpl_srcs = [
+    "src/cdef_apply_tmpl.c",
+    "src/cdef_tmpl.c",
+    "src/fg_apply_tmpl.c",
+    "src/filmgrain_tmpl.c",
+    "src/ipred_prepare_tmpl.c",
+    "src/ipred_tmpl.c",
+    "src/itx_tmpl.c",
+    "src/lf_apply_tmpl.c",
+    "src/loopfilter_tmpl.c",
+    "src/looprestoration_tmpl.c",
+    "src/lr_apply_tmpl.c",
+    "src/mc_tmpl.c",
+    "src/recon_tmpl.c",
+]
+
+x86_dav1d_srcs = [
+    "src/x86/cpu.c",
+]
+
+arm_dav1d_srcs = [
+    "src/arm/cpu.c",
+]
+
+dav1d_srcs = [
+    "src/cdf.c",
+    "src/cpu.c",
+    "src/ctx.c",
+    "src/data.c",
+    "src/decode.c",
+    "src/dequant_tables.c",
+    "src/getbits.c",
+    "src/intra_edge.c",
+    "src/itx_1d.c",
+    "src/lf_mask.c",
+    "src/lib.c",
+    "src/log.c",
+    "src/mem.c",
+    "src/msac.c",
+    "src/obu.c",
+    "src/pal.c",
+    "src/picture.c",
+    "src/qm.c",
+    "src/ref.c",
+    "src/refmvs.c",
+    "src/scan.c",
+    "src/tables.c",
+    "src/thread_task.c",
+    "src/warpmv.c",
+    "src/wedge.c",
+] + select({
+    ":cpu_aarch64": arm_dav1d_srcs + arm64_asm_srcs,
+    ":cpu_armv7": arm_dav1d_srcs + armv7_asm_srcs,
+    ":cpu_x86_32": x86_dav1d_srcs,
+    ":cpu_x86_64": x86_dav1d_srcs,
+    "//conditions:default": [],
+}) + select({
+    ":os_windows": ["src/win32/thread.c"],
+    "//conditions:default": [],
+})
+
+nasm_library(
+    name = "x86_asm",
+    srcs = x86_asm_srcs,
+    hdrs = [
+        "src/ext/x86/x86inc.asm",
+        "src/x86/filmgrain_common.asm",
+    ] + select({
+        ":macos_x86_64": ["config/apple/x64/config.asm"],
+        ":windows_x86_64": ["config/win/x64/config.asm"],
+        ":linux_x86_32": ["config/linux/x86/config.asm"],
+        "//conditions:default": ["config/linux/x64/config.asm"],
+    }),
+    copts = select({
+        ":macos_x86_64": [
+            "-f",
+            "macho64",
+            "-DPIC",
+        ],
+        ":windows_x86_64": [
+            "-f",
+            "win64",
+            "-DPIC",
+        ],
+        ":linux_x86_32": [
+            "-f",
+            "elf32",
+            "-DPIC",
+        ],
+        "//conditions:default": [
+            "-f",
+            "elf64",
+            "-DPIC",
+        ],
+    }),
+    includes = [
+        ".",
+        "src",
+    ] + select({
+        ":macos_x86_64": ["config/apple/x64"],
+        ":windows_x86_64": ["config/win/x64"],
+        ":linux_x86_32": ["config/linux/x86"],
+        "//conditions:default": ["config/linux/x64"],
+    }),
+    target_compatible_with = [
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+shared_copts = [
+    "-D_FILE_OFFSET_BITS=64",
+    "-D_ISOC99_SOURCE",
+    "-Wall",
+    "-Winvalid-pch",
+    "-Wextra",
+    "-std=c99",
+    "-I.",
+    "-Ilibdav1d",
+    "-Iinclude",
+    "-Iinclude/dav1d",
+    "-Iversion",
+    "-Wundef",
+    "-Wno-unused-parameter",
+    "-Wno-undef",
+    "-Wno-frame-larger-than",
+    "-fomit-frame-pointer",
+    "-ffast-math",
+    "-fvisibility=hidden",
+] + select({
+    ":os_windows": [],
+    "//conditions:default": ["-fPIC"],
+}) + select({
+    ":macos_x86_64": ["-Iconfig/apple/x64"],
+    ":macos_aarch64": ["-Iconfig/apple/arm64"],
+    ":windows_x86_64": ["-Iconfig/win/x64"],
+    ":windows_aarch64": ["-Iconfig/win/arm64"],
+    ":linux_x86_32": [
+        "-D_GNU_SOURCE",
+        "-Iconfig/linux/x86",
+    ],
+    ":linux_aarch64": [
+        "-D_GNU_SOURCE",
+        "-Iconfig/linux/arm64",
+    ],
+    ":linux_armv7": [
+        "-D_GNU_SOURCE",
+        "-Iconfig/linux/arm",
+    ],
+    "//conditions:default": [
+        "-D_GNU_SOURCE",
+        "-Iconfig/linux/x64",
+    ],
+})
+
+common_hdrs = [
+    "include/common/attributes.h",
+    "include/common/bitdepth.h",
+    "include/common/dump.h",
+    "include/common/frame.h",
+    "include/common/intops.h",
+    "include/common/validate.h",
+    "include/dav1d/common.h",
+    "include/dav1d/data.h",
+    "include/dav1d/dav1d.h",
+    "include/dav1d/headers.h",
+    "include/dav1d/picture.h",
+    "include/dav1d/version.h",
+    "src/cdef.h",
+    "src/cdef_apply.h",
+    "src/cdf.h",
+    "src/cpu.h",
+    "src/ctx.h",
+    "src/data.h",
+    "src/decode.h",
+    "src/dequant_tables.h",
+    "src/env.h",
+    "src/fg_apply.h",
+    "src/filmgrain.h",
+    "src/getbits.h",
+    "src/internal.h",
+    "src/intra_edge.h",
+    "src/ipred.h",
+    "src/ipred_prepare.h",
+    "src/itx.h",
+    "src/itx_1d.h",
+    "src/levels.h",
+    "src/lf_apply.h",
+    "src/lf_mask.h",
+    "src/log.h",
+    "src/loopfilter.h",
+    "src/looprestoration.h",
+    "src/lr_apply.h",
+    "src/mc.h",
+    "src/mem.h",
+    "src/msac.h",
+    "src/obu.h",
+    "src/pal.h",
+    "src/picture.h",
+    "src/qm.h",
+    "src/recon.h",
+    "src/ref.h",
+    "src/refmvs.h",
+    "src/scan.h",
+    "src/tables.h",
+    "src/thread.h",
+    "src/thread_data.h",
+    "src/thread_task.h",
+    "src/warpmv.h",
+    "src/wedge.h",
+    "version/vcs_version.h",
+]
+
+x86_hdrs = [
+    "src/x86/cdef.h",
+    "src/x86/cpu.h",
+    "src/x86/filmgrain.h",
+    "src/x86/ipred.h",
+    "src/x86/itx.h",
+    "src/x86/loopfilter.h",
+    "src/x86/looprestoration.h",
+    "src/x86/mc.h",
+    "src/x86/msac.h",
+    "src/x86/pal.h",
+    "src/x86/refmvs.h",
+]
+
+arm_hdrs = [
+    "src/arm/arm-arch.h",
+    "src/arm/asm-offsets.h",
+    "src/arm/cdef.h",
+    "src/arm/cpu.h",
+    "src/arm/filmgrain.h",
+    "src/arm/ipred.h",
+    "src/arm/itx.h",
+    "src/arm/loopfilter.h",
+    "src/arm/looprestoration.h",
+    "src/arm/mc.h",
+    "src/arm/msac.h",
+    "src/arm/refmvs.h",
+]
+
+arm32_tmpl_hdrs = [
+    "src/arm/asm.S",
+    "src/arm/32/util.S",
+    "src/arm/32/cdef_tmpl.S",
+    "src/arm/32/looprestoration_tmpl.S",
+]
+
+arm64_tmpl_hdrs = [
+    "src/arm/asm.S",
+    "src/arm/64/util.S",
+    "src/arm/64/cdef_tmpl.S",
+    "src/arm/64/looprestoration_tmpl.S",
+]
+
+cc_library(
+    name = "dav1d_hdrs",
+    hdrs = common_hdrs + select({
+        ":macos_x86_64": ["config/apple/x64/config.h"] + x86_hdrs,
+        ":macos_aarch64": ["config/apple/arm64/config.h"] + arm_hdrs,
+        ":windows_x86_64": ["config/win/x64/config.h"] + x86_hdrs,
+        ":windows_aarch64": ["config/win/arm64/config.h"] + arm_hdrs,
+        ":linux_x86_32": ["config/linux/x86/config.h"] + x86_hdrs,
+        ":linux_aarch64": ["config/linux/arm64/config.h"] + arm_hdrs,
+        ":linux_armv7": ["config/linux/arm/config.h"] + arm_hdrs,
+        "//conditions:default": ["config/linux/x64/config.h"] + x86_hdrs,
+    }) + select({
+        ":cpu_armv7": arm32_tmpl_hdrs,
+        ":cpu_aarch64": arm64_tmpl_hdrs,
+        "//conditions:default": [],
+    }),
+    includes = [
+        ".",
+        "include",
+        "include/dav1d",
+        "version",
+    ] + select({
+        ":macos_x86_64": ["config/apple/x64"],
+        ":macos_aarch64": ["config/apple/arm64"],
+        ":windows_x86_64": ["config/win/x64"],
+        ":windows_aarch64": ["config/win/arm64"],
+        ":linux_x86_32": ["config/linux/x86"],
+        ":linux_aarch64": ["config/linux/arm64"],
+        ":linux_armv7": ["config/linux/arm"],
+        "//conditions:default": ["config/linux/x64"],
+    }),
+    linkstatic = 1,
+)
+
+cc_library(
+    name = "dav1d_lib_8bit",
+    srcs = tmpl_srcs,
+    copts = shared_copts + [
+        "-DBITDEPTH=8",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":dav1d_hdrs",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "dav1d_lib_16bit",
+    srcs = tmpl_srcs,
+    copts = shared_copts + [
+        "-DBITDEPTH=16",
+    ],
+    linkstatic = 1,
+    deps = [
+        ":dav1d_hdrs",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "dav1d_lib",
+    srcs = dav1d_srcs + select({
+        ":cpu_x86_32": [":x86_asm"],
+        ":cpu_x86_64": [":x86_asm"],
+        "//conditions:default": [],
+    }),
+    hdrs = [
+        "include/dav1d/common.h",
+        "include/dav1d/data.h",
+        "include/dav1d/dav1d.h",
+        "include/dav1d/headers.h",
+        "include/dav1d/picture.h",
+        "include/dav1d/version.h",
+    ],
+    copts = shared_copts,
+    linkopts = select({
+        ":os_macos": [],
+        ":os_windows": [],
+        "//conditions:default": [
+            "-ldl",
+            "-pthread",
+        ],
+    }),
+    linkstatic = 1,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":dav1d_hdrs",
+        ":dav1d_lib_16bit",
+        ":dav1d_lib_8bit",
+    ],
+    alwayslink = 1,
+)
+
+[
+    cc_test(
+        name = "header_test_{}".format(hdr.replace(".h", "")),
+        srcs = ["tests/header_test.c"],
+        copts = shared_copts + [
+            '-DDAV1D_TEST_HEADER=\\"dav1d/{}\\"'.format(hdr),
+        ],
+        deps = [":dav1d_lib"],
+    )
+    for hdr in [
+        "common.h",
+        "data.h",
+        "dav1d.h",
+        "headers.h",
+        "picture.h",
+        "version.h",
+    ]
+]

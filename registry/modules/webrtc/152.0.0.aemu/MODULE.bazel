@@ -1,0 +1,53 @@
+# Maps to M152 in the webrtc world
+module(
+    name = "webrtc",
+    version = "152.0.0.aemu",
+)
+
+# Standard Rules
+bazel_dep(name = "rules_cc", version = "0.2.17")
+bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "rules_java", version = "9.3.0")
+bazel_dep(name = "rules_rust", version = "0.67.0")
+bazel_dep(name = "rules_python", version = "1.7.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
+bazel_dep(name = "rules_license", version = "1.0.0")
+bazel_dep(name = "rules_android", version = "0.7.1.aemu")
+bazel_dep(name = "rules_foreign_cc", version = "0.13.0")
+bazel_dep(name = "rules_nasm", version = "0.4.0")
+
+# Utilities & Platforms
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "bazel_skylib", version = "1.9.0")
+bazel_dep(name = "apple_support", version = "2.2.0")
+bazel_dep(name = "goldfish_build", version = "0.0.3")
+
+# WebRTC Dependencies
+bazel_dep(name = "abseil-cpp", version = "20260107.0")
+bazel_dep(name = "aom", version = "3.13.3")
+bazel_dep(name = "boringssl", version = "0.20251124.0")
+bazel_dep(name = "grpc", version = "1.81.1.aemu")
+bazel_dep(name = "nasm", version = "2.14.02")
+bazel_dep(name = "crc32c", version = "1.1.0")
+bazel_dep(name = "xxhash", version = "0.8.3.bcr.1")
+bazel_dep(name = "perfetto", version = "54.0")
+bazel_dep(name = "mesa3d", version = "0.0.1", repo_name = "mesa")
+bazel_dep(name = "libx11", version = "1.8.12.bcr.3.aemu")
+bazel_dep(name = "ffmpeg", version = "8.0.aemu")
+bazel_dep(name = "jsoncpp", version = "1.9.6.bcr.2")
+bazel_dep(name = "libjpeg_turbo", version = "3.1.3.bcr.5")
+bazel_dep(name = "libsrtp2", version = "2.3.0")
+bazel_dep(name = "libvpx", version = "1.16.0.bcr.beta.1")
+bazel_dep(name = "libyuv", version = "1948")
+bazel_dep(name = "opus", version = "1.6.0")
+bazel_dep(name = "pffft", version = "1.1.0")
+bazel_dep(name = "protobuf", version = "33.4")
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1")
+bazel_dep(name = "rnnoise", version = "0.2.0")
+bazel_dep(name = "dav1d", version = "1.5.3-58-g14c73c7d")
+bazel_dep(name = "libgav1", version = "0.20.0")
+
+# Test Dependencies
+bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
+
+# WebRTC decoders and codecs (local overrides for modules missing in BCR)

@@ -1,4 +1,10 @@
 {
-  "type": "local_path",
-  "path": "third_party/libsrtp2"
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/libsrtp2/libsrtp2/+archive/46755e2aa15b618854b1ab502b4787e584aa590d.tar.gz",
+    "integrity": "sha256-lcRx3ScmM02mc0dEchLApeUl95ACbf9a6S7j+JRqVCc=",
+    "strip_prefix": "libsrtp-46755e2aa15b618854b1ab502b4787e584aa590d",
+    "overlay": {
+        "BUILD.bazel": "sha256-YlicUYNaE9f/Mo7u+X/Fr5koDBV/LFky8YiwcfvaWjU=",
+        "MODULE.bazel": "sha256-7XQ6nqcW6b5saCWARintjPPTPyLuMtNuh9WkX2grGl0=",
+        "config.h.bazel": "sha256-DBXL8640oc0T6gKXSdPdzj5veBCZwoBuAte9XUfyr1Y="
+    }
 }

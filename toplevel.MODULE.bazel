@@ -57,6 +57,12 @@ bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "aemu", version = "0.0.2")
 bazel_dep(name = "rutabaga_gfx", version = "0.0.1")
 bazel_dep(name = "libpng", version = "0.0.1")
+bazel_dep(name = "pffft", version = "1.1.0")
+bazel_dep(name = "rnnoise", version = "0.2.0")
+bazel_dep(name = "libgav1", version = "0.20.0")
+bazel_dep(name = "dav1d", version = "1.5.3-58-g14c73c7d")
+bazel_dep(name = "libsrtp2", version = "2.3.0")
+bazel_dep(name = "libyuv", version = "1948")
 bazel_dep(name = "nasm", version = "2.16.03.bcr.3")
 bazel_dep(name = "rules_nasm", version = "0.5.0")
 
@@ -136,3 +142,4 @@ local_path_override(
 
 bazel_dep(name = "mesa3d", version = "0.0.1")
 bazel_dep(name = "wayland-protocols", version = "1.41")
+bazel_dep(name = "webrtc", version = "152.0.0.aemu")

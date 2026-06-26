@@ -10,11 +10,11 @@
     "patch_strip": 1,
     "overlay": {
         ".bazelignore": "sha256-aoCKSedUMNp60kePVfi63+e6UZVHzbT3Q2WWuCoLjXU=",
-        "BUILD.bazel": "sha256-X0aBuZrBE4CW8WGz0MdJQnyZaWdMtcqBurjxzOlUKiI=",
-        "MODULE.bazel": "sha256-eFOk07zqm8gtBTy8M4nK/5bb0jNijqWUPcdLyGnhl3g=",
+        "BUILD.bazel": "sha256-bPR/F+ymo/Rc1oPG05AENAauvJ3H7QWzhFhkBgOIuvw=",
+        "MODULE.bazel": "sha256-ckH0N2w5g/OMenGhlFiP78NjM/qJoV1BhZCp8kn4ZxM=",
         "bazel/BUILD.bazel": "sha256-H5umqVyo48utOupdgG+gzCJlQ7FFWBi5rLfMCTTeJ/M=",
         "bazel/aom_config.bzl": "sha256-HJlBo+NCYhOwyi4Ms4cXq2J25rxBE4z5sqVKvhxmbPc=",
-        "bazel/rtcd.bzl": "sha256-r51vVPFzUhPhDbOrxiZhkPsS54z0jA7eL3VbdW/xavE=",
+        "bazel/rtcd.bzl": "sha256-HKMIp5P+eHeTZh0WiC7GDMl7u2ft54tqAYT8iID+858=",
         "bazel/rtcd.py": "sha256-Ok2EU5OP+7i3mXy4hn8bQ7xwUqnmcStVyoBOdqNJMYk=",
         "test/BUILD.bazel": "sha256-kdHQQIGKeES7rH58Z88Hzqc6QZ5WHG263M9YhYweU90=",
         "test/MODULE.bazel": "sha256-4x5wYnArGMQSMDLwKR7s/8NxCh0g7tTNt5zkmNQ0tv8="
