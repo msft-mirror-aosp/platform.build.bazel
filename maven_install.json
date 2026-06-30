@@ -28,6 +28,7 @@
     "com.google.truth:truth": 1696781452,
     "com.squareup.okhttp:okhttp": -1467174407,
     "com.squareup.okio:okio": 795722926,
+    "commons-net:commons-net": 233258627,
     "io.grpc:grpc-android": 801616305,
     "io.grpc:grpc-core": 441373945,
     "io.grpc:grpc-okhttp": -1473080236,
@@ -56,6 +57,7 @@
     "net.java.dev.jna:jna-platform": 1640964380,
     "org.checkerframework:checker-qual": -819031361,
     "org.codehaus.mojo:animal-sniffer-annotations": 852823480,
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core": 1181209059,
     "org.mockito:mockito-core": -1925148636,
     "repositories": 233549113
   },
@@ -63,11 +65,11 @@
     "androidx.annotation:annotation": -303913461,
     "androidx.annotation:annotation-jvm": 904636582,
     "androidx.concurrent:concurrent-futures": -265179572,
-    "androidx.concurrent:concurrent-futures-ktx": -950600570,
+    "androidx.concurrent:concurrent-futures-ktx": -1176326215,
     "androidx.lifecycle:lifecycle-common": 1837464211,
     "androidx.test.services:storage:aar": 829153566,
     "androidx.test.uiautomator:uiautomator:aar": 237026294,
-    "androidx.test:core:aar": 1572835676,
+    "androidx.test:core:aar": -1745371541,
     "androidx.test:monitor:aar": -1793113797,
     "androidx.test:rules:aar": 1571307717,
     "androidx.test:runner:aar": 348088096,
@@ -100,6 +102,8 @@
     "com.squareup.okhttp:okhttp": 687126423,
     "com.squareup.okio:okio": 509148821,
     "commons-codec:commons-codec": 552652796,
+    "commons-io:commons-io": -1143158308,
+    "commons-net:commons-net": -1876001268,
     "io.grpc:grpc-android:aar": -1088611972,
     "io.grpc:grpc-api": -616709404,
     "io.grpc:grpc-context": -1670193711,
@@ -147,8 +151,8 @@
     "org.jetbrains.kotlin:kotlin-reflect": -476662995,
     "org.jetbrains.kotlin:kotlin-stdlib": 1381928198,
     "org.jetbrains.kotlin:kotlin-stdlib-common": 1474965713,
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core": 1812496567,
-    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm": -1806399191,
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core": -1869037175,
+    "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm": -499669041,
     "org.jetbrains:annotations": 1343229301,
     "org.jspecify:jspecify": -2091595516,
     "org.mockito:mockito-core": 747245314,
@@ -397,6 +401,18 @@
         "jar": "e599d5318e97aa48f42136a2927e6dfa4e8881dff0e6c8e3109ddbbff51d7b7d"
       },
       "version": "1.11"
+    },
+    "commons-io:commons-io": {
+      "shasums": {
+        "jar": "7d643a2afea8b058b762aa6fb90e5b256f6c729739f8b3784c3370ddc609e88d"
+      },
+      "version": "2.21.0"
+    },
+    "commons-net:commons-net": {
+      "shasums": {
+        "jar": "9e88444afadc9467f0bf3d328f93b9538da35a9be05cdee430766e64fddbd6c5"
+      },
+      "version": "3.13.0"
     },
     "io.grpc:grpc-android:aar": {
       "shasums": {
@@ -657,15 +673,15 @@
     },
     "org.jetbrains.kotlinx:kotlinx-coroutines-core": {
       "shasums": {
-        "jar": "f9522095aedcc2a6ab32c7484061ea698352c71be1390adb403b59aa48a38fdc"
+        "jar": "04e7737fb15cf5f3aed83a91141a5303a0b2acd886f5bbc35cdbe791ad63dfee"
       },
-      "version": "1.7.3"
+      "version": "1.11.0"
     },
     "org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm": {
       "shasums": {
-        "jar": "f3d4f5de1c391bbcc20f3b3435ccbac013521e76b6902d7d59635ec15c1f797e"
+        "jar": "d1d75aa01dffbb4d1c520e67e4c4e7f5f6174718e7cb4632412503f2f0e604fa"
       },
-      "version": "1.8.1"
+      "version": "1.11.0"
     },
     "org.jetbrains:annotations": {
       "shasums": {
@@ -881,6 +897,9 @@
     "com.squareup.okio:okio": [
       "org.jetbrains.kotlin:kotlin-stdlib",
       "org.jetbrains.kotlin:kotlin-stdlib-common"
+    ],
+    "commons-net:commons-net": [
+      "commons-io:commons-io"
     ],
     "io.grpc:grpc-android:aar": [
       "com.google.guava:guava",
@@ -1348,6 +1367,45 @@
       "org.apache.commons.codec.language.bm",
       "org.apache.commons.codec.net"
     ],
+    "commons-io:commons-io": [
+      "org.apache.commons.io",
+      "org.apache.commons.io.build",
+      "org.apache.commons.io.channels",
+      "org.apache.commons.io.charset",
+      "org.apache.commons.io.comparator",
+      "org.apache.commons.io.file",
+      "org.apache.commons.io.file.attribute",
+      "org.apache.commons.io.file.spi",
+      "org.apache.commons.io.filefilter",
+      "org.apache.commons.io.function",
+      "org.apache.commons.io.input",
+      "org.apache.commons.io.input.buffer",
+      "org.apache.commons.io.monitor",
+      "org.apache.commons.io.output",
+      "org.apache.commons.io.serialization"
+    ],
+    "commons-net:commons-net": [
+      "org.apache.commons.net",
+      "org.apache.commons.net.bsd",
+      "org.apache.commons.net.chargen",
+      "org.apache.commons.net.daytime",
+      "org.apache.commons.net.discard",
+      "org.apache.commons.net.echo",
+      "org.apache.commons.net.finger",
+      "org.apache.commons.net.ftp",
+      "org.apache.commons.net.ftp.parser",
+      "org.apache.commons.net.imap",
+      "org.apache.commons.net.io",
+      "org.apache.commons.net.nntp",
+      "org.apache.commons.net.ntp",
+      "org.apache.commons.net.pop3",
+      "org.apache.commons.net.smtp",
+      "org.apache.commons.net.telnet",
+      "org.apache.commons.net.tftp",
+      "org.apache.commons.net.time",
+      "org.apache.commons.net.util",
+      "org.apache.commons.net.whois"
+    ],
     "io.grpc:grpc-api": [
       "io.grpc"
     ],
@@ -1813,7 +1871,6 @@
       "_COROUTINE",
       "kotlinx.coroutines",
       "kotlinx.coroutines.channels",
-      "kotlinx.coroutines.debug",
       "kotlinx.coroutines.debug.internal",
       "kotlinx.coroutines.flow",
       "kotlinx.coroutines.flow.internal",
@@ -1989,6 +2046,8 @@
       "com.squareup.okhttp:okhttp",
       "com.squareup.okio:okio",
       "commons-codec:commons-codec",
+      "commons-io:commons-io",
+      "commons-net:commons-net",
       "io.grpc:grpc-android:aar",
       "io.grpc:grpc-api",
       "io.grpc:grpc-context",
@@ -2087,6 +2146,8 @@
       "com.squareup.okhttp:okhttp",
       "com.squareup.okio:okio",
       "commons-codec:commons-codec",
+      "commons-io:commons-io",
+      "commons-net:commons-net",
       "io.grpc:grpc-android:aar",
       "io.grpc:grpc-api",
       "io.grpc:grpc-context",
