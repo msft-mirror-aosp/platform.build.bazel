@@ -153,15 +153,15 @@ gcs_archive(
 gcs_archive(
     name = "cts-arm64",
     build_file_content = _generic_build,
-    sha256 = "73ce001646b6d4ef3f574ce85a25efa781aae19d92486c20a07cbb543d9a1bd3",
-    url = "gs://emu-next-bazel/ab/git_26Q2-release/test_suites_arm64/15492250/android-cts.zip",
+    sha256 = "868ed00224b0e754e928c43299843c2fa3ef04e9d35f3b273c8efecc3186eccc",
+    url = "gs://emu-next-bazel/xts_releases/android-cts-17_r1-linux_x86-arm.zip",
 )
 
 gcs_archive(
     name = "cts-x86-64",
     build_file_content = _generic_build,
-    sha256 = "26657b87a654f7b6d45a4309518238862f5f643f7029ee1e34cd8fd8f35de4cc",
-    url = "gs://emu-next-bazel/ab/git_26Q2-release/test_suites_x86_64/15492250/android-cts.zip",
+    sha256 = "e3b784016da9d9fb6aa34eb98835028a5a88fe8e5a40584fd6558b621c7a6306",
+    url = "gs://emu-next-bazel/xts_releases/android-cts-17_r1-linux_x86-x86.zip",
 )
 
 gcs_archive(
@@ -176,6 +176,13 @@ gcs_archive(
     build_file_content = _generic_build,
     sha256 = "0d047961309c7956442ef9c7a6559e3fe8cbb952c7369622f08f899c9e881ce7",
     url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.5.zip",
+)
+
+gcs_archive(
+    name = "cts-verifier",
+    build_file_content = _generic_build,
+    sha256 = "a47bc094a90be4d05f081c5cc45a9f7fc3429c4ef3cabff440f429f64da68ab9",
+    url = "gs://emu-next-bazel/xts_releases/android-cts-verifier-17_r1-linux_x86-x86.zip",
 )
 
 gcs_archive(
