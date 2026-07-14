@@ -104,8 +104,8 @@ multisource_repo.file(
         "local_file": "@goldfish_build//utils:empty.zip",
     },
     goog = {
-        "sha256": "3bfd34ba02635d8ca8d48f4ed765fa9976fece0be783672a232cf9ec06f4ab8f",
-        "url": "gs://emu-next-bazel/fishtank/15638871/FISHTANK-sdk-repo-linux-emu-15638871.zip",
+        "sha256": "5c18db568fab30a16ac859200c3172cb78ae6319b4ec1323a0ebd180e9d0ec01",
+        "url": "gs://emu-next-bazel/fishtank/15853385/FISHTANK-sdk-repo-linux-emu-15853385.zip",
     },
 )
 multisource_repo.file(
@@ -114,8 +114,8 @@ multisource_repo.file(
         "local_file": "@goldfish_build//utils:empty.zip",
     },
     goog = {
-        "sha256": "bf29310b1fe1f7fc5bc1ecd11715ea879258f8de76545d14c165b4ee339f7958",
-        "url": "gs://emu-next-bazel/fishtank/15638871/internal/FISHTANK-sdk-repo-linux-emu-15638871.zip",
+        "sha256": "84691b31da3bcd717597f85cfc558e0d33128eb8b13d9530da61cfd50029ffe6",
+        "url": "gs://emu-next-bazel/fishtank/15853385/internal/FISHTANK-sdk-repo-linux-emu-15853385.zip",
     },
 )
 multisource_repo.file(
@@ -124,8 +124,8 @@ multisource_repo.file(
         "local_file": "@goldfish_build//utils:empty.zip",
     },
     goog = {
-        "sha256": "f7b930219dac758eb6fae0578b39e5049999a709f0053d0e18a456d3e229fc76",
-        "url": "gs://emu-next-bazel/fishtank/15638871/FISHTANK-sdk-repo-darwin_aarch64-emu-15638871.zip",
+        "sha256": "d8e3fbe763ef9b0090807d7683985b05a6746ccfb963b027087fb0dfbc8cfe05",
+        "url": "gs://emu-next-bazel/fishtank/15853385/FISHTANK-sdk-repo-darwin_aarch64-emu-15853385.zip",
     },
 )
 multisource_repo.file(
@@ -134,8 +134,8 @@ multisource_repo.file(
         "local_file": "@goldfish_build//utils:empty.zip",
     },
     goog = {
-        "sha256": "1b9c4d5fe5b6be4afbc3dac77ef3a277fd7c8acf41ba95c48887c50dba2329c5",
-        "url": "gs://emu-next-bazel/fishtank/15638871/FISHTANK-sdk-repo-windows-emu-15638871.zip",
+        "sha256": "d85e774b3780e69d47fbb3338714fee00aa40b39566e7308e87bed2faacfd182",
+        "url": "gs://emu-next-bazel/fishtank/15853385/FISHTANK-sdk-repo-windows-emu-15853385.zip",
     },
 )
 # END upload_fishtank
