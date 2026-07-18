@@ -226,3 +226,10 @@ gcs_archive(
     sha256 = "b9d44a3a568c038320fad22c4613aba1a3dfea6709666aa3c2405e92cafc21b0",
     url = "gs://emu-next-bazel/ab/git_26Q2-sts-release/test_suites_x86_64/15499126/android-sts.zip",
 )
+
+gcs_archive(
+    name = "emu-main-dev-linux-x64",
+    build_file_content = _generic_build,
+    sha256 = "c31045e20735355624a881f9b876c99661a9273069318e6c512b7963bc837ddb",
+    url = "gs://emu-next-bazel/ab/git_emu-main-dev/emulator-linux_x64_gfxstream/sdk-repo-linux-emulator-15888718.zip",
+)
