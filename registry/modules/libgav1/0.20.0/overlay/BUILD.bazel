@@ -1,0 +1,623 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    license_kinds = ["@rules_license//licenses/spdx:Apache-2.0"],
+    license_text = "LICENSE",
+)
+
+config_setting(
+    name = "x86_64",
+    constraint_values = [
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "arm64",
+    constraint_values = [
+        "@platforms//cpu:arm64",
+    ],
+)
+
+config_setting(
+    name = "windows_x86_64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+config_setting(
+    name = "windows_arm64",
+    constraint_values = [
+        "@platforms//os:windows",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+LIBGAV1_DEFINES = [
+    "LIBGAV1_MAX_BITDEPTH=10",
+    "LIBGAV1_THREADPOOL_USE_STD_MUTEX",
+    "LIBGAV1_ENABLE_LOGGING=0",
+]
+
+LIBGAV1_INCLUDES = [
+    ".",
+    "src",
+]
+
+LIBGAV1_COPTS = select({
+    ":windows_x86_64": [],
+    ":windows_arm64": [],
+    "//conditions:default": [
+        "-fno-asynchronous-unwind-tables",
+    ],
+})
+
+cc_library(
+    name = "common",
+    srcs = [
+        "src/dsp/constants.cc",
+        "src/utils/bit_reader.cc",
+        "src/utils/block_parameters_holder.cc",
+        "src/utils/constants.cc",
+        "src/utils/cpu.cc",
+        "src/utils/entropy_decoder.cc",
+        "src/utils/executor.cc",
+        "src/utils/logging.cc",
+        "src/utils/raw_bit_reader.cc",
+        "src/utils/segmentation.cc",
+        "src/utils/segmentation_map.cc",
+        "src/utils/threadpool.cc",
+    ],
+    hdrs = [
+        "src/dsp/arm/average_blend_neon.h",
+        "src/dsp/arm/cdef_neon.h",
+        "src/dsp/arm/common_neon.h",
+        "src/dsp/arm/convolve_neon.h",
+        "src/dsp/arm/distance_weighted_blend_neon.h",
+        "src/dsp/arm/film_grain_neon.h",
+        "src/dsp/arm/intra_edge_neon.h",
+        "src/dsp/arm/intrapred_cfl_neon.h",
+        "src/dsp/arm/intrapred_directional_neon.h",
+        "src/dsp/arm/intrapred_filter_neon.h",
+        "src/dsp/arm/intrapred_neon.h",
+        "src/dsp/arm/intrapred_smooth_neon.h",
+        "src/dsp/arm/inverse_transform_neon.h",
+        "src/dsp/arm/loop_filter_neon.h",
+        "src/dsp/arm/loop_restoration_neon.h",
+        "src/dsp/arm/mask_blend_neon.h",
+        "src/dsp/arm/motion_field_projection_neon.h",
+        "src/dsp/arm/motion_vector_search_neon.h",
+        "src/dsp/arm/obmc_neon.h",
+        "src/dsp/arm/super_res_neon.h",
+        "src/dsp/arm/warp_neon.h",
+        "src/dsp/arm/weight_mask_neon.h",
+        "src/dsp/average_blend.h",
+        "src/dsp/cdef.h",
+        "src/dsp/cdef.inc",
+        "src/dsp/common.h",
+        "src/dsp/constants.h",
+        "src/dsp/convolve.h",
+        "src/dsp/convolve.inc",
+        "src/dsp/distance_weighted_blend.h",
+        "src/dsp/dsp.h",
+        "src/dsp/film_grain.h",
+        "src/dsp/film_grain_common.h",
+        "src/dsp/intra_edge.h",
+        "src/dsp/intrapred.h",
+        "src/dsp/intrapred_cfl.h",
+        "src/dsp/intrapred_directional.h",
+        "src/dsp/intrapred_filter.h",
+        "src/dsp/intrapred_smooth.h",
+        "src/dsp/inverse_transform.h",
+        "src/dsp/inverse_transform.inc",
+        "src/dsp/loop_filter.h",
+        "src/dsp/loop_restoration.h",
+        "src/dsp/mask_blend.h",
+        "src/dsp/motion_field_projection.h",
+        "src/dsp/motion_vector_search.h",
+        "src/dsp/obmc.h",
+        "src/dsp/obmc.inc",
+        "src/dsp/smooth_weights.inc",
+        "src/dsp/super_res.h",
+        "src/dsp/warp.h",
+        "src/dsp/weight_mask.h",
+        "src/dsp/x86/average_blend_sse4.h",
+        "src/dsp/x86/cdef_avx2.h",
+        "src/dsp/x86/cdef_sse4.h",
+        "src/dsp/x86/common_avx2.h",
+        "src/dsp/x86/common_avx2.inc",
+        "src/dsp/x86/common_sse4.h",
+        "src/dsp/x86/common_sse4.inc",
+        "src/dsp/x86/convolve_avx2.h",
+        "src/dsp/x86/convolve_sse4.h",
+        "src/dsp/x86/convolve_sse4.inc",
+        "src/dsp/x86/distance_weighted_blend_sse4.h",
+        "src/dsp/x86/film_grain_sse4.h",
+        "src/dsp/x86/intra_edge_sse4.h",
+        "src/dsp/x86/intrapred_cfl_sse4.h",
+        "src/dsp/x86/intrapred_directional_sse4.h",
+        "src/dsp/x86/intrapred_filter_sse4.h",
+        "src/dsp/x86/intrapred_smooth_sse4.h",
+        "src/dsp/x86/intrapred_sse4.h",
+        "src/dsp/x86/inverse_transform_sse4.h",
+        "src/dsp/x86/loop_filter_sse4.h",
+        "src/dsp/x86/loop_restoration_avx2.h",
+        "src/dsp/x86/loop_restoration_sse4.h",
+        "src/dsp/x86/mask_blend_sse4.h",
+        "src/dsp/x86/motion_field_projection_sse4.h",
+        "src/dsp/x86/motion_vector_search_sse4.h",
+        "src/dsp/x86/obmc_sse4.h",
+        "src/dsp/x86/super_res_sse4.h",
+        "src/dsp/x86/transpose_sse4.h",
+        "src/dsp/x86/warp_sse4.h",
+        "src/dsp/x86/weight_mask_sse4.h",
+        "src/utils/array_2d.h",
+        "src/utils/bit_mask_set.h",
+        "src/utils/bit_reader.h",
+        "src/utils/block_parameters_holder.h",
+        "src/utils/blocking_counter.h",
+        "src/utils/common.h",
+        "src/utils/compiler_attributes.h",
+        "src/utils/constants.h",
+        "src/utils/cpu.h",
+        "src/utils/dynamic_buffer.h",
+        "src/utils/entropy_decoder.h",
+        "src/utils/executor.h",
+        "src/utils/logging.h",
+        "src/utils/memory.h",
+        "src/utils/queue.h",
+        "src/utils/raw_bit_reader.h",
+        "src/utils/reference_info.h",
+        "src/utils/segmentation.h",
+        "src/utils/segmentation_map.h",
+        "src/utils/stack.h",
+        "src/utils/threadpool.h",
+        "src/utils/types.h",
+        "src/utils/unbounded_queue.h",
+        "src/utils/vector.h",
+    ],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+)
+
+cc_library(
+    name = "dsp_sse4",
+    srcs = [
+        "src/dsp/x86/average_blend_sse4.cc",
+        "src/dsp/x86/cdef_sse4.cc",
+        "src/dsp/x86/convolve_sse4.cc",
+        "src/dsp/x86/distance_weighted_blend_sse4.cc",
+        "src/dsp/x86/film_grain_sse4.cc",
+        "src/dsp/x86/intra_edge_sse4.cc",
+        "src/dsp/x86/intrapred_cfl_sse4.cc",
+        "src/dsp/x86/intrapred_directional_sse4.cc",
+        "src/dsp/x86/intrapred_filter_sse4.cc",
+        "src/dsp/x86/intrapred_smooth_sse4.cc",
+        "src/dsp/x86/intrapred_sse4.cc",
+        "src/dsp/x86/inverse_transform_sse4.cc",
+        "src/dsp/x86/loop_filter_sse4.cc",
+        "src/dsp/x86/loop_restoration_10bit_sse4.cc",
+        "src/dsp/x86/loop_restoration_sse4.cc",
+        "src/dsp/x86/mask_blend_sse4.cc",
+        "src/dsp/x86/motion_field_projection_sse4.cc",
+        "src/dsp/x86/motion_vector_search_sse4.cc",
+        "src/dsp/x86/obmc_sse4.cc",
+        "src/dsp/x86/super_res_sse4.cc",
+        "src/dsp/x86/warp_sse4.cc",
+        "src/dsp/x86/weight_mask_sse4.cc",
+    ],
+    copts = select({
+        ":windows_x86_64": [],
+        ":x86_64": [
+            "-msse4.1",
+            "-fno-asynchronous-unwind-tables",
+        ],
+        "//conditions:default": [
+            "-fno-asynchronous-unwind-tables",
+        ],
+    }),
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [":common"],
+)
+
+cc_library(
+    name = "dsp_avx2",
+    srcs = [
+        "src/dsp/x86/cdef_avx2.cc",
+        "src/dsp/x86/convolve_avx2.cc",
+        "src/dsp/x86/loop_restoration_10bit_avx2.cc",
+        "src/dsp/x86/loop_restoration_avx2.cc",
+    ],
+    copts = select({
+        ":windows_x86_64": ["/arch:AVX2"],
+        ":x86_64": [
+            "-mavx2",
+            "-fno-asynchronous-unwind-tables",
+        ],
+        "//conditions:default": [
+            "-fno-asynchronous-unwind-tables",
+        ],
+    }),
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [":common"],
+)
+
+cc_library(
+    name = "dsp_neon",
+    srcs = [
+        "src/dsp/arm/average_blend_neon.cc",
+        "src/dsp/arm/cdef_neon.cc",
+        "src/dsp/arm/convolve_10bit_neon.cc",
+        "src/dsp/arm/convolve_neon.cc",
+        "src/dsp/arm/distance_weighted_blend_neon.cc",
+        "src/dsp/arm/film_grain_neon.cc",
+        "src/dsp/arm/intra_edge_neon.cc",
+        "src/dsp/arm/intrapred_cfl_neon.cc",
+        "src/dsp/arm/intrapred_directional_neon.cc",
+        "src/dsp/arm/intrapred_filter_neon.cc",
+        "src/dsp/arm/intrapred_neon.cc",
+        "src/dsp/arm/intrapred_smooth_neon.cc",
+        "src/dsp/arm/inverse_transform_10bit_neon.cc",
+        "src/dsp/arm/inverse_transform_neon.cc",
+        "src/dsp/arm/loop_filter_10bit_neon.cc",
+        "src/dsp/arm/loop_filter_neon.cc",
+        "src/dsp/arm/loop_restoration_10bit_neon.cc",
+        "src/dsp/arm/loop_restoration_neon.cc",
+        "src/dsp/arm/mask_blend_neon.cc",
+        "src/dsp/arm/motion_field_projection_neon.cc",
+        "src/dsp/arm/motion_vector_search_neon.cc",
+        "src/dsp/arm/obmc_neon.cc",
+        "src/dsp/arm/super_res_neon.cc",
+        "src/dsp/arm/super_res_neon.h",
+        "src/dsp/arm/warp_neon.cc",
+        "src/dsp/arm/weight_mask_neon.cc",
+    ],
+    copts = select({
+        ":windows_arm64": [],
+        ":arm64": [
+            "-fno-asynchronous-unwind-tables",
+        ],
+        "//conditions:default": [
+            "-fno-asynchronous-unwind-tables",
+        ],
+    }),
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [":common"],
+)
+
+cc_library(
+    name = "libgav1",
+    srcs = [
+        "src/buffer_pool.cc",
+        "src/decoder.cc",
+        "src/decoder_impl.cc",
+        "src/decoder_impl.h",
+        "src/decoder_settings.cc",
+        "src/dsp/average_blend.cc",
+        "src/dsp/cdef.cc",
+        "src/dsp/convolve.cc",
+        "src/dsp/distance_weighted_blend.cc",
+        "src/dsp/dsp.cc",
+        "src/dsp/film_grain.cc",
+        "src/dsp/intra_edge.cc",
+        "src/dsp/intrapred.cc",
+        "src/dsp/intrapred_cfl.cc",
+        "src/dsp/intrapred_directional.cc",
+        "src/dsp/intrapred_filter.cc",
+        "src/dsp/intrapred_smooth.cc",
+        "src/dsp/inverse_transform.cc",
+        "src/dsp/loop_filter.cc",
+        "src/dsp/loop_restoration.cc",
+        "src/dsp/mask_blend.cc",
+        "src/dsp/motion_field_projection.cc",
+        "src/dsp/motion_vector_search.cc",
+        "src/dsp/obmc.cc",
+        "src/dsp/super_res.cc",
+        "src/dsp/warp.cc",
+        "src/dsp/weight_mask.cc",
+        "src/film_grain.cc",
+        "src/film_grain.h",
+        "src/frame_buffer.cc",
+        "src/frame_buffer_utils.h",
+        "src/frame_scratch_buffer.h",
+        "src/inter_intra_masks.inc",
+        "src/internal_frame_buffer_list.cc",
+        "src/internal_frame_buffer_list.h",
+        "src/loop_restoration_info.cc",
+        "src/loop_restoration_info.h",
+        "src/motion_vector.cc",
+        "src/motion_vector.h",
+        "src/obu_parser.cc",
+        "src/post_filter.h",
+        "src/post_filter/cdef.cc",
+        "src/post_filter/deblock.cc",
+        "src/post_filter/deblock_thresholds.inc",
+        "src/post_filter/loop_restoration.cc",
+        "src/post_filter/post_filter.cc",
+        "src/post_filter/super_res.cc",
+        "src/prediction_mask.cc",
+        "src/prediction_mask.h",
+        "src/quantizer.cc",
+        "src/quantizer.h",
+        "src/quantizer_tables.inc",
+        "src/reconstruction.cc",
+        "src/reconstruction.h",
+        "src/residual_buffer_pool.cc",
+        "src/residual_buffer_pool.h",
+        "src/scan_tables.inc",
+        "src/status_code.cc",
+        "src/symbol_decoder_context.cc",
+        "src/symbol_decoder_context.h",
+        "src/symbol_decoder_context_cdfs.inc",
+        "src/threading_strategy.cc",
+        "src/threading_strategy.h",
+        "src/tile.h",
+        "src/tile/bitstream/mode_info.cc",
+        "src/tile/bitstream/palette.cc",
+        "src/tile/bitstream/partition.cc",
+        "src/tile/bitstream/transform_size.cc",
+        "src/tile/prediction.cc",
+        "src/tile/tile.cc",
+        "src/tile_scratch_buffer.h",
+        "src/version.cc",
+        "src/warp_prediction.cc",
+        "src/warp_prediction.h",
+        "src/yuv_buffer.cc",
+        "src/yuv_buffer.h",
+    ],
+    hdrs = [
+        "src/buffer_pool.h",
+        "src/decoder_state.h",
+        "src/gav1/decoder.h",
+        "src/gav1/decoder_buffer.h",
+        "src/gav1/decoder_settings.h",
+        "src/gav1/frame_buffer.h",
+        "src/gav1/status_code.h",
+        "src/gav1/symbol_visibility.h",
+        "src/gav1/version.h",
+        "src/obu_parser.h",
+    ],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    include_prefix = "third_party/libgav1",
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":common",
+        ":dsp_avx2",
+        ":dsp_neon",
+        ":dsp_sse4",
+    ],
+)
+
+cc_library(
+    name = "tests_utils",
+    srcs = [
+        "tests/block_utils.cc",
+        "tests/third_party/libvpx/md5_utils.cc",
+        "tests/utils.cc",
+    ],
+    hdrs = [
+        "tests/block_utils.h",
+        "tests/third_party/libvpx/acm_random.h",
+        "tests/third_party/libvpx/md5_helper.h",
+        "tests/third_party/libvpx/md5_utils.h",
+        "tests/utils.h",
+    ],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/base",
+        "@abseil-cpp//absl/base:config",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/time",
+        "@googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "array_2d_test",
+    srcs = ["src/utils/array_2d_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "block_parameters_holder_test",
+    srcs = ["src/utils/block_parameters_holder_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "blocking_counter_test",
+    srcs = ["src/utils/blocking_counter_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@abseil-cpp//absl/time",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "cpu_test",
+    srcs = ["src/utils/cpu_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "queue_test",
+    srcs = ["src/utils/queue_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "stack_test",
+    srcs = ["src/utils/stack_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "threadpool_test",
+    srcs = ["src/utils/threadpool_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "unbounded_queue_test",
+    srcs = ["src/utils/unbounded_queue_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "vector_test",
+    srcs = ["src/utils/vector_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "average_blend_test",
+    srcs = ["src/dsp/average_blend_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        ":tests_utils",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/time",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "buffer_pool_test",
+    srcs = ["src/buffer_pool_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "cdef_test",
+    srcs = ["src/dsp/cdef_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        ":tests_utils",
+        "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/time",
+        "@googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "decoder_buffer_test",
+    srcs = ["src/decoder_buffer_test.cc"],
+    copts = LIBGAV1_COPTS,
+    defines = LIBGAV1_DEFINES,
+    includes = LIBGAV1_INCLUDES,
+    deps = [
+        ":libgav1",
+        "@abseil-cpp//absl/synchronization",
+        "@googletest//:gtest_main",
+    ],
+)
+
+test_suite(
+    name = "libgav1_tests",
+    tests = [
+        ":array_2d_test",
+        ":average_blend_test",
+        ":block_parameters_holder_test",
+        ":blocking_counter_test",
+        ":buffer_pool_test",
+        ":cdef_test",
+        ":cpu_test",
+        ":decoder_buffer_test",
+        ":queue_test",
+        ":stack_test",
+        ":threadpool_test",
+        ":unbounded_queue_test",
+        ":vector_test",
+    ],
+)

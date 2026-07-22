@@ -1,0 +1,12 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/rnnoise/rnnoise/+archive/70f1d256acd4b34a572f999a05c87bf00b67730d.tar.gz",
+    "integrity": "sha256-9h7gs/TEzTNzA+AD0zM1fF6vJe9ddadCEJ7lnpoKOTI=",
+    "strip_prefix": "rnnoise-70f1d256acd4b34a572f999a05c87bf00b67730d",
+    "overlay": {
+        "BUILD.bazel": "sha256-UIKqHP1WrdWA9wCx1wp7iQPuB20QJQ1Ba8bSTvMRqwI=",
+        "MODULE.bazel": "sha256-agCxQlEfqAsrd3TWN5FY/utI2x40d0z1cafJFB9DABo=",
+        "src/rnn_vad_weights.cc": "sha256-NuALxcgvo7LiOAOm1RA92hzL0jRmYGIwA9QCwvt5Mkw=",
+        "src/rnn_vad_weights.h": "sha256-OiyRFTgbHQNjznOSfO6c6Z3M/zQFhX5G5xC71Si4b4U=",
+        "src/rnn_activations.h": "sha256-uoV1KUlM6yConQH+frT4RtL78uj/Qrs4lBPTpZNx25I="
+    }
+}

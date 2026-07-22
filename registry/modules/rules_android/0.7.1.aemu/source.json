@@ -4,6 +4,7 @@
     "url": "https://github.com/bazelbuild/rules_android/releases/download/v0.7.1/rules_android-v0.7.1.tar.gz",
     "patch_strip": 1,
     "patches": {
-        "support-multiple-os-paths.patch": "sha256-UQtXwiky+ZuI9jvcsHl5GVsgD7FdBu9xDwfW/bK162E="
+        "support-multiple-os-paths.patch": "sha256-UQtXwiky+ZuI9jvcsHl5GVsgD7FdBu9xDwfW/bK162E=",
+        "fix-javalite-aspect-propagation.patch": "sha256-q1Nkrhw3ja7Bz19sw56u/iNU5zZhqyN+AuaVEh91djQ="
     }
 }

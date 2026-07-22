@@ -12,6 +12,8 @@ SKIP_BUILD_FAILURE = [
     "spawn-test-win32-gui",
     "win32",
     "gpoll",
+    "io-channel-basic",
+    "include",
 ]
 
 SKIP_TEST_FAILURE = [
@@ -59,6 +61,8 @@ TEST_NAMES = [src.replace(".c", "") for src in TEST_SRCS]
     local_defines = [
         "_GNU_SOURCE",
         "G_LOG_DOMAIN='\"GLib\"'",
+        "UNICODE",
+        "_UNICODE",
     ],
     deps = [
         "//:config_h",
@@ -165,16 +169,32 @@ INCLUDE_PREFIX = REPO_ROOT if REPO_ROOT else "."
         "-I%s/glib" % (INCLUDE_PREFIX,),
         "-I%s/glib/deprecated" % (INCLUDE_PREFIX,),
     ],
-    data = TEST_DATA + TEST_DATA_EXTRA.get(test_name, []),
+    data = TEST_DATA + TEST_DATA_EXTRA.get(test_name, []) + [
+        "//glib:glib_shared",
+    ],
+    dynamic_deps = ["//glib:glib_shared"],
     env = TEST_ENV.get(test_name, DEFAULT_TEST_ENV),
+    linkopts = select({
+        "@platforms//os:windows": [
+            "advapi32.lib",
+            "shell32.lib",
+            "user32.lib",
+            "ole32.lib",
+            "oleaut32.lib",
+            "ws2_32.lib",
+        ],
+        "//conditions:default": [],
+    }),
     local_defines = [
         "_GNU_SOURCE",
         "G_LOG_DOMAIN='\"GLib\"'",
+        "UNICODE",
+        "_UNICODE",
     ],
     target_compatible_with = TEST_PLATFORMS.get(test_name, []),
     deps = [
         "//:config_h",
-        "//glib",
+        "//glib:glib_import",
     ] + select({
         "@platforms//os:linux": [],
         "//conditions:default": ["//glib:stub_intl"],

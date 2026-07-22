@@ -1,0 +1,9 @@
+diff -Naur a/rules/dex_toolchains.bzl b/rules/dex_toolchains.bzl
+--- a/rules/dex_toolchains.bzl	2026-06-24 17:21:12.748723158 -0700
++++ b/rules/dex_toolchains.bzl	2026-06-24 17:21:14.837864620 -0700
+@@ -14,4 +14,5 @@
+ """Toolchain types to traverse in dex_desugar_aspect."""
+ 
+ dex_toolchains = [
++    "@com_google_protobuf//bazel/private:javalite_toolchain_type",
+ ]

@@ -1,0 +1,11 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/libyuv/libyuv/+archive/d23308a2a7442be8e559b1b471862fd7588d6a57.tar.gz",
+    "integrity": "sha256-s1/o3EYITsfk+VlfMxiJE5oChlmaYLGKuEQV3ZvNQZE=",
+    "strip_prefix": "",
+    "overlay": {
+        "BUILD.bazel": "sha256-Ta/ikpOsYx1tRr1wF9XVlVwjxJCKcguRvA5rwe8sjGg=",
+        "MODULE.bazel": "sha256-tm1icBp03WjW9hymxFiDUd3G3pT8fAMD8S1fmfjAyUo=",
+        "unit_test/BUILD.bazel": "sha256-vLJk0fySK59D4ErWB3mTMODI6TB9SNJz2PZYurbjsHU=",
+        "unit_test/unit_test/unit_test.h": "sha256-cdb5+VhyUBfr4YrTZ2Z5xZ+eV7Xa5OMxuLE5nUMraDA="
+    }
+}
