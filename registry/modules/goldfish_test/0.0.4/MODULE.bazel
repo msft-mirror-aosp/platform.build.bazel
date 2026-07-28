@@ -45,6 +45,7 @@ maven.install(
         # the lock_file if you change this list.
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
+        "androidx.test.ext:junit:1.3.0",
         "androidx.test.services:storage:1.6.0",
         "androidx.test.uiautomator:uiautomator:2.3.0",
         "com.github.oshi:oshi-core:6.10.0",
