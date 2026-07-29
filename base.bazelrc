@@ -110,6 +110,7 @@ build:dynamic --strategy=ExtractBreakpadSymbols=dynamic
 
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
+startup:ci --experimental_remote_repo_contents_cache
 common:ci --lockfile_mode=error
 common:ci --remote_build_event_upload=all
 common:ci --experimental_collect_system_network_usage
@@ -120,6 +121,12 @@ build:ci --config=hermetic
 build:ci --bes_timeout=600s
 build:ci --experimental_enable_execution_graph_log
 build:ci --experimental_execution_graph_log_dep_type=all
+
+# Reduce log spam
+build:ci --ui_event_filters=-info
+build:ci --ui_event_filters=-debug
+build:ci --noshow_progress
+build:ci --noshow_loading_progress
 
 
 # RBE-based cross-platform and multi-platform build configurations

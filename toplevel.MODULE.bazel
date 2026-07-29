@@ -35,8 +35,8 @@ bazel_dep(name = "breakpad", version = "0.0.1")
 bazel_dep(name = "pkg-config", version = "0.29.2")
 bazel_dep(name = "ninja", version = "1.12.1.bcr.1")
 bazel_dep(name = "boringssl", version = "0.20251124.0")
-bazel_dep(name = "abseil-cpp", version = "20260107.0")
-bazel_dep(name = "tink_cc", version = "2.5.0.aemu")
+bazel_dep(name = "abseil-cpp", version = "20260526.0")
+bazel_dep(name = "tink_cc", version = "2.7.0")
 
 # repo_name override needed by @grpc
 bazel_dep(name = "protoc-gen-validate", version = "1.3.0", repo_name = "com_envoyproxy_protoc_gen_validate")
@@ -44,8 +44,8 @@ bazel_dep(name = "protoc-gen-validate", version = "1.3.0", repo_name = "com_envo
 # Dep of GRPC but override here
 # Use local registry version to address https://github.com/bazelbuild/bazel/issues/26922
 bazel_dep(name = "c-ares", version = "1.34.6")
-bazel_dep(name = "grpc-java", version = "1.78.0")
-bazel_dep(name = "grpc", version = "1.78.0.aemu")
+bazel_dep(name = "grpc-java", version = "1.82.0")
+bazel_dep(name = "grpc", version = "1.81.1.aemu")
 
 # These are only needed for AMC
 # TODO(whollins): get them from @qemu module instead somehow
@@ -57,13 +57,14 @@ bazel_dep(name = "pixman", version = "0.0.1")
 bazel_dep(name = "aemu", version = "0.0.2")
 bazel_dep(name = "rutabaga_gfx", version = "0.0.1")
 bazel_dep(name = "libpng", version = "0.0.1")
-bazel_dep(name = "libvpx", version = "1.7.0")
-bazel_dep(name = "libvpx_test_data", version = "0.0.1")
-bazel_dep(name = "nasm", version = "2.16.03.bcr.2")
-bazel_dep(name = "rules_nasm", version = "0.4.0")
-
-libvpx_test_data = use_extension("@libvpx_test_data//build/bazel/extensions:libvpx_test_data.bzl", "libvpx_test_data")
-use_repo(libvpx_test_data, "libvpx_test_vectors")
+bazel_dep(name = "pffft", version = "1.1.0")
+bazel_dep(name = "rnnoise", version = "0.2.0")
+bazel_dep(name = "libgav1", version = "0.20.0")
+bazel_dep(name = "dav1d", version = "1.5.3-58-g14c73c7d")
+bazel_dep(name = "libsrtp2", version = "2.3.0")
+bazel_dep(name = "libyuv", version = "1948")
+bazel_dep(name = "nasm", version = "2.16.03.bcr.3")
+bazel_dep(name = "rules_nasm", version = "0.5.0")
 
 register_toolchains("//build/bazel/toolchains:nasm_toolchain")
 
@@ -115,10 +116,12 @@ maven.install(
         "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
         "com.squareup.okhttp:okhttp:2.7.5",
         "com.squareup.okio:okio:2.10.0",
-        "io.grpc:grpc-okhttp:1.75.0",
-        "io.grpc:grpc-core:1.75.0",
-        "io.grpc:grpc-android:1.75.0",
-        "io.grpc:grpc-stub:1.75.0",
+        "io.grpc:grpc-okhttp:1.82.0",
+        "io.grpc:grpc-core:1.82.0",
+        "io.grpc:grpc-android:1.82.0",
+        "io.grpc:grpc-stub:1.82.0",
+        "io.grpc:grpc-protobuf:1.82.0",
+        "io.grpc:grpc-protobuf-lite:1.82.0",
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
     ],

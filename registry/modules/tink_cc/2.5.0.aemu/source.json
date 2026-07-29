@@ -1,9 +1,0 @@
-{
-    "integrity": "sha256-Oi6PX7ZkkPgC5Se1g6bbQcOrd8rArDLXYWvl2UpgQoY=",
-    "strip_prefix": "tink-cc-2.5.0",
-    "url": "https://github.com/tink-crypto/tink-cc/archive/refs/tags/v2.5.0.tar.gz",
-    "patch_strip": 1,
-    "patches": {
-        "fix_boringssl_deleters.patch": "sha256-MZkn+GygZEjxc/EcPyeKpc9c61+AemSnnhGhHDOGiKk="
-    }
-}

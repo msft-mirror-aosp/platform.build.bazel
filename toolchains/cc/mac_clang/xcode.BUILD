@@ -58,6 +58,7 @@ ALL_FRAMEWORKS = [
     "CoreGraphics",
     "CoreImage",
     "CoreLocation",
+    "CoreMIDI",
     "CoreMedia",
     "CoreServices",
     "CoreText",
@@ -75,6 +76,7 @@ ALL_FRAMEWORKS = [
     "Security",
     "Symbols",
     "SystemConfiguration",
+    "UniformTypeIdentifiers",
     "VideoToolbox",
     "vmnet",
 ]

@@ -1,0 +1,71 @@
+diff --git src/closures.c src/closures.c
+--- src/closures.c
++++ src/closures.c
+@@ -423,7 +423,9 @@
+ #include <unistd.h>
+ #endif
+ #include <string.h>
+-#include <stdio.h>
++#ifndef _WIN32
++#include <stdio.h>
++#endif
+ #if !defined(_WIN32)
+ #ifdef HAVE_MNTENT
+ #include <mntent.h>
+diff --git src/dlmalloc.c src/dlmalloc.c
+--- src/dlmalloc.c
++++ src/dlmalloc.c
+@@ -1165,7 +1165,9 @@
+ #pragma warning( disable : 4146 ) /* no "unsigned" warnings */
+ #endif /* _MSC_VER */
+ 
++#ifndef _WIN32
+ #include <stdio.h>       /* for printing in malloc_stats */
++#endif
+ 
+ #ifndef LACKS_ERRNO_H
+ #include <errno.h>       /* for MALLOC_FAILURE_ACTION */
+@@ -2931,6 +2933,7 @@
+ }
+ #endif /* !NO_MALLINFO */
+ 
++#ifndef _WIN32
+ static void internal_malloc_stats(mstate m) {
+   if (!PREACTION(m)) {
+     size_t maxfp = 0;
+@@ -2961,6 +2964,7 @@
+     POSTACTION(m);
+   }
+ }
++#endif
+ 
+ /* ----------------------- Operations on smallbins ----------------------- */
+ 
+@@ -4457,9 +4461,11 @@
+ }
+ #endif /* NO_MALLINFO */
+ 
++#ifndef _WIN32
+ void dlmalloc_stats(void) {
+   internal_malloc_stats(gm);
+ }
++#endif
+ 
+ size_t dlmalloc_usable_size(void* mem) {
+   if (mem != 0) {
+@@ -4853,6 +4859,7 @@
+   return result;
+ }
+ 
++#ifndef _WIN32
+ void mspace_malloc_stats(mspace msp) {
+   mstate ms = (mstate)msp;
+   if (ok_magic(ms)) {
+@@ -4861,6 +4868,7 @@
+     USAGE_ERROR_ACTION(ms,ms);
+   }
+ }
++#endif
+ 
+ size_t mspace_footprint(mspace msp) {
+   size_t result;

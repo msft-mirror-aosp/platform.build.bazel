@@ -32,7 +32,7 @@ bazel_dep(name = "rules_proto", version = "7.1.0")
 
 # Note that the protobuf version must be compatible (the same) as the one used
 # by rules_android (currently used by @goldfish)
-bazel_dep(name = "protobuf", version = "33.4")
+bazel_dep(name = "protobuf", version = "35.1")
 bazel_dep(name = "with_cfg.bzl", version = "0.14.1")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")

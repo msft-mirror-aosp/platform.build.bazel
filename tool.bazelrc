@@ -1,5 +1,11 @@
 # Bazel tool configs
-# See also build/bazel/platforms/BUILD.bazel for target-platform-specific flags.
+
+# WARNING: DO NOT set os-dependent --fearure flags (e.g. build:linux --features=...)
+# in this file or any bazelrc file. Toggle them directly in features.bzl for corresponding
+# cc toolchains. See ag/40496765 for reason.
+#
+# Use build/bazel/platforms/BUILD.bazel for target-platform-specific flags, but be aware of:
+# https://bazel.build/reference/be/platforms-and-toolchains#platform_flags_repeated
 
 build --host_platform='@host_platform//:host'
 # info has to be overriden due to https://github.com/bazelbuild/bazel/issues/25145
@@ -44,5 +50,3 @@ build:clang-tidy --aspects @goldfish_build//rules:clang_tidy.bzl%clang_tidy_aspe
 build:clang-tidy --output_groups=tidy_fixes
 build:clang-tidy "--@goldfish_build//:clang_tidy_config=@goldfish//:clang_tidy_config"
 build:clang-tidy "--@goldfish_build//:clang_tidy_regex=s/m_//g"
-
-

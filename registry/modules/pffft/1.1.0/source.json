@@ -1,0 +1,9 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/pffft/pffft/+archive/e358d44ddf5fe5ca8d09b95dbe769c27a703d6ab.tar.gz",
+    "integrity": "sha256-+guPzyhLYqTM8oL78SLgvKFd7S19+JzdYi99PyCW9rs=",
+    "strip_prefix": "",
+    "overlay": {
+        "BUILD.bazel": "sha256-6J+rzytgm2RFkCe6lqDjB/2bYGlFX3Df1O7n1ECEnII=",
+        "MODULE.bazel": "sha256-e9prAkxEBFrXwsdczkwAHiDjwak7IHX2eVocNco1K44="
+    }
+}

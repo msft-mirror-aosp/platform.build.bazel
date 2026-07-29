@@ -1,0 +1,101 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    package_name = "libsrtp2",
+    copyright_notice = "Copyright (c) 2001-2017 Cisco Systems, Inc.",
+    license_kinds = ["@rules_license//licenses/spdx:BSD-3-Clause"],
+    license_text = "LICENSE",
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "generate_config_h",
+    srcs = ["config.h.bazel"],
+    outs = ["include/config.h"],
+    cmd = "cp $< $@",
+)
+
+cc_library(
+    name = "libsrtp2",
+    srcs = [
+        "crypto/cipher/aes.c",
+        "crypto/cipher/aes_icm.c",
+        "crypto/cipher/cipher.c",
+        "crypto/cipher/null_cipher.c",
+        "crypto/hash/auth.c",
+        "crypto/hash/hmac.c",
+        "crypto/hash/null_auth.c",
+        "crypto/hash/sha1.c",
+        "crypto/kernel/alloc.c",
+        "crypto/kernel/crypto_kernel.c",
+        "crypto/kernel/err.c",
+        "crypto/kernel/key.c",
+        "crypto/math/datatypes.c",
+        "crypto/math/stat.c",
+        "crypto/replay/rdb.c",
+        "crypto/replay/rdbx.c",
+        "crypto/replay/ut_sim.c",
+        "srtp/ekt.c",
+        "srtp/srtp.c",
+    ],
+    win_def_file = select({
+        "@platforms//os:windows": "srtp.def",
+        "//conditions:default": None,
+    }),
+    hdrs = glob([
+        "include/*.h",
+        "crypto/include/*.h",
+    ]) + [":generate_config_h"],
+    copts = [
+        "-Wno-unused-parameter",
+    ] + select({
+        "@platforms//os:windows": ["/W3"],
+        "//conditions:default": ["-Wno-implicit-function-declaration"],
+    }),
+    defines = ["HAVE_CONFIG_H"],
+    include_prefix = "third_party/libsrtp",
+    # buildifier: leave-alone
+    includes = [
+        "include",
+        "crypto/include",
+    ],
+    linkopts = select({
+        "@platforms//os:windows": ["-DEFAULTLIB:ws2_32.lib"],
+        "//conditions:default": [],
+    }),
+)
+
+# Test Apps
+cc_library(
+    name = "test_srtp_lib",
+    srcs = ["test/test_srtp.c"],
+    hdrs = [
+        "srtp/srtp.c",
+        "test/cutest.h",
+    ],
+    deps = [":libsrtp2"],
+)
+
+cc_test(
+    name = "test_srtp",
+    deps = [":test_srtp_lib"],
+)
+
+cc_test(
+    name = "srtp_driver",
+    srcs = [
+        "test/getopt_s.c",
+        "test/srtp_driver.c",
+        "test/util.c",
+        "test/util.h",
+    ],
+    args = ["-v"],
+    deps = [":libsrtp2"],
+)

@@ -68,6 +68,11 @@ cc_toolchain_import(
 
 cc_import(
     name = "libpulse",
+    hdrs = glob(
+        ["sysroot/usr/include/pulse/*.h"],
+        allow_empty = True,
+    ),
+    includes = ["sysroot/usr/include"],
     interface_library = ":sysroot/usr/lib/libpulse.so",
     shared_library = ":sysroot/usr/lib/libpulse.so.0.15.3",
     visibility = ["//visibility:public"],
@@ -75,6 +80,11 @@ cc_import(
 
 cc_import(
     name = "libasound",
+    hdrs = glob(
+        ["sysroot/usr/include/alsa/**/*.h"],
+        allow_empty = True,
+    ),
+    includes = ["sysroot/usr/include"],
     interface_library = ":sysroot/usr/lib/libasound.so",
     shared_library = ":sysroot/usr/lib/libasound.so.2.0.0",
     visibility = ["//visibility:public"],

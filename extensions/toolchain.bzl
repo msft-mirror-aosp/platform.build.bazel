@@ -74,6 +74,12 @@ def _toolchain_impl(ctx):
                 build_file = "//toolchains/cc/windows_clang:sdk.BUILD",
                 sdk_path = "C:\\Program Files (x86)\\Windows Kits\\10",
             )
+            overlay_repository(
+                name = "dism_adk",
+                path = "C:\\Program Files (x86)\\Windows Kits\\10\\Assessment and Deployment Kit\\Deployment Tools\\SDKs\\DismApi",
+                not_found_ok = True,
+                overlay_files = {"BUILD.bazel": "//toolchains/cc/windows_clang:dism_adk.BUILD"},
+            )
         else:
             # dummy
             overlay_repository(
@@ -87,6 +93,17 @@ def _toolchain_impl(ctx):
                 path = "build/bazel/no-such-dir",
                 not_found_ok = True,
                 overlay_files = {"BUILD.bazel": "//toolchains/cc/windows_clang:sdk.BUILD"},
+            )
+            gcs_archive(
+                name = "dism_adk",
+                build_file = "//toolchains/cc/windows_clang:dism_adk.BUILD",
+                sha256 = "f180fe513c09a75b813dffbadb69fbd911e88f9d648f686d4c868b90a3b7ae77",
+                url = "gs://emu-next-bazel/hermetic-msvc/windows_11_adk_dismapi_10.1.26100.2454.zip",
+                # Bug: 523435084, fix path names in dismapi
+                rename_files = {
+                    "Include\\dismapi.h": "Include/dismapi.h",
+                    "Lib\\amd64\\dismapi.lib": "Lib/amd64/dismapi.lib",
+                },
             )
 
         if ctx.os.name.lower().startswith("mac") and ctx.getenv("CC_ALLOW_HOST_SDK", "1") in ("1", "true"):

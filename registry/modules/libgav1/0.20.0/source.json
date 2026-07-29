@@ -1,0 +1,9 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/libgav1/libgav1/+archive/66ac17620652635392f6ab24065c77b035e281c9.tar.gz",
+    "integrity": "sha256-6hC9rupaD9kKFkbK5feOFEbs4lhkAEa63hp0lYa8uFA=",
+    "strip_prefix": "",
+    "overlay": {
+        "BUILD.bazel": "sha256-fz7mfbIsCVn7vTJXqqkaP9hjp/7FVsnNZ7O/N+6kwXk=",
+        "MODULE.bazel": "sha256-Ir+qatscAAPspltrgqucN5tHnIrbE2Lf3hdSZgR56a4="
+    }
+}

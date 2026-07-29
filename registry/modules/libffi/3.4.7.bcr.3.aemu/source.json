@@ -3,9 +3,13 @@
     "integrity": "sha256-E4YH3uJovezzdK35FEwA6DnjhUH3XySh/PGLeP2kiy0=",
     "strip_prefix": "libffi-3.4.7",
     "overlay": {
-        "BUILD.bazel": "sha256-qhwW+6dvtl8mufiCPMAZI3UFRPvjxcSu5WF/Y7Xtu2A=",
+        "BUILD.bazel": "sha256-hEmUxN3jJup4OFUmFR52Un0zV08pU90M1X7q3TYURT8=",
         "MODULE.bazel": "sha256-KqoOMmaQAqJv/kIemJE+1w+l7iHDb8UdLVEFOl7QdCA=",
-        "fficonfig.h.in": "sha256-6Hq6WAc38lHcHvZLMLNybMgP1fPTo679V9qYjxohxqY=",
-        "libffi.bzl": "sha256-Kzczj+HATmjjWvg6YSNRVshzZH6RrRUZA/l2DzEQuxs="
+        "fficonfig.h.in": "sha256-Cf6vxX1mdV52LxxK4IjJc/iSvQqbcgLyhC7DWCdotig=",
+        "libffi.bzl": "sha256-o4CvQr+a6pwr2KQPI+c1ifKcpE71xx48ZVlaHKXCnyg="
+    },
+    "patch_strip": 0,
+    "patches": {
+        "ucrt_comdat_collisions.patch": "sha256-ZZcK4ONJdwmEIHMEoM7Ag+cHsti5nX4uLMIHtvcrQHY="
     }
 }

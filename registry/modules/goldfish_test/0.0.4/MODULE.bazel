@@ -43,22 +43,24 @@ maven.install(
     artifacts = [
         # Rerun REPIN=1 bazel run @maven//:pin, and update
         # the lock_file if you change this list.
-        "com.google.api.grpc:grpc-google-cloud-pubsub-v1:1.125.0",
-        "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
-        "com.google.testparameterinjector:test-parameter-injector:1.21",
-        "com.squareup.okhttp:okhttp:2.7.5",
-        "com.squareup.okio:okio:2.10.0",
-        "io.grpc:grpc-core:1.75.0",
-        "io.grpc:grpc-android:1.75.0",
-        "io.grpc:grpc-stub:1.75.0",
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
         "androidx.test.services:storage:1.6.0",
         "androidx.test.uiautomator:uiautomator:2.3.0",
         "com.github.oshi:oshi-core:6.10.0",
+        "com.google.api.grpc:grpc-google-cloud-pubsub-v1:1.125.0",
+        "com.google.api.grpc:proto-google-cloud-pubsub-v1:1.125.0",
+        "com.google.testparameterinjector:test-parameter-injector:1.21",
+        "com.squareup.okhttp:okhttp:2.7.5",
+        "com.squareup.okio:okio:2.10.0",
+        "commons-net:commons-net:3.13.0",
+        "io.grpc:grpc-core:1.75.0",
+        "io.grpc:grpc-android:1.75.0",
+        "io.grpc:grpc-stub:1.75.0",
         "junit:junit:4.13.2",
         "net.java.dev.jna:jna:5.14.0",
         "net.java.dev.jna:jna-platform:5.14.0",
+        "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0",
     ],
     lock_file = ":maven_install.json",
     repositories = [
@@ -100,6 +102,7 @@ gcs_file(
 gcs_archive(
     name = "tradefed",
     build_file = "//deps/tradefed:tradefed.BUILD",
+    patches = ["//deps/tradefed:patches/prepend-classpath.patch"],
     sha256 = "3f94672c0953e934e623953b3aa3fdc15fa3c4d1fcaf1a45bc33308c3bfeb990",
     url = "gs://emu-next-bazel/ab/tradefed/tradefed/14843258/tradefed.zip",
 )
@@ -115,15 +118,22 @@ filegroup(
 gcs_archive(
     name = "android16k-arm64-v8a",
     build_file_content = _generic_build,
-    sha256 = "767bc55ae7883ca62c87dd669bab6e8f610de97e634496544be1ba24f2f31152",
-    url = "gs://emu-next-bazel/ab/git_26Q2-beta-release/sdk_gphone16k_arm64-userdebug/15181570/sdk-repo-linux-system-images-15181570.zip",
+    sha256 = "a3f0108a50a8f9ffc1bee9670093f23bc5d6ae1f20a24d0b5c17eb7d485e06f5",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_arm64-userdebug/15867102/sdk-repo-linux-system-images-15867102.zip",
 )
 
 gcs_archive(
     name = "android16k-x86_64",
     build_file_content = _generic_build,
-    sha256 = "6626b3889e2e204863908840b5ce85d37f29282e4ad7c1ce128a22240b9ea047",
-    url = "gs://emu-next-bazel/ab/git_26Q2-beta-release/sdk_gphone16k_x86_64-userdebug/15181570/sdk-repo-linux-system-images-15181570.zip",
+    sha256 = "0d2997bf44191f2e689a7faee3b95bc51dd8ce6e52b6730585d22b6678664979",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15867102/sdk-repo-linux-system-images-15867102.zip",
+)
+
+gcs_archive(
+    name = "android16k-x86_64-user",
+    build_file_content = _generic_build,
+    sha256 = "7bb1d832715d9513f0555930d27cb833ae59c3d62e6c2754097a03fe7e6f99be",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-user-cts/15867102/signed-x86_64-sdk-repo-linux-system-images-15867102.zip",
 )
 
 gcs_archive(
@@ -143,15 +153,15 @@ gcs_archive(
 gcs_archive(
     name = "cts-arm64",
     build_file_content = _generic_build,
-    sha256 = "eb6b31ea8b61038ad4f21f4b0189c1092b3a3133161329bd71c7e6d48e41d83a",
-    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_arm64/14236881/android-cts.zip",
+    sha256 = "868ed00224b0e754e928c43299843c2fa3ef04e9d35f3b273c8efecc3186eccc",
+    url = "gs://emu-next-bazel/xts_releases/android-cts-17_r1-linux_x86-arm.zip",
 )
 
 gcs_archive(
     name = "cts-x86-64",
     build_file_content = _generic_build,
-    sha256 = "b33dd4562eac1192e909c99baf3a0a569b3086a35a59566bc8f529ccf26b71fb",
-    url = "gs://emu-next-bazel/ab/git_trunk-release/test_suites_x86_64/14236881/android-cts.modified-20251216.zip",
+    sha256 = "e3b784016da9d9fb6aa34eb98835028a5a88fe8e5a40584fd6558b621c7a6306",
+    url = "gs://emu-next-bazel/xts_releases/android-cts-17_r1-linux_x86-x86.zip",
 )
 
 gcs_archive(
@@ -166,6 +176,20 @@ gcs_archive(
     build_file_content = _generic_build,
     sha256 = "0d047961309c7956442ef9c7a6559e3fe8cbb952c7369622f08f899c9e881ce7",
     url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.5.zip",
+)
+
+gcs_archive(
+    name = "cts-verifier",
+    build_file_content = _generic_build,
+    sha256 = "a47bc094a90be4d05f081c5cc45a9f7fc3429c4ef3cabff440f429f64da68ab9",
+    url = "gs://emu-next-bazel/xts_releases/android-cts-verifier-17_r1-linux_x86-x86.zip",
+)
+
+gcs_archive(
+    name = "gts",
+    build_file_content = _generic_build,
+    sha256 = "0a14cb722bc37b993d68091779b8c002702e5cf85d846ca932f9bbf0c6e6252a",
+    url = "gs://emu-next-bazel/ab/git_26Q2-release/test_suites_arm64/15492250/signed-android-gts.zip",
 )
 
 gcs_archive(
@@ -187,4 +211,18 @@ gcs_archive(
     build_file_content = _generic_build,
     sha256 = "45f3fdc096a584aa83440d0437ba5673fc693d17784293416cdb99213afe07cd",
     url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-platform-tools-13278306.zip",
+)
+
+gcs_archive(
+    name = "sts-arm64",
+    build_file_content = _generic_build,
+    sha256 = "8d8c94bcd628e420bb67ff92d784ad6ae62975c26735f2b791e985445b6dfb94",
+    url = "gs://emu-next-bazel/ab/git_26Q2-sts-release/test_suites_arm64/15499126/android-sts.zip",
+)
+
+gcs_archive(
+    name = "sts-x86-64",
+    build_file_content = _generic_build,
+    sha256 = "b9d44a3a568c038320fad22c4613aba1a3dfea6709666aa3c2405e92cafc21b0",
+    url = "gs://emu-next-bazel/ab/git_26Q2-sts-release/test_suites_x86_64/15499126/android-sts.zip",
 )

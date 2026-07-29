@@ -1,0 +1,20 @@
+{
+    "url": "https://github.com/webmproject/libvpx/archive/refs/tags/v1.16.0.tar.gz",
+    "integrity": "sha256-ekeaPGa59dVUKkxqG303aKmDseXBTGCpOW7cm2SeAVw=",
+    "strip_prefix": "libvpx-1.16.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-x0BAXWiDZq5/Rfed7OQY657MCIc2nykqPix2I4kKiTM=",
+        "ads2gas.py": "sha256-f7ddtHp7dmpZfaLJaTCJqrQsk2Ylw2pnFN6iHlpt8/A=",
+        "config/BUILD.bazel": "sha256-+RXyyeb+kA4yv8GKecNA/nKFXdOqgQovgmTjHv5sHdg=",
+        "config/defs.bzl": "sha256-k3ioG3DEP/Xss54WALu8VwqzJjAd/VrojUcKAsxeBWs=",
+        "config/generators.bzl": "sha256-H0TPNALzqQZRX09ny1O0fU+jzAIGO7Q/Qmdm6dEyWDg=",
+        "config/vpx_config.bzl": "sha256-pV+QQ3iLQJtI1E1YYp2xcOZIV6nmC8qBvM4rGh3nzsM=",
+        "config/vpx_version.bzl": "sha256-O2s4CFagq8Vh2U1bG8Suzt2sOLr1lFv/V6CQdLawhq4=",
+        "libvpx_srcs.bzl": "sha256-XRbXnkK+5nDvLuJG0SC0l1+geOzjRoN29F/bQQ3oM1Q=",
+        "nasm.bzl": "sha256-6mvhG3DXfOAjvT/ofBMvKFw1vfLqdga7CPoUkNhn/aA=",
+        "rtcd.py": "sha256-M8zS0ceXdVg4ekUdID1JUwrQLh9LNAF1mj/V565rQas=",
+        "tests/BUILD.bazel": "sha256-fgIRZkcVKHpiW3U+Igf7uxqTR1/2tr5Ei3mOVxBegok=",
+        "tests/MODULE.bazel": "sha256-CJScA0GX92QXJqy+fqrmMLL39G13MhDqSk/EJCwD18s=",
+        "tests/smoke.cc": "sha256-JyIDMVInnuldHH6woaBVy2aBZU6ciFsrdlrpsiDI4Hs="
+    }
+}

@@ -1,0 +1,82 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+exports_files(["LICENSE"])
+
+license(
+    name = "license",
+    license_kinds = [
+        "@rules_license//licenses/spdx:Apache-2.0",
+        "@rules_license//licenses/spdx:BSD-3-Clause",
+        "@rules_license//licenses/spdx:MIT",
+    ],
+    license_text = "LICENSE",
+    visibility = [":__subpackages__"],
+)
+
+SIMD_COPTS_ARM64 = [
+    "-Wno-vla",
+    "-Wno-#pragma-messages",
+    "-Wno-absolute-value",
+    "-O3",
+]
+
+SIMD_COPTS_X64 = [
+    "-DPFFFT_SCALVEC_ENABLED=1 ",
+    "-D_USE_MATH_DEFINES",
+    "-O3",
+    "-Wno-#pragma-messages",
+    "-Wno-absolute-value",
+    "-msse4.2",
+    "-mpopcnt",
+]
+
+SIMD_COPTS = select({
+    "@platforms//os:windows": SIMD_COPTS_X64,
+    "@platforms//os:linux": SIMD_COPTS_X64,
+    "@platforms//os:macos": SIMD_COPTS_ARM64,
+})
+
+cc_library(
+    name = "pffft",
+    srcs = [
+        "src/pffft.c",
+    ],
+    hdrs = [
+        "src/pffft.h",
+    ],
+    copts = SIMD_COPTS,
+    strip_include_prefix = "src",
+)
+
+cc_library(
+    name = "fftpack",
+    testonly = 1,
+    srcs = [
+        "src/fftpack.c",
+    ],
+    hdrs = [
+        "src/fftpack.h",
+    ],
+    copts = SIMD_COPTS,
+    strip_include_prefix = "src",
+    visibility = ["//visibility:private"],
+)
+
+cc_test(
+    name = "pffft_test",
+    testonly = 1,
+    srcs = [
+        "src/test_pffft.c",
+    ],
+    copts = SIMD_COPTS,
+    deps = [
+        ":fftpack",
+        ":pffft",
+    ],
+)

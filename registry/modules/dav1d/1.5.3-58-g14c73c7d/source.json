@@ -1,0 +1,31 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/dav1d/dav1d/+archive/14c73c7d.tar.gz",
+    "integrity": "sha256-rMFRPf4xIQVxBPgeU5973y5WbW7a59Ksfon9OqFtK9w=",
+    "strip_prefix": "dav1d-14c73c7d",
+    "overlay": {
+        "BUILD.bazel": "sha256-IeOtHilTQ24QAdLOTpG7pTm3lT2d7Jxx7VWGC5HupHY=",
+        "MODULE.bazel": "sha256-XMadQ7/a3ImSO4XOpwHRGVvQ+/BM0N2wRcuwLZElnjE=",
+        "version/vcs_version.h": "sha256-3KOL0lLwkCF7NcdWVTT8YczKfw5mxYTEh7wJhAoM46A=",
+        "config/apple/x64/config.h": "sha256-BT9e6HFfa6UGqUMU9/m99AntndvWj0XvSaxTMkQ1Uko=",
+        "config/apple/x64/config.asm": "sha256-yhwvq0fm9mjIv1JvayrwiwimnnbI1Mct16Re+e0EVM0=",
+        "config/apple/arm/config.h": "sha256-463TCwBQP+XiPSdBGkx/57mAPTzk+5vDTr3u+qJ0dpk=",
+        "config/apple/x86/config.h": "sha256-phA/Tv7S894Xqh2hq6BRlnHSeq+pzNMNiPquTGvr5dU=",
+        "config/apple/x86/config.asm": "sha256-+Q76vM4Xes/Bxi8+wbs6TizN01NADWbN6xsJsZ7ff7k=",
+        "config/apple/arm64/config.h": "sha256-peQBX1y/Wu3JgUr1jtf1MW9LNEywhvocuy1oxhvf1bA=",
+        "config/linux-noasm/generic/config.h": "sha256-KnzyNbVsZoPg49oPo0b76oBYvoDL5N4zjyA3lpEZAjM=",
+        "config/linux-noasm/x64/config.h": "sha256-ySRpL6S1Y7NZ+LTxjlVQ+BEpNnoACVMQP5k/T/2vg0M=",
+        "config/linux/x64/config.h": "sha256-57Gv7d0lCbFlwfO+rCqeV+9XKC2/BQwHmC2+658HVBQ=",
+        "config/linux/x64/config.asm": "sha256-yhwvq0fm9mjIv1JvayrwiwimnnbI1Mct16Re+e0EVM0=",
+        "config/linux/arm/config.h": "sha256-ddgPQLBW4MJnUt7gTdzZY4XxIMQ6K7yV+XV6XsXJIGw=",
+        "config/linux/x86/config.h": "sha256-8BxIEyC5PlSMjER9XpbBQbmXaEe+ircLHM0XnhHhNHk=",
+        "config/linux/x86/config.asm": "sha256-+Q76vM4Xes/Bxi8+wbs6TizN01NADWbN6xsJsZ7ff7k=",
+        "config/linux/arm64/config.h": "sha256-iHgdN3sOU46hze/SBUbm0Jf/9CGwYW8Ky19aKZbUJkg=",
+        "config/linux/riscv64/config.h": "sha256-P9J4/0rRSx/oozuIRMtnPLb5XOWLDY0TTHIbBVG1dho=",
+        "config/linux/riscv64/cpu-renamed.c": "sha256-ARi5UKbQxcB3UGfoaIgQ3M7itcvGEW/bQN8bBhJUqLM=",
+        "config/win/x64/config.h": "sha256-lwVYgDMBN1uQTjrIS6UXIhI7+Hy386jNheW6wZZw0dQ=",
+        "config/win/x64/config.asm": "sha256-yhwvq0fm9mjIv1JvayrwiwimnnbI1Mct16Re+e0EVM0=",
+        "config/win/x86/config.h": "sha256-GSUn02cf5SFuetBxdICDUJTCbhgNgo3Mtx1pQXtQwhE=",
+        "config/win/x86/config.asm": "sha256-+16vCtiYBXHVSkkorAGOhNBm7waveZa4yItfB6sbKlI=",
+        "config/win/arm64/config.h": "sha256-olGbCKpxVyjaTNxS+rSKrUE6BuLJOrvgcRjQBROjnUs="
+    }
+}
