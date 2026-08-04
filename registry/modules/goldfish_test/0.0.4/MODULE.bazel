@@ -45,6 +45,7 @@ maven.install(
         # the lock_file if you change this list.
         "androidx.test:core:1.7.0",
         "androidx.test:rules:1.7.0",
+        "androidx.test.ext:junit:1.3.0",
         "androidx.test.services:storage:1.6.0",
         "androidx.test.uiautomator:uiautomator:2.3.0",
         "com.github.oshi:oshi-core:6.10.0",
@@ -125,15 +126,15 @@ gcs_archive(
 gcs_archive(
     name = "android16k-x86_64",
     build_file_content = _generic_build,
-    sha256 = "0d2997bf44191f2e689a7faee3b95bc51dd8ce6e52b6730585d22b6678664979",
-    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15867102/sdk-repo-linux-system-images-15867102.zip",
+    sha256 = "cfe25afa3b691c99736e9eddc817c25b2b1f6dd7182b44d766b77bf6bef9eeeb",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/15982542/sdk-repo-linux-system-images-15982542.zip",
 )
 
 gcs_archive(
     name = "android16k-x86_64-user",
     build_file_content = _generic_build,
-    sha256 = "7bb1d832715d9513f0555930d27cb833ae59c3d62e6c2754097a03fe7e6f99be",
-    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-user-cts/15867102/signed-x86_64-sdk-repo-linux-system-images-15867102.zip",
+    sha256 = "456a0027d1e833daedf0a6edeface2c9ffcaad0e4a31c46bb1b7672d27de7b7f",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-user-cts/15982542/signed-x86_64-sdk-repo-linux-system-images-15982542.zip",
 )
 
 gcs_archive(
@@ -225,4 +226,10 @@ gcs_archive(
     build_file_content = _generic_build,
     sha256 = "b9d44a3a568c038320fad22c4613aba1a3dfea6709666aa3c2405e92cafc21b0",
     url = "gs://emu-next-bazel/ab/git_26Q2-sts-release/test_suites_x86_64/15499126/android-sts.zip",
+)
+
+gcs_file(
+    name = "emu-main-dev-linux-x64",
+    sha256 = "c31045e20735355624a881f9b876c99661a9273069318e6c512b7963bc837ddb",
+    url = "gs://emu-next-bazel/ab/git_emu-main-dev/emulator-linux_x64_gfxstream/sdk-repo-linux-emulator-15888718.zip",
 )
