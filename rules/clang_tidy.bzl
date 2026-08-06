@@ -21,6 +21,19 @@ load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 
+TidyEnabledProviderInfo = provider(
+    "Flag to enable or disable clang-tidy analysis and testing.",
+    fields = ["enabled"],
+)
+
+def _tidy_enabled_flag_impl(ctx):
+    return TidyEnabledProviderInfo(enabled = ctx.build_setting_value)
+
+tidy_enabled_flag = rule(
+    implementation = _tidy_enabled_flag_impl,
+    build_setting = config.bool(flag = True),
+)
+
 TidySourceProviderInfo = provider(
     "a set of source files that we can provide to clang-tidy so we 'only' check specific set of files.",
     fields = ["srcs"],
@@ -281,6 +294,9 @@ def _clang_tidy_aspect_impl(target, ctx):
         # b/477626338: Clang-tidy is disabled on Windows.
         return [ClangTidyInfo(fixes = depset())]
 
+    if not ctx.attr._clang_tidy_enabled[TidyEnabledProviderInfo].enabled:
+        return [ClangTidyInfo(fixes = depset())]
+
     cc_toolchain = find_cpp_toolchain(ctx)
     if cc_toolchain.compiler == "clang-cl":
         # Disable clang-tidy when targeting Windows (cross-compiling)
@@ -459,6 +475,10 @@ clang_tidy_aspect = aspect(
             doc = "The set of tags that can be used to exclude targets from clang-tidy analysis.",
             default = Label("//:clang_tidy_exclude_tags"),
         ),
+        "_clang_tidy_enabled": attr.label(
+            doc = "Flag to enable/disable clang-tidy analysis.",
+            default = Label("//:clang_tidy_enabled"),
+        ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],
 )
@@ -595,9 +615,6 @@ def clang_tidy_test(
         **kwargs: Additional arguments to pass to the underlying clang_tidy_report rule.
     """
 
-    # clang-tidy is disabled because it is making presubmits unacceptably slow.
-    # TODO(b/494605718): Fix performance issues and re-enable.
-    return
     repo = native.repository_name()
     substrings = []
     apply_fixes_in = ""

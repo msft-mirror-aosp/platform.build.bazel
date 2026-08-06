@@ -1,6 +1,6 @@
 load("@rules_license//rules:license.bzl", "license")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
-load("//rules:clang_tidy.bzl", "tidy_exclude_tags_flag", "tidy_regex_flag", "tidy_source_flag")
+load("//rules:clang_tidy.bzl", "tidy_enabled_flag", "tidy_exclude_tags_flag", "tidy_regex_flag", "tidy_source_flag")
 
 package(
     default_applicable_licenses = [":license"],
@@ -25,6 +25,21 @@ test_suite(
     tests = [
         "//toolchains:tool_versions_test",
     ],
+)
+
+# Flag to globally enable/disable clang-tidy analysis and testing.
+tidy_enabled_flag(
+    name = "clang_tidy_enabled",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "enable_clang_tidy_setting",
+    flag_values = {
+        ":clang_tidy_enabled": "true",
+    },
+    visibility = ["//visibility:public"],
 )
 
 # Here are the various flags used for our clang-tidy rules
