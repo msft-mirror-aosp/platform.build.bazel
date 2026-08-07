@@ -115,8 +115,7 @@ tidy_report_transition = transition(
 )
 
 # --- Constants ---
-_HEADER_EXTS = (".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".H")
-_SRC_EXTS = [".c", ".cc", ".cpp", ".cxx", ".c++", ".C"] + list(_HEADER_EXTS)
+_SRC_EXTS = [".c", ".cc", ".cpp", ".cxx", ".c++", ".C"]
 
 _UNSUPPORTED_FLAGS = [
     "-fno-canonical-system-headers",
@@ -139,21 +138,17 @@ ClangTidyInfo = provider(
 )
 
 def _get_sources(attr):
-    """Extracts valid source files from srcs and hdrs attributes."""
+    """Extracts valid C/C++ source files from srcs attribute only."""
+    if not hasattr(attr, "srcs"):
+        return []
+
     srcs = []
-
-    def _is_valid(f):
-        return f.is_source and any([f.basename.endswith(ext) for ext in _SRC_EXTS])
-
-    # Iterate over both attributes generically
-    for attr_name in ["srcs", "hdrs"]:
-        if hasattr(attr, attr_name):
-            val = getattr(attr, attr_name)
-            for target in val:
-                srcs.extend([f for f in target.files.to_list() if _is_valid(f)])
-
-    # Let's throw out the header files for now.
-    return [src for src in srcs if not src.basename.endswith(_HEADER_EXTS)]
+    val = getattr(attr, "srcs")
+    if type(val) == "list":
+        for target in val:
+            if hasattr(target, "files"):
+                srcs.extend([f for f in target.files.to_list() if f.is_source and any([f.basename.endswith(ext) for ext in _SRC_EXTS])])
+    return srcs
 
 def _get_toolchain_flags(ctx, cc_toolchain, action_name = ACTION_NAMES.cpp_compile):
     feature_config = cc_common.configure_features(
@@ -327,7 +322,16 @@ def _clang_tidy_aspect_impl(target, ctx):
             fixes = depset(transitive = transitive_fixes),
         )]
 
-    # 2. Generate Flags
+    # 2. Extract valid C/C++ source files (skip header-only/empty libraries)
+    srcs = _get_sources(ctx.rule.attr)
+    if not srcs:
+        all_fixes = depset(transitive = transitive_fixes)
+        return [
+            OutputGroupInfo(tidy_fixes = all_fixes),
+            ClangTidyInfo(fixes = all_fixes),
+        ]
+
+    # 3. Generate Flags
     deps = [target] + getattr(ctx.rule.attr, "implementation_deps", [])
     dep_flags, additional_files = _get_deps_flags(deps)
 
@@ -340,8 +344,7 @@ def _clang_tidy_aspect_impl(target, ctx):
     c_flags = _filter_safe_flags(_get_toolchain_flags(ctx, cc_toolchain, ACTION_NAMES.c_compile) + combined_flags)
     cxx_flags = _filter_safe_flags(_get_toolchain_flags(ctx, cc_toolchain, ACTION_NAMES.cpp_compile) + combined_flags)
 
-    # 3. Generate tidy actions for each source file
-    srcs = _get_sources(ctx.rule.attr)
+    # 4. Generate tidy actions for each source file
 
     fix_files = []
 
