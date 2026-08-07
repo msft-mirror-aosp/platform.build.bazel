@@ -542,6 +542,12 @@ def _create_parser() -> argparse.ArgumentParser:
         help="A file containing the compiler flags, one per line.",
     )
     gen_parser.add_argument(
+        "--line-filter",
+        type=str,
+        default="",
+        help="JSON line filter to restrict diagnostics to specific line ranges (e.g. diff ranges).",
+    )
+    gen_parser.add_argument(
         "--rewrite-rules",
         type=str,
         help="A sed-style regex (e.g., 's/old/new/g') to apply to replacement text. Useful for systematic transformations.",
@@ -670,6 +676,10 @@ def _handle_generate(args: argparse.Namespace) -> None:
         f"--config-file={args.config_file}",
         f"--export-fixes={args.fixes_file}",
         f"-extra-arg=-resource-dir={resource_dir}",
+    ]
+    if getattr(args, "line_filter", ""):
+        tidy_cmd.append(f"--line-filter={args.line_filter}")
+    tidy_cmd += [
         args.source_file,
         "--",
     ] + compiler_flags

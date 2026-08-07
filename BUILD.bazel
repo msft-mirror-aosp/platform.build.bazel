@@ -1,6 +1,6 @@
 load("@rules_license//rules:license.bzl", "license")
 load("@rules_python//python:pip.bzl", "compile_pip_requirements")
-load("//rules:clang_tidy.bzl", "tidy_enabled_flag", "tidy_exclude_tags_flag", "tidy_regex_flag", "tidy_source_flag")
+load("//rules:clang_tidy.bzl", "tidy_enabled_flag", "tidy_exclude_tags_flag", "tidy_line_filter_flag", "tidy_regex_flag", "tidy_source_flag")
 
 package(
     default_applicable_licenses = [":license"],
@@ -52,6 +52,12 @@ tidy_source_flag(
 
 tidy_regex_flag(
     name = "clang_tidy_regex",
+    build_setting_default = "",
+    visibility = ["//visibility:public"],
+)
+
+tidy_line_filter_flag(
+    name = "clang_tidy_line_filter",
     build_setting_default = "",
     visibility = ["//visibility:public"],
 )
