@@ -60,6 +60,19 @@ tidy_regex_flag = rule(
     build_setting = config.string(flag = True, allow_multiple = False),
 )
 
+TidyLineFilterProviderInfo = provider(
+    "a JSON string specifying line filters for clang-tidy.",
+    fields = ["line_filter"],
+)
+
+def _tidy_line_filter_flag_impl(ctx):
+    return TidyLineFilterProviderInfo(line_filter = ctx.build_setting_value)
+
+tidy_line_filter_flag = rule(
+    implementation = _tidy_line_filter_flag_impl,
+    build_setting = config.string(flag = True, allow_multiple = False),
+)
+
 TidyExcludeTagsProviderInfo = provider(
     "a set of tags that we can use to exclude a set of targets from clang-tidy analysis.",
     fields = ["tags"],
@@ -95,8 +108,24 @@ def _tidy_report_transition_impl(_settings, attr):
         # for our attribute, overwriting the existing one.
         outputs["//:clang_tidy_config"] = attr.tidy_config_file
 
-    if attr.source_path_substrings:
+    current_cf = _settings.get("//:clang_tidy_check_files")
+
+    # Bazel 7 + Bzlmod applies repository mapping semantics to default configurations.
+    # The build_setting_default for //:clang_tidy_check_files is internally defined
+    # as "goldfish" (which may evaluate organically as "goldfish+" under strict Bzlmod
+    # mapping).
+    #
+    # If the user explicitly sets --@goldfish_build//:clang_tidy_check_files=... on the CLI,
+    # we strictly respect it (e.g., dynamically scoping tests to modified files via buildbot).
+    #
+    # However, if it holds the un-overridden defaultValue (meaning no CLI flag was passed),
+    # we safely fallback to the legacy aspect macro's `attr.source_path_substrings`.
+    if current_cf and current_cf not in ("goldfish", "goldfish+", ["goldfish"], ["goldfish+"]):
+        outputs["//:clang_tidy_check_files"] = current_cf
+    elif attr.source_path_substrings:
         outputs["//:clang_tidy_check_files"] = attr.source_path_substrings
+    elif current_cf:
+        outputs["//:clang_tidy_check_files"] = current_cf
 
     if attr.exclude_tags:
         outputs["//:clang_tidy_exclude_tags"] = attr.exclude_tags
@@ -105,7 +134,9 @@ def _tidy_report_transition_impl(_settings, attr):
 
 tidy_report_transition = transition(
     implementation = _tidy_report_transition_impl,
-    inputs = [],
+    inputs = [
+        "//:clang_tidy_check_files",
+    ],
     outputs = [
         "//:clang_tidy_config",
         "//:clang_tidy_check_files",
@@ -115,8 +146,7 @@ tidy_report_transition = transition(
 )
 
 # --- Constants ---
-_HEADER_EXTS = (".h", ".hh", ".hpp", ".hxx", ".inc", ".inl", ".H")
-_SRC_EXTS = [".c", ".cc", ".cpp", ".cxx", ".c++", ".C"] + list(_HEADER_EXTS)
+_SRC_EXTS = [".c", ".cc", ".cpp", ".cxx", ".c++", ".C"]
 
 _UNSUPPORTED_FLAGS = [
     "-fno-canonical-system-headers",
@@ -139,21 +169,17 @@ ClangTidyInfo = provider(
 )
 
 def _get_sources(attr):
-    """Extracts valid source files from srcs and hdrs attributes."""
+    """Extracts valid C/C++ source files from srcs attribute only."""
+    if not hasattr(attr, "srcs"):
+        return []
+
     srcs = []
-
-    def _is_valid(f):
-        return f.is_source and any([f.basename.endswith(ext) for ext in _SRC_EXTS])
-
-    # Iterate over both attributes generically
-    for attr_name in ["srcs", "hdrs"]:
-        if hasattr(attr, attr_name):
-            val = getattr(attr, attr_name)
-            for target in val:
-                srcs.extend([f for f in target.files.to_list() if _is_valid(f)])
-
-    # Let's throw out the header files for now.
-    return [src for src in srcs if not src.basename.endswith(_HEADER_EXTS)]
+    val = getattr(attr, "srcs")
+    if type(val) == "list":
+        for target in val:
+            if hasattr(target, "files"):
+                srcs.extend([f for f in target.files.to_list() if f.is_source and any([f.basename.endswith(ext) for ext in _SRC_EXTS])])
+    return srcs
 
 def _get_toolchain_flags(ctx, cc_toolchain, action_name = ACTION_NAMES.cpp_compile):
     feature_config = cc_common.configure_features(
@@ -271,6 +297,10 @@ def _emit_tidy_action(ctx, action_tool, src, flags, cc_toolchain, additional_fil
     if regex:
         args.add("--rewrite-rules", regex)
 
+    line_filter = ctx.attr._clang_tidy_line_filter[TidyLineFilterProviderInfo].line_filter
+    if line_filter:
+        args.add("--line-filter", line_filter)
+
     inputs = depset([src, clang_tidy_exec, flags_file], transitive = [additional_files, cc_toolchain.all_files])
     if clang_tidy_config:
         inputs = depset([clang_tidy_config], transitive = [inputs])
@@ -327,7 +357,36 @@ def _clang_tidy_aspect_impl(target, ctx):
             fixes = depset(transitive = transitive_fixes),
         )]
 
-    # 2. Generate Flags
+    # 2. Extract valid C/C++ source files (skip header-only/empty libraries)
+    srcs = _get_sources(ctx.rule.attr)
+    if not srcs:
+        all_fixes = depset(transitive = transitive_fixes)
+        return [
+            OutputGroupInfo(tidy_fixes = all_fixes),
+            ClangTidyInfo(fixes = all_fixes),
+        ]
+
+    # 2.5 Filter Sources before generating any cost-heavy toolchain flags
+    check_src = ctx.attr._clang_tidy_check_files[TidySourceProviderInfo].srcs
+    matching_srcs = []
+
+    if check_src:
+        for src in srcs:
+            for c in check_src:
+                if c in src.path:
+                    matching_srcs.append(src)
+                    break
+    else:
+        matching_srcs = srcs
+
+    if not matching_srcs:
+        all_fixes = depset(transitive = transitive_fixes)
+        return [
+            OutputGroupInfo(tidy_fixes = all_fixes),
+            ClangTidyInfo(fixes = all_fixes),
+        ]
+
+    # 3. Generate Flags
     deps = [target] + getattr(ctx.rule.attr, "implementation_deps", [])
     dep_flags, additional_files = _get_deps_flags(deps)
 
@@ -340,33 +399,24 @@ def _clang_tidy_aspect_impl(target, ctx):
     c_flags = _filter_safe_flags(_get_toolchain_flags(ctx, cc_toolchain, ACTION_NAMES.c_compile) + combined_flags)
     cxx_flags = _filter_safe_flags(_get_toolchain_flags(ctx, cc_toolchain, ACTION_NAMES.cpp_compile) + combined_flags)
 
-    # 3. Generate tidy actions for each source file
-    srcs = _get_sources(ctx.rule.attr)
-
+    # 4. Generate tidy actions for each source file
     fix_files = []
 
     clang_tidy_config = ctx.file._clang_tidy_config
     action_tool = ctx.attr._run_tidy.files_to_run
 
-    check_src = ctx.attr._clang_tidy_check_files[TidySourceProviderInfo].srcs
-
-    # 4. Users need to explicitly specify the sources they want to chec
-    # note that we do "fuzzy" matching using "str" in "path", this is
-    # likely good enough for our use case.
-    for src in srcs:
-        for c in check_src:
-            if c in src.path:
-                flags = c_flags if _is_c_source(src) else cxx_flags
-                fixes = _emit_tidy_action(
-                    ctx,
-                    action_tool,
-                    src,
-                    flags,
-                    cc_toolchain,
-                    additional_files,
-                    clang_tidy_config,
-                )
-                fix_files.append(fixes)
+    for src in matching_srcs:
+        flags = c_flags if _is_c_source(src) else cxx_flags
+        fixes = _emit_tidy_action(
+            ctx,
+            action_tool,
+            src,
+            flags,
+            cc_toolchain,
+            additional_files,
+            clang_tidy_config,
+        )
+        fix_files.append(fixes)
 
     all_fixes = depset(direct = fix_files, transitive = transitive_fixes)
     return [
@@ -478,6 +528,10 @@ clang_tidy_aspect = aspect(
         "_clang_tidy_enabled": attr.label(
             doc = "Flag to enable/disable clang-tidy analysis.",
             default = Label("//:clang_tidy_enabled"),
+        ),
+        "_clang_tidy_line_filter": attr.label(
+            doc = "The line filter to restrict diagnostics to modified lines.",
+            default = Label("//:clang_tidy_line_filter"),
         ),
     },
     toolchains = ["@bazel_tools//tools/cpp:toolchain_type"],

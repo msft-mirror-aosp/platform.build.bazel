@@ -20,7 +20,7 @@ import subprocess
 import json
 import math
 from dataclasses import dataclass
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 
@@ -542,6 +542,12 @@ def _create_parser() -> argparse.ArgumentParser:
         help="A file containing the compiler flags, one per line.",
     )
     gen_parser.add_argument(
+        "--line-filter",
+        type=str,
+        default="",
+        help="JSON line filter to restrict diagnostics to specific line ranges (e.g. diff ranges).",
+    )
+    gen_parser.add_argument(
         "--rewrite-rules",
         type=str,
         help="A sed-style regex (e.g., 's/old/new/g') to apply to replacement text. Useful for systematic transformations.",
@@ -603,12 +609,42 @@ def _create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _extract_resource_dir(compiler_flags: List[str]) -> Path:
-    """Poke clang to get the actual resource directory."""
-    return subprocess.check_output(
+def _find_resource_dir(clang_tidy_exe: str) -> Optional[str]:
+    """Find the resource directory relative to clang-tidy executable without spawning subprocess."""
+    try:
+        exe_path = Path(clang_tidy_exe).resolve()
+        for lib_dir_name in ("lib", "lib64"):
+            lib_clang = exe_path.parent.parent / lib_dir_name / "clang"
+            if lib_clang.is_dir():
+                versions = [p for p in lib_clang.iterdir() if p.is_dir()]
+                if versions:
+                    return str(sorted(versions)[-1])
+    except Exception:
+        pass
+    return None
+
+
+_CACHED_RESOURCE_DIR: Optional[str] = None
+
+
+def _extract_resource_dir(compiler_flags: List[str], clang_tidy_exe: str = "") -> str:
+    """Gets the actual resource directory, preferring direct directory lookup and caching."""
+    global _CACHED_RESOURCE_DIR
+    if _CACHED_RESOURCE_DIR:
+        return _CACHED_RESOURCE_DIR
+
+    if clang_tidy_exe:
+        found = _find_resource_dir(clang_tidy_exe)
+        if found:
+            _CACHED_RESOURCE_DIR = found
+            return found
+
+    res = subprocess.check_output(
         compiler_flags + ["-print-resource-dir"],
         text=True,
-    )
+    ).strip()
+    _CACHED_RESOURCE_DIR = res
+    return res
 
 
 def _handle_generate(args: argparse.Namespace) -> None:
@@ -632,7 +668,7 @@ def _handle_generate(args: argparse.Namespace) -> None:
     # Tidy will incorrectly resolve the resource_directory outside
     # of the sandbox which would result clang not finding standard headers,
     # we have to invoke clang with the complete flag configuration to get it.
-    resource_dir = _extract_resource_dir(compiler_flags)
+    resource_dir = _extract_resource_dir(compiler_flags, args.clang_tidy_exe)
     logging.debug("Extracted resource dir: %s", resource_dir)
 
     tidy_cmd = [
@@ -640,6 +676,10 @@ def _handle_generate(args: argparse.Namespace) -> None:
         f"--config-file={args.config_file}",
         f"--export-fixes={args.fixes_file}",
         f"-extra-arg=-resource-dir={resource_dir}",
+    ]
+    if getattr(args, "line_filter", ""):
+        tidy_cmd.append(f"--line-filter={args.line_filter}")
+    tidy_cmd += [
         args.source_file,
         "--",
     ] + compiler_flags
