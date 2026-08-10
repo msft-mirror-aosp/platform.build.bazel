@@ -254,6 +254,9 @@ class ReportRewriter:
         Returns:
             A list of strings, where each string is a line from the file.
         """
+        if not filepath.is_file():
+            return []
+
         if filepath in self.file_cache:
             self.file_cache.move_to_end(filepath)
             return self.file_cache[filepath]
@@ -279,6 +282,8 @@ class ReportRewriter:
         Returns:
             A tuple containing the 1-based line number and column number.
         """
+        if not filepath.is_file():
+            return 0, 0
         lines = self._get_file_lines(filepath)
         current_offset = 0
         for line_num, line_content in enumerate(lines, 1):
@@ -647,6 +652,50 @@ def _extract_resource_dir(compiler_flags: List[str], clang_tidy_exe: str = "") -
     return res
 
 
+def _filter_duplicate_resource_dir_flags(raw_flags: List[str]) -> List[str]:
+    """Filters out explicit toolchain Clang resource directory include paths from compiler flags.
+
+    When running clang-tidy, `-extra-arg=-resource-dir={resource_dir}` is passed so clang-tidy
+    knows its own builtin header location. If the toolchain also generates `-isystem` or `-I`
+    flags pointing to the toolchain's `lib/clang/<version>/include` directory, Clang's header
+    search path ends up with duplicate resource directories (one relative, one absolute).
+
+    This causes Clang builtin headers using `#include_next` (such as `stdint.h`) to resolve to
+    the second Clang resource directory rather than chaining to the SDK/system C library headers,
+    breaking fundamental type definitions like `uint8_t`, `uint32_t`, etc.
+
+    Args:
+        raw_flags: List of raw compiler flags extracted from the flags file.
+
+    Returns:
+        List of sanitized flags with duplicate Clang resource directory includes removed.
+    """
+    filtered_flags: List[str] = []
+    i = 0
+    while i < len(raw_flags):
+        flag = raw_flags[i]
+        # Check for two-part include flag, e.g.: -isystem <path>/lib/clang/<version>/include
+        if (
+            flag in ("-isystem", "-I")
+            and i + 1 < len(raw_flags)
+            and "/lib/clang/" in raw_flags[i + 1]
+            and raw_flags[i + 1].endswith("/include")
+        ):
+            i += 2
+            continue
+        # Check for joined include flag, e.g.: -isystem<path>/lib/clang/<version>/include
+        if (
+            (flag.startswith("-isystem") or flag.startswith("-I"))
+            and "/lib/clang/" in flag
+            and flag.endswith("/include")
+        ):
+            i += 1
+            continue
+        filtered_flags.append(flag)
+        i += 1
+    return filtered_flags
+
+
 def _handle_generate(args: argparse.Namespace) -> None:
     """
     Runs clang-tidy on a single source file
@@ -661,7 +710,8 @@ def _handle_generate(args: argparse.Namespace) -> None:
     compiler_flags = []
     if args.flags_file:
         with open(args.flags_file, "r") as f:
-            compiler_flags = [line.strip() for line in f if line.strip()]
+            raw_flags = [line.strip() for line in f if line.strip()]
+        compiler_flags = _filter_duplicate_resource_dir_flags(raw_flags)
 
     compiler_flags = compiler_flags + ["-c", args.source_file]
     logging.debug("Cleaned compiler flags: %s", compiler_flags)
