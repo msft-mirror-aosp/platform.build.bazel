@@ -684,6 +684,10 @@ def clang_tidy_test(
         # For other external repositories, use the repository name (without '@') and a trailing slash.
         substrings = [repo.replace("@", "") + "/"]
 
+    tags = kwargs.pop("tags", [])
+    if "tidy-test" not in tags:
+        tags = tags + ["tidy-test"]
+
     report_name = name + "_report"
     clang_tidy_report(
         name = report_name,
@@ -693,6 +697,7 @@ def clang_tidy_test(
         apply_fixes_in = apply_fixes_in,
         rewrite_sed_pattern = rewrite_sed_pattern,
         testonly = True,
+        tags = tags,
         **kwargs
     )
 
@@ -700,6 +705,7 @@ def clang_tidy_test(
         name = name,
         report_yaml = report_name,
         testonly = True,
+        tags = tags,
         target_compatible_with = select({
             "@platforms//os:macos": [],
             "@platforms//os:linux": [],
