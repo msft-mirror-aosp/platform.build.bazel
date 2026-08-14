@@ -46,6 +46,7 @@ ALL_FRAMEWORKS = [
     "AVFoundation",
     "AppKit",
     "ApplicationServices",
+    "AudioToolbox",
     "CFNetwork",
     "Carbon",
     "CloudKit",

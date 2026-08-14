@@ -31,5 +31,9 @@ build:ciasan --config=ci
 build:ciasan --config=debug
 build:ciasan --config=asan
 
+# Clang-tidy execution configuration
+build:tidy --@goldfish_build//:clang_tidy_enabled=true
+test:tidy --@goldfish_build//:clang_tidy_enabled=true
+
 # User overrides must come last
 try-import %workspace%/user.bazelrc
