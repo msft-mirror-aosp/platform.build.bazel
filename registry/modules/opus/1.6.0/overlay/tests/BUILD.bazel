@@ -1,0 +1,78 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("//:defs.bzl", "OPUS_COPTS")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "test_support",
+    hdrs = ["test_opus_common.h"],
+    copts = OPUS_COPTS,
+    deps = ["//:opus"],
+)
+
+cc_test(
+    name = "test_opus_api",
+    srcs = ["test_opus_api.c"],
+    copts = OPUS_COPTS,
+    deps = [
+        ":test_support",
+        "//:opus",
+    ],
+)
+
+cc_test(
+    name = "test_opus_decode",
+    timeout = "moderate",
+    srcs = ["test_opus_decode.c"],
+    copts = OPUS_COPTS,
+    deps = [
+        ":test_support",
+        "//:opus",
+    ],
+)
+
+cc_test(
+    name = "test_opus_encode",
+    timeout = "long",
+    srcs = [
+        "opus_encode_regressions.c",
+        "test_opus_encode.c",
+    ],
+    copts = OPUS_COPTS,
+    deps = [
+        ":test_support",
+        "//:opus",
+    ],
+)
+
+cc_test(
+    name = "test_opus_extensions",
+    timeout = "moderate",
+    srcs = ["test_opus_extensions.c"],
+    copts = OPUS_COPTS,
+    deps = [
+        ":test_support",
+        "//:opus",
+    ],
+)
+
+cc_test(
+    name = "test_opus_padding",
+    srcs = ["test_opus_padding.c"],
+    copts = OPUS_COPTS,
+    deps = [
+        ":test_support",
+        "//:opus",
+    ],
+)
+
+cc_test(
+    name = "test_opus_projection",
+    timeout = "moderate",
+    srcs = ["test_opus_projection.c"],
+    copts = OPUS_COPTS,
+    deps = [
+        ":test_support",
+        "//:opus",
+    ],
+)

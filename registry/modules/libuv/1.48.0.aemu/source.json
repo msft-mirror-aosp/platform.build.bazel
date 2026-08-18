@@ -5,6 +5,6 @@
     "patch_strip": 1,
     "patches": {
         "bazel.patch": "sha256-G6xhR/ebMfuKF2LykGhsKCs5eUoHaPVJJ/aSXEcjT8Q=",
-        "aemu_windows-support.patch": "sha256-HDcf8pZpL69LZRwe3DJF0I7PA5Jzv3O1WML9AgisKH0="
+        "aemu_windows-support.patch": "sha256-JHhrEg0RGAEqDJS+zN6SdInSGQ8XbgJYkFtmVrIpKDo="
     }
 }
