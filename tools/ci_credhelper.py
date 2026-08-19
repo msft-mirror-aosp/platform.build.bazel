@@ -12,7 +12,9 @@ import urllib.error
 import urllib.request
 
 
-_GOOGLE_URI_RE = re.compile(r"^https://[^.]+\.(?:pkg\.dev|googleapis\.com)(?:/.*)$")
+_GOOGLE_URI_RE = re.compile(
+    r"^https://(?:[^/.]+\.)*(?:pkg\.dev|googleapis\.com)(?:/.*)?$"
+)
 _RFC3339_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 _TIMEOUT = 60
 
