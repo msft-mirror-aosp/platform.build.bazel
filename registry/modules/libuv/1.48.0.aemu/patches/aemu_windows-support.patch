@@ -97,7 +97,14 @@
          "//conditions:default": [
              "src/unix/async.c",
              "src/unix/core.c",
-@@ -92,6 +143,17 @@
+@@ -87,11 +138,21 @@
+     copts = _COPTS,
+-    linkopts = [
+-        "-pthread",
+-    ] + select({
++    linkopts = select({
+         "@platforms//os:linux": [
++            "-pthread",
              "-ldl",
              "-lrt",
          ],
@@ -112,6 +119,7 @@
 +            "-DEFAULTLIB:ole32.lib",
 +            "-DEFAULTLIB:shell32.lib",
 +        ],
-         "//conditions:default": [],
+-        "//conditions:default": [],
++        "//conditions:default": ["-pthread"],
      }),
      local_defines = _LOCAL_DEFINES,

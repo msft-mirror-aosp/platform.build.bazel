@@ -433,6 +433,13 @@ def _clang_tidy_report_impl(ctx):
     all_fixes_depset = depset(transitive = transitive_fix_depsets)
 
     all_fixes = all_fixes_depset.to_list()
+    if ctx.attr.source_path_substrings:
+        all_fixes = [
+            f
+            for f in all_fixes
+            if any([sub in f.path for sub in ctx.attr.source_path_substrings])
+        ]
+
     combine_tool = ctx.executable._run_tidy
 
     # --- Combine ALL Fixes ---
@@ -670,19 +677,20 @@ def clang_tidy_test(
     """
 
     repo = native.repository_name()
+    clean_repo = repo.replace("@", "")
     substrings = []
     apply_fixes_in = ""
     rewrite_sed_pattern = ""
-    if repo == "@goldfish+":
-        substrings = ["goldfish+"]
+    if clean_repo in ("goldfish", "goldfish+"):
+        substrings = ["goldfish+", "goldfish", "hardware/generic/goldfish"]
         apply_fixes_in = "hardware/generic/goldfish"
         rewrite_sed_pattern = "s/^m_//g"
-    elif not repo:
+    elif not repo or repo == "@":
         # For the main repository, no explicit filtering is applied by default.
         pass  # User can still pass source_path_substrings via kwargs if needed.
     else:
         # For other external repositories, use the repository name (without '@') and a trailing slash.
-        substrings = [repo.replace("@", "") + "/"]
+        substrings = [clean_repo + "/"]
 
     tags = kwargs.pop("tags", [])
     if "tidy-test" not in tags:
