@@ -1,0 +1,11 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/libva/libva-2.22.0.tar.gz",
+    "integrity": "sha256-RnxBjCZAoXjGuq1b4uANVphCEjdjuAUHchq4frevhzU=",
+    "strip_prefix": "libva-2.22.0",
+    "overlay": {
+        "BUILD.bazel": "sha256-4BWUmjJR9PR27bJWlwsQ5P/hGZmbyXSSIpeGS1NZfEA=",
+        "MODULE.bazel": "sha256-/lKcU00va2KFDi2BB2srufYeqjfRrTYvL7iUgrWDkfg=",
+        "va/va_drm.h": "sha256-PME2eKtVIHehvN1D7cGM51a7trvc1oWyh/jbrqagGTM=",
+        "va/va_version.h": "sha256-GI2EQsBnnujI32p/e4pfACk/iPZzqe1XJkDQwnUnSIg="
+    }
+}

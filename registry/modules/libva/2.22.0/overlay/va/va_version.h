@@ -1,0 +1,12 @@
+#ifndef VA_VERSION_H
+#define VA_VERSION_H
+
+#define VA_MAJOR_VERSION 1
+#define VA_MINOR_VERSION 22
+#define VA_MICRO_VERSION 0
+
+#define VA_VERSION_S "1.22.0"
+#define VA_VERSION_HEX \
+    ((VA_MAJOR_VERSION << 24) | (VA_MINOR_VERSION << 16) | (VA_MICRO_VERSION << 8))
+
+#endif /* VA_VERSION_H */
