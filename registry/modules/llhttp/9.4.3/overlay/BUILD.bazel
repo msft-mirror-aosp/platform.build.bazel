@@ -1,0 +1,36 @@
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_license//rules:license.bzl", "license")
+
+package(
+    default_applicable_licenses = [":license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    package_name = "llhttp",
+    license_kinds = ["@rules_license//licenses/spdx:MIT"],
+    license_text = "LICENSE",
+    package_url = "https://github.com/nodejs/llhttp",
+)
+
+exports_files(["LICENSE"])
+
+cc_library(
+    name = "llhttp",
+    srcs = [
+        "src/api.c",
+        "src/http.c",
+        "src/llhttp.c",
+    ],
+    hdrs = [
+        "include/llhttp.h",
+    ],
+    includes = ["include"],
+)
+
+cc_test(
+    name = "llhttp_test",
+    srcs = ["test_llhttp.c"],
+    deps = [":llhttp"],
+)
