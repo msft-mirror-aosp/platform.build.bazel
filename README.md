@@ -123,3 +123,31 @@ python utils/update_sysimage.py -b BUILD_ID [options]
 *   `--gcs-bucket <bucket>`: Override the target GCS bucket.
 *   `-f, --force`: Force download and upload even if the file exists on GCS.
 *   `-v, --verbose`: Enable verbose logging.
+
+## Clang-Tidy Configuration
+
+The build system includes first-class support for `clang-tidy` integration via Bazel aspects. The `clang_tidy_test` rules operate over the C++ dependency graph and ensure that code styling and static analysis modernize the codebase in an automated, transactional basis.
+
+### Enabling Clang-Tidy Validation
+
+To invoke clang-tidy validation during a test or build phase, pass the following flag:
+```bash
+--@goldfish_build//:clang_tidy_enabled=true
+```
+
+### Performance & Diagnostic Scoping
+
+Parsing every C++ source file heavily burdens the build system and generates significant noise from legacy code. We use a combination of flags to scope the analysis down to single files and specific line numbers (e.g. for precommit hooks or `emu-dev-cli tidy` refactoring pipelines):
+
+1. **Limit the Aspect AST Evaluation (`clang_tidy_check_files`)**
+   Use this to restrict the Bazel aspect to a minimal set of source files. This works via a string suffix match against file paths and drastically speeds up the evaluation time.
+   ```bash
+   --@goldfish_build//:clang_tidy_check_files="foo.cc"
+   --@goldfish_build//:clang_tidy_check_files="bar.h"
+   ```
+
+2. **Restrict Emitted Diagnostics (`clang_tidy_line_filter`)**
+   Even when parsing `foo.cc`, limit the generated report to lines actually modified by passing the native `clang-tidy` line filter block format encoded as JSON.
+   ```bash
+   --@goldfish_build//:clang_tidy_line_filter='[{"name": "foo.cc", "lines": [[10, 20]]}]'
+   ```

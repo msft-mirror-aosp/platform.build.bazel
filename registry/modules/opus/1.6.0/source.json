@@ -1,0 +1,13 @@
+{
+    "url": "https://github.com/xiph/opus/archive/refs/tags/v1.6.tar.gz",
+    "strip_prefix": "opus-1.6",
+    "overlay": {
+        "BUILD.bazel": "sha256-yXXgroeOo8ZOXOt5taBz+7iAChRfKPldiLj8lVGWZns=",
+        "celt/tests/BUILD.bazel": "sha256-xGUEmJTh3BQmjHJ93cwDodROL8KUDEvfvKikiNzf+Bo=",
+        "config.h": "sha256-eVXAMmIrplE0jwkRQ5paDKRHoo5efo92w28bnbRtih4=",
+        "defs.bzl": "sha256-x0mrTPfGjjjXtVOYKhR89KblcXyPzvncBA5XK24MPKI=",
+        "silk/tests/BUILD.bazel": "sha256-AE1novH1hNzIcVRJ9Jwycf4Y3rfRUHDHcqvmjSfJAZU=",
+        "tests/BUILD.bazel": "sha256-dKZa90TW6Vmn5b6PqYAc3M1GW5WGXtnar1HHsuZCC4s="
+    },
+    "integrity": "sha256-qfnwQZYXTkob214MWoXjbrvUWhjLu7i+UCTFmzwAGWQ="
+}
