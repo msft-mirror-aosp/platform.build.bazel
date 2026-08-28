@@ -1,0 +1,10 @@
+"""https://github.com/nodejs/llhttp"""
+
+module(
+    name = "llhttp",
+    version = "9.4.3",
+    bazel_compatibility = [">=7.2.1"],
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.4")
+bazel_dep(name = "rules_license", version = "1.0.0")

@@ -1,0 +1,10 @@
+{
+    "url": "https://storage.googleapis.com/emu-next-bazel/registry/llhttp/llhttp-9.4.3.tar.gz",
+    "integrity": "sha256-HrgTx0N7Mah0lqHNPtefAHRnIPXn4px5tCwCy2nzbDk=",
+    "strip_prefix": "llhttp-release-v9.4.3",
+    "overlay": {
+        "BUILD.bazel": "sha256-Zrpf5TZ4ai9BzoAHku5pqtBZixohW9UE/90iGnjEaWw=",
+        "MODULE.bazel": "sha256-EQBeqBToAuqYlg2jP4AiBjbTpzrM97t9qkLHhE7ArJc=",
+        "test_llhttp.c": "sha256-W3URpJoYE8GEObzPlO817HnT+g7PtFg2P7RR3m7O2Rk="
+    }
+}
