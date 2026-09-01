@@ -31,6 +31,23 @@ bazel_dep(name = "rules_gcs", version = "1.0.1")
 bazel_dep(name = "rules_java", version = "8.11.0")
 bazel_dep(name = "rules_kotlin", version = "2.3.20")
 bazel_dep(name = "rules_jvm_external", version = "6.10")
+bazel_dep(name = "aspect_bazel_lib", version = "2.19.2")
+bazel_dep(name = "aspect_rules_js", version = "3.4.1")
+bazel_dep(name = "aspect_rules_ts", version = "3.10.1")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.27.0")
+bazel_dep(name = "rules_nodejs", version = "6.3.3.aemu")
+
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "typescript")
+rules_ts_ext.deps()
+use_repo(rules_ts_ext, "npm_typescript")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "aquarium_npm",
+    pnpm_lock = "//emulator/ui/aquarium:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "aquarium_npm")
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 use_repo(pip, "pypi_aemu")
@@ -117,6 +134,13 @@ new_local_repository(
     name = "prebuilt_python_windows",
     build_file = "//:python_windows.BUILD",
     path = "prebuilts/python/windows-x86",
+)
+
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+local_repository(
+    name = "prebuilt_android_sdk",
+    path = "prebuilts/android/android-sdk",
 )
 
 multisource_repo = use_extension("@goldfish_build//extensions:multisource_repo.bzl", "multisource_repo")
