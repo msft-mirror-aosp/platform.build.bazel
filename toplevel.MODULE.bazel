@@ -100,8 +100,6 @@ android_sdk_repository_extension.configure(paths = {
 bazel_dep(name = "rules_jvm_external", version = "6.10")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
-use_repo(maven, "maven")
-
 maven.artifact(
     testonly = True,
     artifact = "runner",
@@ -136,7 +134,7 @@ maven.install(
         "netsim",
         "protobuf",
     ],
-    lock_file = "@goldfish_build//:maven_install.json",
+    lock_file = "//build/bazel:maven_install.json",
     repositories = [
         "https://repo.maven.apache.org/maven2/",
         "https://maven.google.com",
@@ -145,6 +143,29 @@ maven.install(
     strict_visibility = True,
     version_conflict_policy = "pinned",
 )
+maven.install(
+    name = "android_ide_common_30_1_3",
+    known_contributing_modules = ["rules_android"],
+    # Rerun REPIN=1 bazel run @android_ide_common_30_1_3//:pin to update
+    # the lock_file after upgrading rules_android.
+    lock_file = "//build/bazel:registry/modules/rules_android/android_ide_maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+maven.install(
+    name = "rules_android_maven",
+    known_contributing_modules = ["rules_android"],
+    # Rerun REPIN=1 bazel run @rules_android_maven//:pin to update
+    # the lock_file after upgrading rules_android.
+    lock_file = "//build/bazel:registry/modules/rules_android/maven_install.json",
+    repositories = [
+        "https://maven.google.com",
+        "https://repo1.maven.org/maven2",
+    ],
+)
+use_repo(maven, "android_ide_common_30_1_3", "maven", "rules_android_maven")
 
 bazel_dep(name = "lavapipe_bazel_deps", version = "0.0.1")
 local_path_override(
