@@ -1,7 +1,7 @@
 {
-    "url": "https://storage.googleapis.com/emu-next-bazel/registry/dav1d/dav1d/+archive/14c73c7d.tar.gz",
-    "integrity": "sha256-rMFRPf4xIQVxBPgeU5973y5WbW7a59Ksfon9OqFtK9w=",
-    "strip_prefix": "dav1d-14c73c7d",
+    "url": "https://github.com/videolan/dav1d/archive/14c73c7db38eebfd3202146b76a1ad4df90dd3a2.tar.gz",
+    "integrity": "sha256-CDEEpqjMqwMxYE5qD7fKuKLWSEtUkR8U1lFd6MlBIlQ=",
+    "strip_prefix": "dav1d-14c73c7db38eebfd3202146b76a1ad4df90dd3a2",
     "overlay": {
         "BUILD.bazel": "sha256-IeOtHilTQ24QAdLOTpG7pTm3lT2d7Jxx7VWGC5HupHY=",
         "MODULE.bazel": "sha256-XMadQ7/a3ImSO4XOpwHRGVvQ+/BM0N2wRcuwLZElnjE=",

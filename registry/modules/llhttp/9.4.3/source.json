@@ -1,5 +1,5 @@
 {
-    "url": "https://storage.googleapis.com/emu-next-bazel/registry/llhttp/llhttp-9.4.3.tar.gz",
+    "url": "https://github.com/nodejs/llhttp/archive/refs/tags/release/v9.4.3.tar.gz",
     "integrity": "sha256-HrgTx0N7Mah0lqHNPtefAHRnIPXn4px5tCwCy2nzbDk=",
     "strip_prefix": "llhttp-release-v9.4.3",
     "overlay": {

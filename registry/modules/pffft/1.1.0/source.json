@@ -1,9 +1,10 @@
 {
-    "url": "https://storage.googleapis.com/emu-next-bazel/registry/pffft/pffft/+archive/e358d44ddf5fe5ca8d09b95dbe769c27a703d6ab.tar.gz",
-    "integrity": "sha256-+guPzyhLYqTM8oL78SLgvKFd7S19+JzdYi99PyCW9rs=",
-    "strip_prefix": "",
+    "url": "https://github.com/source-archive/pffft/archive/refs/heads/master.tar.gz",
+    "integrity": "sha256-HJtT0mfpCTQEKFqFqCZKkyUWRU4d6BdoE+Cxcx5JPnA=",
+    "strip_prefix": "pffft-master",
     "overlay": {
-        "BUILD.bazel": "sha256-6J+rzytgm2RFkCe6lqDjB/2bYGlFX3Df1O7n1ECEnII=",
-        "MODULE.bazel": "sha256-e9prAkxEBFrXwsdczkwAHiDjwak7IHX2eVocNco1K44="
+        "BUILD.bazel": "sha256-6s2afKyE/pZd/KGE925D9Putt1pS+Q7i2SI6sxN7WlE=",
+        "MODULE.bazel": "sha256-e9prAkxEBFrXwsdczkwAHiDjwak7IHX2eVocNco1K44=",
+        "LICENSE": "sha256-pGIAWS6xk4U1JyUNoJjmuwx1Qk56LH242lJsTzAcPYg="
     }
 }

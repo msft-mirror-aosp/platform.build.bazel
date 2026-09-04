@@ -801,7 +801,7 @@
     "@@goldfish_build+//extensions:multisource_repo.bzl%multisource_repo": {
       "general": {
         "bzlTransitiveDigest": "BOEWrHIAgExAfTsXXEQXhWL5VC5mU3d/o+dz4FJa1QU=",
-        "usagesDigest": "mmgv0OWkadTSJ12QBDmKptaO+AWdpIO4OvmqJVKL0uY=",
+        "usagesDigest": "mraHKkdpgaGX3McVUwd0J962c0xrcaAuZriVjkq4HTo=",
         "recordedInputs": [
           "REPO_MAPPING:goldfish+,goldfish goldfish+",
           "REPO_MAPPING:goldfish_build+,bazel_tools bazel_tools",
@@ -809,20 +809,6 @@
           "ENV:MULTISOURCE_REPO_TYPE \\0"
         ],
         "generatedRepoSpecs": {
-          "arm_sysroot": {
-            "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
-            "attributes": {
-              "url": "gs://emu-next-bazel/arm-toolchain/arm-gnu-toolchain-13.2.rel1-x86_64-aarch64-none-linux-gnu.tar.xz",
-              "sha256": "12fcdf13a7430655229b20438a49e8566e26551ba08759922cdaf4695b0d4e23",
-              "build_file": "@@goldfish_build+//toolchains/cc/linux_clang:gcc_arm64.BUILD",
-              "build_file_content": "",
-              "strip_prefix": "arm-gnu-toolchain-13.2.Rel1-x86_64-aarch64-none-linux-gnu",
-              "patch_strip": 1,
-              "patches": [
-                "@@goldfish_build+//toolchains/cc/linux_clang/patches:Resolve-libc-relative-to-sysroot-aarch64_none_linux_gnu.patch"
-              ]
-            }
-          },
           "android16k-x86_64": {
             "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
             "attributes": {
