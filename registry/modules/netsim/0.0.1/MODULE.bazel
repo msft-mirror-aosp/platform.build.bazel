@@ -175,6 +175,7 @@ use_repo(
     "indexmap",
     "inout",
     "itoa",
+    "jiff",
     "libc",
     "libz-rs-sys",
     "libz-sys",
