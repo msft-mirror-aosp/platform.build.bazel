@@ -196,11 +196,27 @@ generate_pdb_file_feature = feature(
             flag_groups = [flag_group(flags = [
                 # Generate full debug information
                 "/Zi",
+                # Emit type record hashes in .debug$H for fast parallel type merging
+                "-gcodeview-ghash",
             ])],
         ),
         flag_set(
             actions = LINK_ACTIONS,
-            flag_groups = [flag_group(flags = ["/DEBUG"])],
+            flag_groups = [flag_group(flags = ["/DEBUG:GHASH"])],
+        ),
+    ],
+)
+
+fastbuild_feature = feature(
+    name = "fastbuild",
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
+            flag_groups = [
+                flag_group(flags = [
+                    "/O1",
+                ]),
+            ],
         ),
     ],
 )
@@ -681,6 +697,7 @@ def _cc_features_impl(ctx):
         # flags override each other.
         opt_feature,
         dbg_feature,
+        fastbuild_feature,
         no_ndebug_feature,
         libraries_to_link_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
