@@ -1,5 +1,5 @@
 {
-    "url": "https://storage.googleapis.com/emu-next-bazel/registry/libva/libva-2.22.0.tar.gz",
+    "url": "https://github.com/intel/libva/archive/refs/tags/2.22.0.tar.gz",
     "integrity": "sha256-RnxBjCZAoXjGuq1b4uANVphCEjdjuAUHchq4frevhzU=",
     "strip_prefix": "libva-2.22.0",
     "overlay": {

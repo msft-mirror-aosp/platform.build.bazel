@@ -1,5 +1,5 @@
 {
-    "url": "https://storage.googleapis.com/emu-next-bazel/registry/libsrtp2/libsrtp2/+archive/46755e2aa15b618854b1ab502b4787e584aa590d.tar.gz",
+    "url": "https://github.com/cisco/libsrtp/archive/46755e2aa15b618854b1ab502b4787e584aa590d.tar.gz",
     "integrity": "sha256-lcRx3ScmM02mc0dEchLApeUl95ACbf9a6S7j+JRqVCc=",
     "strip_prefix": "libsrtp-46755e2aa15b618854b1ab502b4787e584aa590d",
     "overlay": {

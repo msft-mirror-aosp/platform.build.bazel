@@ -1,3 +1,6 @@
 @echo off
-set /p req=
-echo %req% | prebuilts\python\windows-x86\python.exe build\bazel\utils\cred_helper.py %*
+if exist "%~dp0..\..\..\prebuilts\python\windows-x86\python.exe" (
+    "%~dp0..\..\..\prebuilts\python\windows-x86\python.exe" "%~dp0cred_helper.py" %*
+) else (
+    prebuilts\python\windows-x86\python.exe "%~dp0cred_helper.py" %*
+)
