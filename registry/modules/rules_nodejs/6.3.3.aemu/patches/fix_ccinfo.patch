@@ -1,0 +1,11 @@
+--- a/nodejs/toolchain.bzl
++++ b/nodejs/toolchain.bzl
+@@ -14,6 +14,8 @@
+
+ """This module implements the node toolchain rule.
+ """
++
++load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
+
+ NodeInfo = provider(
+     doc = "Information about how to invoke Node.js and npm.",

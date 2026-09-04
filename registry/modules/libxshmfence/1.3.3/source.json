@@ -5,7 +5,6 @@
     "patch_strip": 0,
     "overlay": {
         "BUILD.bazel": "sha256-9TN0MqQwnIWFQwErkuqVhCdw45d1JS3qppFEVYXqlcQ=",
-        // "MODULE.bazel": "sha256-3PFS1MRlv7FOHK9LIWqcc6BpnJwf5Trmw0mpJyPb30w=",
         "platform/linux-x86_64/config.h": "sha256-3cahK6T0QYTQEHjJt3Zs1gJdNOr8Zwt9wlP1RhXW1IA=",
         "aemu-bazel/aemu-build-config.jsonc": "sha256-yYGq5eQhV94lQqKico6GOFj/Qu8JhXtbEEUWbCt8rE4=",
         "aemu-bazel/aemu-shim.jsonc": "sha256-F30IdMYqyA3Vkv3pbsEm4f8YOSSm99POrfVlwGeqLfs=",

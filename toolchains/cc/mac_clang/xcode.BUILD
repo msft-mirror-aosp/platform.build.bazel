@@ -79,6 +79,7 @@ ALL_FRAMEWORKS = [
     "SystemConfiguration",
     "UniformTypeIdentifiers",
     "VideoToolbox",
+    "_LocationEssentials",
     "vmnet",
 ]
 

@@ -1,0 +1,9 @@
+{
+    "integrity": "sha256-cyqiru+bpinNf6HLMNoH5raW7XhwawjYTV2GAZgvOLE=",
+    "strip_prefix": "rules_nodejs-6.3.3",
+    "url": "https://github.com/bazelbuild/rules_nodejs/releases/download/v6.3.3/rules_nodejs-v6.3.3.tar.gz",
+    "patch_strip": 1,
+    "patches": {
+        "fix_ccinfo.patch": "sha256-MR6jpakWHTgre4XZ8Iu4Us9kuXo69mLVkvC02afduEE="
+    }
+}
