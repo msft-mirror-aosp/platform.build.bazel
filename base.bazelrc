@@ -19,7 +19,9 @@ build --sandbox_fake_username
 # Qemu is resource intensive and causes timeouts if concurrency is too high.
 # Consume this resource to limit local parallelism for tests booting qemu:
 # tags = ["resources:qemu_instances:1"],
-build --local_resources=qemu_instances=1
+build:linux --local_resources=qemu_instances=3
+build:macos --local_resources=qemu_instances=1
+build:windows --local_resources=qemu_instances=1
 
 # Enable windows symlink and runfiles
 startup --windows_enable_symlinks
