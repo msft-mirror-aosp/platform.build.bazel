@@ -1,5 +1,5 @@
 {
-    "url": "https://storage.googleapis.com/emu-next-bazel/registry/rnnoise/rnnoise/+archive/70f1d256acd4b34a572f999a05c87bf00b67730d.tar.gz",
+    "url": "https://gitlab.xiph.org/xiph/rnnoise/-/archive/70f1d256acd4b34a572f999a05c87bf00b67730d/rnnoise-70f1d256acd4b34a572f999a05c87bf00b67730d.tar.gz",
     "integrity": "sha256-9h7gs/TEzTNzA+AD0zM1fF6vJe9ddadCEJ7lnpoKOTI=",
     "strip_prefix": "rnnoise-70f1d256acd4b34a572f999a05c87bf00b67730d",
     "overlay": {

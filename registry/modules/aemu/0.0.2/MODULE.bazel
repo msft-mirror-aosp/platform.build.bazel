@@ -17,9 +17,24 @@ bazel_dep(name = "lz4", version = "1.9.4")
 bazel_dep(name = "grpc-java", version = "1.82.0")
 bazel_dep(name = "grpc", version = "1.81.1.aemu")
 bazel_dep(name = "rules_proto", version = "7.1.0")
+bazel_dep(name = "rules_java", version = "9.3.0")
+bazel_dep(name = "googleapis", version = "0.0.0-20260825-d10ac924")
 bazel_dep(name = "protobuf", version = "33.4")
 bazel_dep(name = "pkg-config", version = "0.29.2")
 bazel_dep(name = "ninja", version = "1.12.1.bcr.1")
+bazel_dep(name = "rules_nodejs", version = "6.3.3.aemu")
+
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(
+    node_urls = [
+        "https://storage.googleapis.com/emu-next-bazel/registry/nodejs/v{version}/{filename}",
+        "https://nodejs.org/dist/v{version}/{filename}",
+    ],
+    node_version = "20.18.0",
+)
+use_repo(node, "nodejs_toolchains")
+
+register_toolchains("@nodejs_toolchains//:all")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
