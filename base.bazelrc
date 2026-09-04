@@ -40,6 +40,11 @@ common:linux --credential_helper="*.googlesource.com=%workspace%/build/bazel/uti
 common:macos --credential_helper="*.googlesource.com=%workspace%/build/bazel/utils/credential_helper.sh"
 common:windows --credential_helper="*.googlesource.com=%workspace%/build/bazel/utils/credential_helper.cmd"
 
+# Airlock
+common:linux --credential_helper="*.pkg.dev=%workspace%/build/bazel/utils/credential_helper.sh"
+common:macos --credential_helper="*.pkg.dev=%workspace%/build/bazel/utils/credential_helper.sh"
+common:windows --credential_helper="*.pkg.dev=%workspace%/build/bazel/utils/credential_helper.cmd"
+
 # Publish to the private BES backend.
 build:sponge --grpc_keepalive_time=30s
 build:sponge --bes_keywords=android-emulator
