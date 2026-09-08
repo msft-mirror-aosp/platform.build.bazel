@@ -96,13 +96,20 @@ cc_features(
         "-Wno-macro-redefined",  # We force define a large set windows settings
         "--target=x86_64-pc-windows-msvc",
         "/clang:-march=x86-64-v3",  # v2: SSE4.2 and Popcount, v3: AVX, AVX2, and BMI1/2
+        # Allow removal of unused sections and code folding at link time.
+        "/Gy",
+        "/Gw",
         # Disable exception handling
         # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
         "/EHs-",
         "/EHc-",
         "/EHa-",
     ] + _x64_defines,
-    cxx_flags = ["/std:c++latest"],
+    cxx_flags = [
+        "/std:c++latest",
+        # Drop unreferenced inline functions/data from .obj files to reduce size
+        "/Zc:inline",
+    ],
     link_flags = ["/ignore:4070"],
     toolchain_imports = _x64_imports,
     warning_flags = [
