@@ -403,6 +403,19 @@ def _cc_toolchain_config_impl(ctx):
         ),
     ])
     features.extend(ctx.attr.cc_features[CcFeatureConfigInfo].features)
+    raw_builtin_dirs = depset(
+        direct = ctx.attr.legacy_builtin_include_directories,
+        transitive = [
+            lib[CcToolchainImportInfo].include_paths
+            for lib in ctx.attr.toolchain_imports
+            if CcToolchainImportInfo in lib
+        ],
+        order = "topological",
+    ).to_list()
+    builtin_include_directories = [
+        d if d.startswith("%") or d.startswith("/") or (len(d) > 1 and d[1] == ":") else "%workspace%/" + d
+        for d in raw_builtin_dirs
+    ]
     return [
         cc_common.create_cc_toolchain_config_info(
             ctx = ctx,
@@ -416,7 +429,7 @@ def _cc_toolchain_config_impl(ctx):
                 for p in ctx.attr.artifact_name_patterns
             ],
             builtin_sysroot = sysroot,
-            cxx_builtin_include_directories = ctx.attr.legacy_builtin_include_directories,
+            cxx_builtin_include_directories = builtin_include_directories,
             target_cpu = ctx.attr.target_cpu,
             # This is needed by targets using legacy compiler flag value.
             compiler = ctx.attr.compiler_name,
