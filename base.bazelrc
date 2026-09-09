@@ -75,6 +75,9 @@ build:_remote_base --jobs=100
 # remote_local_fallback allows bazel to continue if there are
 # network connectivity failures (e.g., offline)
 build:_remote_base --remote_local_fallback
+# ThinLTO indexing on large targets (libgoldfish) outputs >20k files, exceeding RBE's 1MB ActionResult limit.
+build:_remote_base --modify_execution_info=CppLTOIndexing=+no-remote
+
 
 # Config to use hermetic SDKs
 build:hermetic --@goldfish_build//toolchains/cc/mac_clang:hermetic_xcode
