@@ -192,7 +192,7 @@ generate_pdb_file_feature = feature(
             ])],
         ),
         flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [flag_group(flags = [
                 # Generate full debug information
                 "/Zi",
@@ -459,14 +459,14 @@ msvc_runtimes_feature = feature(
     enabled = True,
     flag_sets = [
         flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [flag_group(flags = ["/MD"])],
             with_features = [
                 with_feature_set(not_features = ["static_link_msvcrt", "dbg"]),
             ],
         ),
         flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [flag_group(flags = ["/MDd"])],
             with_features = [
                 with_feature_set(not_features = ["static_link_msvcrt"], features = ["dbg"]),
@@ -487,14 +487,14 @@ msvc_runtimes_feature = feature(
             ],
         ),
         flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [flag_group(flags = ["/MT"])],
             with_features = [
                 with_feature_set(features = ["static_link_msvcrt"], not_features = ["dbg"]),
             ],
         ),
         flag_set(
-            actions = [ACTION_NAMES.c_compile, ACTION_NAMES.cpp_compile],
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [flag_group(flags = ["/MTd"])],
             with_features = [
                 with_feature_set(features = ["static_link_msvcrt", "dbg"]),
