@@ -45,8 +45,8 @@ def _cc_tool_impl(ctx):
         CcToolInfo(
             tool = ctx.executable.tool,
             applied_actions = ctx.attr.applied_actions,
-            with_features = ctx.features,
-            with_no_features = ctx.disabled_features,
+            with_features = [],
+            with_no_features = [],
             env = expanded_env,
             args = expanded_args,
         ),
