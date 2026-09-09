@@ -10,3 +10,9 @@ py_binary(
     srcs = ["parallel_zip.py"],
     visibility = ["//visibility:public"],
 )
+
+alias(
+    name = "7za",
+    actual = "@sevenzip//:7za",
+    visibility = ["//visibility:public"],
+)
