@@ -195,22 +195,15 @@ def _stage_tree(
         raise FileNotFoundError(f"Manifest source tree not found: {src_dir}")
     target_dir.mkdir(parents=True, exist_ok=True)
     target_dir.chmod(0o755)
-    for p in src_dir.rglob("*"):
-        rel = p.relative_to(src_dir)
-        tp = target_dir / rel
-        if p.is_symlink():
-            link_target = os.readlink(p)
-            # Prevent leaking sandbox absolute paths
-            if os.path.isabs(link_target):
-                try:
-                    link_target = os.path.relpath(link_target, p.parent)
-                except ValueError:
-                    pass
-            _stage_symlink(link_target, tp, timestamp)
-        elif p.is_dir():
+    for root, dirs, files in os.walk(src_dir, followlinks=True):
+        rel_root = Path(root).relative_to(src_dir)
+        for d in dirs:
+            tp = target_dir / rel_root / d
             tp.mkdir(parents=True, exist_ok=True)
             tp.chmod(0o755)
-        else:
+        for f in files:
+            p = Path(root) / f
+            tp = target_dir / rel_root / f
             if mode_str:
                 file_mode = int(mode_str, 8)
             else:
