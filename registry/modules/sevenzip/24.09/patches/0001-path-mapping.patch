@@ -1,0 +1,323 @@
+diff --git a/CPP/7zip/Archive/Zip/ZipUpdate.cpp b/CPP/7zip/Archive/Zip/ZipUpdate.cpp
+index bc047b7..42fa562 100644
+--- a/CPP/7zip/Archive/Zip/ZipUpdate.cpp
++++ b/CPP/7zip/Archive/Zip/ZipUpdate.cpp
+@@ -120,4 +120,6 @@ static void SetFileHeader(
+   item.SetEncrypted(!isDir && options.Password_Defined);
+   item.SetDescriptorMode(useDescriptor);
++  if ((item.ExternalAttrib >> 16) != 0)
++    item.MadeByVersion.HostOS = NFileHeader::NHostOS::kUnix;
+
+   if (isDir)
+@@ -513,4 +515,6 @@ static void UpdatePropsFromStream(
+     if (getProps->GetProps(&size, &cTime, &aTime, &mTime, &attrib) == S_OK)
+     {
++      if (!FILETIME_IsZero(item.Ntfs_MTime)) { mTime = item.Ntfs_MTime; cTime = item.Ntfs_CTime; aTime = item.Ntfs_ATime; }
++      if (item.Attrib != 0) attrib = item.Attrib;
+       if (options.Write_MTime)
+         if (!FILETIME_IsZero(mTime))
+diff --git a/CPP/7zip/UI/Common/ArchiveCommandLine.cpp b/CPP/7zip/UI/Common/ArchiveCommandLine.cpp
+index 556b25a..37442ac 100644
+--- a/CPP/7zip/UI/Common/ArchiveCommandLine.cpp
++++ b/CPP/7zip/UI/Common/ArchiveCommandLine.cpp
+@@ -40,4 +40,12 @@
+ #include "Update.h"
+ #include "UpdateAction.h"
++#include "../../../Common/MyLinux.h"
++#include "../../../Common/UTFConvert.h"
++#include "../../../Windows/FileFind.h"
++#include "../../../Windows/TimeUtils.h"
++
++#ifndef FILE_ATTRIBUTE_UNIX_EXTENSION
++#define FILE_ATTRIBUTE_UNIX_EXTENSION 0x8000
++#endif
+
+ extern bool g_CaseSensitive;
+@@ -492,6 +500,33 @@ static void AddRenamePair(CObjectVector<CRenamePair> *renamePairs,
+ #endif
+
++static void SetFiTimeFromUnixTime(CFiTime &fiTime, UInt32 unixTime)
++{
++#ifdef _WIN32
++  NWindows::NTime::UnixTime_To_FileTime(unixTime, fiTime);
++#else
++  fiTime.tv_sec = (time_t)unixTime;
++  fiTime.tv_nsec = 0;
++#endif
++}
++
++static bool ParseOctalMode(const wchar_t *s, unsigned len, UInt32 &val)
++{
++  if (len == 0 || len > 6)
++    return false;
++  UInt32 res = 0;
++  for (unsigned i = 0; i < len; i++)
++  {
++    wchar_t c = s[i];
++    if (c < L'0' || c > L'7')
++      return false;
++    res = (res << 3) | (UInt32)(c - L'0');
++  }
++  val = res;
++  return true;
++}
++
+ static void AddToCensorFromListFile(
+     CObjectVector<CRenamePair> *renamePairs,
++    CObjectVector<CDirItem> *explicitItems,
+     NWildcard::CCensor &censor,
+     const CNameOption &nop, LPCWSTR fileName, UInt32 codePage)
+@@ -530,10 +565,147 @@ static void AddToCensorFromListFile(
+   }
+   else
++  {
++    UInt32 customTimestamp = 0;
++    bool hasCustomTimestamp = false;
+     FOR_VECTOR (i, names)
++    {
++      const UString &line = names[i];
++      if (line.IsEmpty())
++        continue;
++      if (line.IsPrefixedBy(L"#time:"))
++      {
++        const wchar_t *p = line.Ptr(6);
++        UInt64 ts = 0;
++        while (*p >= L'0' && *p <= L'9')
++        {
++          ts = ts * 10 + (*p - L'0');
++          p++;
++        }
++        customTimestamp = (UInt32)ts;
++        hasCustomTimestamp = true;
++        continue;
++      }
++      if (explicitItems)
++      {
++        int colonPos = line.Find(L':');
++        UInt32 mode = 0;
++        if (colonPos > 0 && ParseOctalMode(line.Ptr(), (unsigned)colonPos, mode))
++        {
++          UString rest = line.Ptr((unsigned)(colonPos + 1));
++          int arrowPos = rest.Find(L"->");
++          if (arrowPos >= 0)
++          {
++            UString dest = rest.Left((unsigned)arrowPos);
++            UString target = rest.Ptr((unsigned)(arrowPos + 2));
++            dest.Replace(L'\\', L'/');
++            CDirItem di;
++            di.Name = dest;
++            di.LogPath = dest;
++            di.PhyPath.Empty();
++            AString targetA;
++            ConvertUnicodeToUTF8(target, targetA);
++            di.Size = targetA.Len();
++            di.ReparseData.CopyFrom((const Byte *)(const char *)targetA, targetA.Len());
++            if (hasCustomTimestamp)
++            {
++              SetFiTimeFromUnixTime(di.MTime, customTimestamp);
++              di.CTime = di.ATime = di.MTime;
++            }
++            #ifdef _WIN32
++            di.Attrib = FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_UNIX_EXTENSION | (((MY_LIN_S_IFLNK | mode) & 0xFFFF) << 16);
++            #else
++            di.mode = MY_LIN_S_IFLNK | mode;
++            #endif
++            explicitItems->Add(di);
++            continue;
++          }
++
++          int eqPos = rest.Find(L'=');
++          if (eqPos >= 0)
++          {
++            UString dest = rest.Left((unsigned)eqPos);
++            UString src = rest.Ptr((unsigned)(eqPos + 1));
++            dest.Replace(L'\\', L'/');
++            CDirItem di;
++            di.Name = dest;
++            di.LogPath = dest;
++            if (src.IsEmpty())
++            {
++              di.PhyPath.Empty();
++              di.Size = 0;
++              if (hasCustomTimestamp)
++              {
++                SetFiTimeFromUnixTime(di.MTime, customTimestamp);
++                di.CTime = di.ATime = di.MTime;
++              }
++              #ifdef _WIN32
++              di.Attrib = FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_UNIX_EXTENSION | (((MY_LIN_S_IFREG | mode) & 0xFFFF) << 16);
++              if ((mode & 0222) == 0)
++                di.Attrib |= FILE_ATTRIBUTE_READONLY;
++              #else
++              di.mode = MY_LIN_S_IFREG | mode;
++              #endif
++            }
++            else
++            {
++              di.PhyPath = us2fs(src);
++              NFind::CFileInfo fi;
++              if (!fi.Find(di.PhyPath, true))
++                throw CArcCmdLineException("Source file not found for path mapping:", src);
++              di.Size = fi.Size;
++              di.CTime = fi.CTime;
++              di.ATime = fi.ATime;
++              di.MTime = fi.MTime;
++              if (hasCustomTimestamp)
++              {
++                SetFiTimeFromUnixTime(di.MTime, customTimestamp);
++                di.CTime = di.ATime = di.MTime;
++              }
++              #ifdef _WIN32
++              di.Attrib = FILE_ATTRIBUTE_ARCHIVE | FILE_ATTRIBUTE_UNIX_EXTENSION | (((MY_LIN_S_IFREG | mode) & 0xFFFF) << 16);
++              if ((mode & 0222) == 0)
++                di.Attrib |= FILE_ATTRIBUTE_READONLY;
++              #else
++              di.mode = MY_LIN_S_IFREG | mode;
++              #endif
++            }
++            explicitItems->Add(di);
++            continue;
++          }
++
++          if (!rest.IsEmpty() && (rest.Back() == L'/' || rest.Back() == L'\\'))
++          {
++            UString dest = rest;
++            dest.Replace(L'\\', L'/');
++            if (dest.Back() != L'/')
++              dest += L'/';
++            CDirItem di;
++            di.Name = dest;
++            di.LogPath = dest;
++            di.PhyPath.Empty();
++            di.Size = 0;
++            if (hasCustomTimestamp)
++            {
++              SetFiTimeFromUnixTime(di.MTime, customTimestamp);
++              di.CTime = di.ATime = di.MTime;
++            }
++            #ifdef _WIN32
++            di.Attrib = FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_UNIX_EXTENSION | (((MY_LIN_S_IFDIR | mode) & 0xFFFF) << 16);
++            #else
++            di.mode = MY_LIN_S_IFDIR | mode;
++            #endif
++            explicitItems->Add(di);
++            continue;
++          }
++        }
++      }
+       AddNameToCensor(censor, nop, names[i]);
++    }
++  }
+ }
+
+ static void AddToCensorFromNonSwitchesStrings(
+     CObjectVector<CRenamePair> *renamePairs,
++    CObjectVector<CDirItem> *explicitItems,
+     unsigned startIndex,
+     NWildcard::CCensor &censor,
+@@ -573,5 +745,5 @@ static void AddToCensorFromNonSwitchesStrings(
+       throw CArcCmdLineException(kEmptyFilePath);
+     if (i < (unsigned)stopSwitchIndex && s[0] == kFileListID)
+-      AddToCensorFromListFile(renamePairs, censor, nop, s.Ptr(1), codePage);
++      AddToCensorFromListFile(renamePairs, explicitItems, censor, nop, s.Ptr(1), codePage);
+     else if (renamePairs)
+     {
+@@ -798,5 +970,5 @@ static void AddSwitchWildcardsToCensor(
+       AddNameToCensor(censor, nop2, tail);
+     else if (c == kFileListID)
+-      AddToCensorFromListFile(NULL, censor, nop2, tail, codePage);
++      AddToCensorFromListFile(NULL, NULL, censor, nop2, tail, codePage);
+     #ifdef _WIN32
+     else if (c == kMapNameID)
+@@ -1422,4 +1594,5 @@ void CArcCmdLineParser::Parse2(CArcCmdLineOptions &options)
+   nop.Include = true;
+   AddToCensorFromNonSwitchesStrings(isRename ? &options.UpdateOptions.RenamePairs : NULL,
++      &options.UpdateOptions.ExplicitItems,
+       curCommandIndex, options.Censor,
+       nonSwitchStrings, parser.StopSwitchIndex,
+diff --git a/CPP/7zip/UI/Common/DirItem.h b/CPP/7zip/UI/Common/DirItem.h
+index 3c19249..e9287aa 100644
+--- a/CPP/7zip/UI/Common/DirItem.h
++++ b/CPP/7zip/UI/Common/DirItem.h
+@@ -254,4 +254,6 @@ struct CDirItem: public NWindows::NFile::NFind::CFileInfoBase
+   int LogParent;
+   int SecureIndex;
++  FString PhyPath;
++  UString LogPath;
+
+  #ifdef _WIN32
+diff --git a/CPP/7zip/UI/Common/EnumDirItems.cpp b/CPP/7zip/UI/Common/EnumDirItems.cpp
+index 11643ae..cefd5e1 100644
+--- a/CPP/7zip/UI/Common/EnumDirItems.cpp
++++ b/CPP/7zip/UI/Common/EnumDirItems.cpp
+@@ -145,4 +145,6 @@ FString CDirItems::GetPhyPath(unsigned index) const
+ {
+   const CDirItem &di = Items[index];
++  if (!di.PhyPath.IsEmpty())
++    return di.PhyPath;
+   return us2fs(GetPrefixesPath(PhyParents, di.PhyParent, di.Name));
+ }
+@@ -151,4 +153,6 @@ UString CDirItems::GetLogPath(unsigned index) const
+ {
+   const CDirItem &di = Items[index];
++  if (!di.LogPath.IsEmpty())
++    return di.LogPath;
+   return GetPrefixesPath(LogParents, di.LogParent, di.Name);
+ }
+diff --git a/CPP/7zip/UI/Common/Update.cpp b/CPP/7zip/UI/Common/Update.cpp
+index b959a3c..7d2b881 100644
+--- a/CPP/7zip/UI/Common/Update.cpp
++++ b/CPP/7zip/UI/Common/Update.cpp
+@@ -1409,4 +1409,17 @@ HRESULT UpdateArchive(
+       RINOK(callback->FinishScanning(dirItems.Stat))
+
++      FOR_VECTOR (i, options.ExplicitItems)
++      {
++        const CDirItem &di = options.ExplicitItems[i];
++        dirItems.Items.Add(di);
++        if (di.IsDir())
++          dirItems.Stat.NumDirs++;
++        else
++        {
++          dirItems.Stat.NumFiles++;
++          dirItems.Stat.FilesSize += di.Size;
++        }
++      }
++
+       // 22.00: we don't need parent folder, if absolute path mode
+       if (options.PathMode != NWildcard::k_AbsPath)
+diff --git a/CPP/7zip/UI/Common/Update.h b/CPP/7zip/UI/Common/Update.h
+index 216339a..85c91fb 100644
+--- a/CPP/7zip/UI/Common/Update.h
++++ b/CPP/7zip/UI/Common/Update.h
+@@ -12,4 +12,5 @@
+ #include "UpdateAction.h"
+ #include "UpdateCallback.h"
++#include "DirItem.h"
+
+ enum EArcNameMode
+@@ -120,4 +121,5 @@ struct CUpdateOptions
+   CObjectVector<CRenamePair> RenamePairs;
+   CRecordVector<UInt64> VolumesSizes;
++  CObjectVector<CDirItem> ExplicitItems;
+
+   bool InitFormatIndex(const CCodecs *codecs, const CObjectVector<COpenType> &types, const UString &arcPath);
+diff --git a/CPP/7zip/UI/Common/UpdateCallback.cpp b/CPP/7zip/UI/Common/UpdateCallback.cpp
+index d3ee639..5b9ffcc 100644
+--- a/CPP/7zip/UI/Common/UpdateCallback.cpp
++++ b/CPP/7zip/UI/Common/UpdateCallback.cpp
+@@ -627,4 +627,14 @@ Z7_COM7F_IMF(CArchiveUpdateCallback::GetStream2(UInt32 index, ISequentialInStrea
+     #endif // !defined(UNDER_CE)
+
++    if (di.PhyPath.IsEmpty() && di.Size == 0)
++    {
++      CBufInStream *inStreamSpec = new CBufInStream();
++      CMyComPtr<ISequentialInStream> inStreamLoc = inStreamSpec;
++      inStreamSpec->Init(NULL, 0);
++      *inStream = inStreamLoc.Detach();
++      UpdateProcessedItemStatus((unsigned)up.DirIndex);
++      return S_OK;
++    }
++
+     CInFileStream *inStreamSpec = new CInFileStream;
+     CMyComPtr<ISequentialInStream> inStreamLoc(inStreamSpec);
