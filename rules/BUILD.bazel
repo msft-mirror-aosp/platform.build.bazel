@@ -1,14 +1,28 @@
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
 package(
     default_applicable_licenses = ["//:license"],
     default_visibility = ["//visibility:public"],
 )
 
+py_library(
+    name = "parallel_zip_lib",
+    srcs = ["parallel_zip.py"],
+    visibility = ["//visibility:public"],
+)
+
 py_binary(
     name = "parallel_zip",
     srcs = ["parallel_zip.py"],
     visibility = ["//visibility:public"],
+    deps = [":parallel_zip_lib"],
+)
+
+py_test(
+    name = "parallel_zip_test",
+    srcs = ["parallel_zip_test.py"],
+    data = ["@sevenzip//:7za"],
+    deps = [":parallel_zip_lib"],
 )
 
 alias(
