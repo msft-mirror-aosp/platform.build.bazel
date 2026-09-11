@@ -135,9 +135,8 @@ Storage to eliminate build flakiness, CDN timeouts, and rate limits.
    rewrite upstream\.org/releases/(.*\.tar\.gz) storage.googleapis.com/emu-next-bazel/registry/<module_name>/$1
    ```
 4. **Behavior:**
-   - **Internal Builds (`goog` / default):** Bazel rewrites the URL to GCS. All
-     non-Google domains are blocked by `block *` in `downloader.cfg` to ensure
-     100% hermetic internal builds.
+   - **Internal Builds (`goog` / default):** Bazel rewrites known URLs to GCS
+     or Airlock mirrors via `downloader.cfg`. Unmapped URLs fall back to upstream.
    - **AOSP Builds (`--config aosp`):** `downloader_aosp.cfg` blocks GCS and
      downloads directly from the canonical public upstream.
 
