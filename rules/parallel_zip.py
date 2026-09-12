@@ -12,10 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Parallel zip archive builder driving 7-Zip from a rules_pkg manifest."""
+"""Parallel zip archive builder driving 7-Zip and streaming zip from a rules_pkg manifest."""
 
 import argparse
-import contextlib
 import json
 import os
 from pathlib import Path
@@ -30,7 +29,7 @@ DEFAULT_EPOCH = 315532800  # 1980-01-01 00:00:00 UTC (ZIP MS-DOS minimum epoch)
 
 def _create_argument_parser():
     parser = argparse.ArgumentParser(
-        description="Create a zip archive using 7-Zip",
+        description="Create a zip archive using 7-Zip or direct zip streaming",
         fromfile_prefix_chars="@",
     )
     parser.add_argument("--sevenzip", required=True, help="Path to 7za executable")
@@ -91,44 +90,6 @@ def _combine_paths(left: str, right: str) -> str:
     return combined.lstrip("/")
 
 
-def _safe_dest_path(staging_root: Path, rel_path: str) -> Path:
-    """Resolves target path and guarantees it remains inside the staging root."""
-    target = (staging_root / rel_path).resolve()
-    try:
-        target.relative_to(staging_root)
-    except ValueError:
-        raise ValueError(
-            f"Path traversal detected: destination '{rel_path}' resolves outside staging root"
-        )
-    return target
-
-
-def _force_rmtree(path: Path) -> None:
-    """Removes a directory tree, resetting read-only permissions on failure (Windows)."""
-    if not path.exists():
-        return
-
-    def _on_error(func, p, _):
-        try:
-            os.chmod(p, 0o777)
-            func(p)
-        except OSError:
-            pass
-
-    shutil.rmtree(path, onerror=_on_error)
-
-
-def _safe_remove_target(target: Path) -> None:
-    """Safely removes an existing target whether it is a directory, file, or symlink."""
-    if target.is_dir() and not target.is_symlink():
-        _force_rmtree(target)
-    elif target.exists() or target.is_symlink():
-        try:
-            target.unlink()
-        except OSError:
-            pass
-
-
 def _get_timestamp(args) -> int:
     ts = max(DEFAULT_EPOCH, args.timestamp)
     if args.stamp_from:
@@ -143,72 +104,6 @@ def _get_timestamp(args) -> int:
             except Exception:
                 pass
     return ts
-
-
-def _stage_file(src: Path, target: Path, mode: int, timestamp: int) -> None:
-    if not src.exists() and not src.is_symlink():
-        raise FileNotFoundError(f"Manifest source file not found: {src}")
-    target.parent.mkdir(parents=True, exist_ok=True)
-    _safe_remove_target(target)
-    shutil.copyfile(src, target)
-    target.chmod(mode)
-    try:
-        os.utime(target, (timestamp, timestamp), follow_symlinks=False)
-    except (OSError, NotImplementedError):
-        pass
-
-
-def _stage_symlink(link_target: str, target: Path, timestamp: int) -> None:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    _safe_remove_target(target)
-    target.symlink_to(link_target)
-    try:
-        os.utime(target, (timestamp, timestamp), follow_symlinks=False)
-    except (OSError, NotImplementedError):
-        pass
-
-
-def _stage_empty_file(target: Path, mode: int, timestamp: int) -> None:
-    target.parent.mkdir(parents=True, exist_ok=True)
-    _safe_remove_target(target)
-    target.write_bytes(b"")
-    target.chmod(mode)
-    try:
-        os.utime(target, (timestamp, timestamp), follow_symlinks=False)
-    except (OSError, NotImplementedError):
-        pass
-
-
-def _stage_dir(target: Path, mode: int = 0o755) -> None:
-    target.mkdir(parents=True, exist_ok=True)
-    target.chmod(mode)
-
-
-def _stage_tree(
-    src_dir: Path,
-    target_dir: Path,
-    default_mode: int,
-    mode_str: str | None,
-    timestamp: int,
-) -> None:
-    if not src_dir.exists():
-        raise FileNotFoundError(f"Manifest source tree not found: {src_dir}")
-    target_dir.mkdir(parents=True, exist_ok=True)
-    target_dir.chmod(0o755)
-    for root, dirs, files in os.walk(src_dir, followlinks=True):
-        rel_root = Path(root).relative_to(src_dir)
-        for d in dirs:
-            tp = target_dir / rel_root / d
-            tp.mkdir(parents=True, exist_ok=True)
-            tp.chmod(0o755)
-        for f in files:
-            p = Path(root) / f
-            tp = target_dir / rel_root / f
-            if mode_str:
-                file_mode = int(mode_str, 8)
-            else:
-                file_mode = 0o755 if os.access(p, os.X_OK) else default_mode
-            _stage_file(p, tp, file_mode, timestamp)
 
 
 def _get_compression_args(compression_type: str, level: int) -> list[str]:
@@ -251,129 +146,228 @@ def _load_manifest_entries(
     return entries
 
 
-@contextlib.contextmanager
-def _staging_environment(output_path: Path):
-    """Context manager setting up an isolated staging dir and listfile, ensuring cleanup."""
-    staging_dir = output_path.parent / (output_path.name + ".staging")
-    listfile_path = output_path.parent / (output_path.name + ".list")
-
-    _force_rmtree(staging_dir)
-    staging_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        yield staging_dir, listfile_path
-    finally:
-        _force_rmtree(staging_dir)
-        if listfile_path.exists():
-            try:
-                listfile_path.unlink()
-            except OSError:
-                pass
-
-
-def _stage_manifest_entries(
-    entries: list[dict],
-    staging_dir: Path,
-    dir_prefix: str,
-    default_mode: int,
-    timestamp: int,
-) -> None:
-    """Populates the staging directory according to manifest entry specifications."""
-    for entry in entries:
-        etype = entry.get("type", "file")
-        raw_dest = entry.get("dest", "").strip("/")
-        if not raw_dest:
-            continue
-
-        dest_rel = _combine_paths(dir_prefix, raw_dest)
-        target = _safe_dest_path(staging_dir, dest_rel)
-
-        src_str = entry.get("src")
-        mode_str = entry.get("mode")
-        mode = int(mode_str, 8) if mode_str else default_mode
-
-        if etype == "file":
-            if not src_str:
-                raise ValueError(f"Missing 'src' for file entry: {dest_rel}")
-            _stage_file(Path(src_str), target, mode, timestamp)
-        elif etype == "tree":
-            if not src_str:
-                raise ValueError(f"Missing 'src' for tree entry: {dest_rel}")
-            _stage_tree(Path(src_str), target, default_mode, mode_str, timestamp)
-        elif etype in ("symlink", "link"):
-            if not src_str:
-                raise ValueError(
-                    f"Missing 'src' (link target) for symlink entry: {dest_rel}"
-                )
-            _stage_symlink(src_str, target, timestamp)
-        elif etype == "dir":
-            _stage_dir(target, mode if mode_str else 0o755)
-        elif etype in ("empty_file", "empty-file"):
-            _stage_empty_file(target, mode, timestamp)
-        else:
-            raise ValueError(f"Unknown manifest entry type: {etype}")
-
-
-def _normalize_staging_metadata(staging_dir: Path, timestamp: int) -> None:
-    """Normalizes directory permissions and deterministic timestamps bottom-up."""
-    for root, dirs, _ in os.walk(staging_dir, topdown=False):
-        for d in dirs:
-            p = Path(root) / d
-            if not p.is_symlink():
-                try:
-                    p.chmod(0o755)
-                except OSError:
-                    pass
-            try:
-                os.utime(p, (timestamp, timestamp), follow_symlinks=False)
-            except (OSError, NotImplementedError):
-                pass
-
-    try:
-        staging_dir.chmod(0o755)
-        os.utime(staging_dir, (timestamp, timestamp))
-    except OSError:
-        pass
-
-
 def _create_empty_zip(output_path: Path) -> None:
     """Creates a standard 22-byte empty ZIP archive directly."""
     if output_path.exists():
         output_path.unlink()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(output_path, "w") as _:
         pass
 
 
-def _generate_sorted_listfile(staging_dir: Path, listfile_path: Path) -> bool:
-    """Generates an explicitly sorted listfile for 7-Zip. Returns False if staging dir is empty."""
-    items_to_archive: list[str] = []
-    for p in staging_dir.rglob("*"):
-        rel_str = str(p.relative_to(staging_dir)).replace("\\", "/")
-        if p.is_dir() and not p.is_symlink():
-            items_to_archive.append(rel_str + "/")
+def _build_dest_map(
+    entries: list[dict],
+    dir_prefix: str,
+    default_mode: int,
+) -> dict[str, dict]:
+    """Flattens and validates manifest entries into a normalized destination map with parent directories."""
+    dest_map: dict[str, dict] = {}
+
+    for entry in entries:
+        etype = entry.get("type", "file")
+        raw_dest = entry.get("dest", "").replace("\\", "/").strip("/")
+        if not raw_dest:
+            continue
+
+        dest_rel = _combine_paths(dir_prefix, raw_dest)
+        mode_str = entry.get("mode")
+        mode = int(mode_str, 8) if mode_str else default_mode
+
+        if etype == "tree":
+            src_str = entry.get("src")
+            if not src_str:
+                raise ValueError(f"Missing 'src' for tree entry: {dest_rel}")
+            src_dir = Path(src_str)
+            if not src_dir.exists():
+                raise FileNotFoundError(f"Manifest source tree not found: {src_dir}")
+            dest_map[dest_rel.rstrip("/") + "/"] = {
+                "type": "dir",
+                "mode": mode if mode_str else 0o755,
+            }
+            for root, dirs, files in os.walk(src_dir, followlinks=True):
+                rel_root = Path(root).relative_to(src_dir)
+                for d in dirs:
+                    d_dest = _combine_paths(dest_rel, str(rel_root / d).replace("\\", "/")) + "/"
+                    dest_map[d_dest] = {
+                        "type": "dir",
+                        "mode": mode if mode_str else 0o755,
+                    }
+                for f in files:
+                    fp = Path(root) / f
+                    f_dest = _combine_paths(dest_rel, str(rel_root / f).replace("\\", "/"))
+                    file_mode = (
+                        int(mode_str, 8)
+                        if mode_str
+                        else (0o755 if os.access(fp, os.X_OK) else default_mode)
+                    )
+                    dest_map[f_dest] = {
+                        "type": "file",
+                        "src": str(fp),
+                        "mode": file_mode,
+                    }
+        elif etype == "dir":
+            dest_map[dest_rel.rstrip("/") + "/"] = {
+                "type": "dir",
+                "mode": mode if mode_str else 0o755,
+            }
+        elif etype in ("symlink", "link"):
+            src_str = entry.get("src")
+            if not src_str:
+                raise ValueError(f"Missing 'src' (link target) for symlink: {dest_rel}")
+            dest_map[dest_rel.rstrip("/")] = {
+                "type": "symlink",
+                "src": src_str.replace("\\", "/"),
+                "mode": mode,
+            }
+        elif etype in ("empty_file", "empty-file"):
+            dest_map[dest_rel.rstrip("/")] = {
+                "type": "empty_file",
+                "mode": mode,
+            }
+        elif etype == "file":
+            src_str = entry.get("src")
+            if not src_str:
+                raise ValueError(f"Missing 'src' for file entry: {dest_rel}")
+            src_path = Path(src_str)
+            if not src_path.exists() and not src_path.is_symlink():
+                raise FileNotFoundError(f"Manifest source file not found: {src_path}")
+            dest_map[dest_rel.rstrip("/")] = {
+                "type": "file",
+                "src": src_str,
+                "mode": mode,
+            }
         else:
-            items_to_archive.append(rel_str)
+            raise ValueError(f"Unknown manifest entry type: {etype}")
 
-    if not items_to_archive:
-        return False
+    if not dest_map:
+        return {}
 
-    items_to_archive.sort()
-    listfile_path.write_text(
-        "\n".join(items_to_archive) + "\n",
-        encoding="utf-8",
-    )
-    return True
+    # Synthesize intermediate parent directory entries for all items
+    for dest in list(dest_map.keys()):
+        parts = dest.strip("/").split("/")
+        for i in range(1, len(parts)):
+            parent = "/".join(parts[:i]) + "/"
+            if parent not in dest_map:
+                dest_map[parent] = {"type": "dir", "mode": 0o755}
+
+    return dest_map
 
 
-def _run_sevenzip(
-    sevenzip_bin: Path,
+def create_zip_stored(
     output_path: Path,
-    listfile_path: Path,
-    staging_dir: Path,
-    compression_args: list[str],
+    entries: list[dict],
+    dir_prefix: str,
+    default_mode: int,
+    timestamp: int,
 ) -> None:
-    """Invokes 7-Zip to produce the final archive from the staged entries."""
+    """Creates a ZIP archive using direct in-memory streaming with zero filesystem staging.
+
+    Used for compression_level = 0 (stored mode). Bypasses all intermediate file copies,
+    normalizes POSIX permissions and forward slashes, handles symlinks in-memory,
+    and ensures bit-for-bit determinism across Linux, macOS, and Windows.
+    """
     if output_path.exists():
         output_path.unlink()
+
+    dest_map = _build_dest_map(entries, dir_prefix, default_mode)
+    if not dest_map:
+        _create_empty_zip(output_path)
+        return
+
+    ts = max(DEFAULT_EPOCH, timestamp)
+    gm = time.gmtime(ts)
+    dt = (max(1980, gm.tm_year), gm.tm_mon, gm.tm_mday, gm.tm_hour, gm.tm_min, gm.tm_sec)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_STORED) as zf:
+        for dest in sorted(dest_map.keys()):
+            item = dest_map[dest]
+            itype = item["type"]
+            mode = item["mode"]
+
+            if itype == "dir":
+                clean_dest = dest.rstrip("/") + "/"
+                zinfo = zipfile.ZipInfo(filename=clean_dest, date_time=dt)
+                zinfo.create_system = 3  # UNIX
+                zinfo.external_attr = (0o040000 | mode) << 16
+                zf.writestr(zinfo, b"")
+
+            elif itype == "symlink":
+                target = item["src"]
+                clean_dest = dest.rstrip("/")
+                zinfo = zipfile.ZipInfo(filename=clean_dest, date_time=dt)
+                zinfo.create_system = 3  # UNIX
+                zinfo.external_attr = (0o120000 | mode) << 16
+                zf.writestr(zinfo, target)
+
+            elif itype == "empty_file":
+                clean_dest = dest.rstrip("/")
+                zinfo = zipfile.ZipInfo(filename=clean_dest, date_time=dt)
+                zinfo.create_system = 3  # UNIX
+                zinfo.external_attr = (0o100000 | mode) << 16
+                zf.writestr(zinfo, b"")
+
+            elif itype == "file":
+                src = Path(item["src"])
+                clean_dest = dest.rstrip("/")
+                zinfo = zipfile.ZipInfo(filename=clean_dest, date_time=dt)
+                zinfo.create_system = 3  # UNIX
+                zinfo.external_attr = (0o100000 | mode) << 16
+
+                with open(src, "rb") as fsrc:
+                    with zf.open(zinfo, "w") as fdst:
+                        shutil.copyfileobj(fsrc, fdst, length=1024 * 1024)
+
+
+def create_zip_deflated(
+    sevenzip_bin: Path,
+    output_path: Path,
+    entries: list[dict],
+    dir_prefix: str,
+    default_mode: int,
+    timestamp: int,
+    compression_args: list[str],
+) -> None:
+    """Creates a ZIP archive using 7-Zip zero-staging path mapping.
+
+    Used for compression_level > 0 (deflated mode). Emits a deterministic
+    mode-annotated listfile consumed directly by 7za with parallel compression.
+    """
+    if output_path.exists():
+        output_path.unlink()
+
+    dest_map = _build_dest_map(entries, dir_prefix, default_mode)
+    if not dest_map:
+        _create_empty_zip(output_path)
+        return
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    listfile_path = output_path.parent / (output_path.name + ".list")
+
+    lines = [f"#time:{max(DEFAULT_EPOCH, timestamp)}"]
+    for dest in sorted(dest_map.keys()):
+        item = dest_map[dest]
+        itype = item["type"]
+        mode = item["mode"]
+        mode_str = f"{mode:04o}"
+
+        if itype == "dir":
+            clean_dest = dest.rstrip("/") + "/"
+            lines.append(f"{mode_str}:{clean_dest}")
+        elif itype == "symlink":
+            clean_dest = dest.rstrip("/")
+            target = item["src"]
+            lines.append(f"{mode_str}:{clean_dest}->{target}")
+        elif itype == "empty_file":
+            clean_dest = dest.rstrip("/")
+            lines.append(f"{mode_str}:{clean_dest}=")
+        elif itype == "file":
+            clean_dest = dest.rstrip("/")
+            src = item["src"]
+            lines.append(f"{mode_str}:{clean_dest}={src}")
+        else:
+            raise ValueError(f"Unknown manifest entry type: {itype}")
 
     cmd = (
         [
@@ -403,19 +397,26 @@ def _run_sevenzip(
     env["LANG"] = "en_US.UTF-8"
     env["LC_CTYPE"] = "UTF-8"
 
-    proc = subprocess.run(
-        cmd,
-        cwd=staging_dir,
-        capture_output=True,
-        text=True,
-        env=env,
-    )
-    if proc.returncode != 0:
-        sys.stderr.write(
-            f"7za failed with exit code {proc.returncode}:\n"
-            f"{proc.stderr}\n{proc.stdout}\n"
+    try:
+        listfile_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        proc = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            env=env,
         )
-        sys.exit(proc.returncode)
+        if proc.returncode != 0:
+            sys.stderr.write(
+                f"7za failed with exit code {proc.returncode}:\n"
+                f"{proc.stderr}\n{proc.stdout}\n"
+            )
+            sys.exit(proc.returncode)
+    finally:
+        if listfile_path.exists():
+            try:
+                listfile_path.unlink()
+            except OSError:
+                pass
 
 
 def main() -> None:
@@ -434,25 +435,22 @@ def main() -> None:
     entries = _load_manifest_entries(manifest_path, args.files)
     output_path = Path(args.output).resolve()
 
-    with _staging_environment(output_path) as (staging_dir, listfile_path):
-        _stage_manifest_entries(
+    if args.compression_type.lower() == "stored" or args.compression_level == 0:
+        create_zip_stored(
+            output_path=output_path,
             entries=entries,
-            staging_dir=staging_dir,
             dir_prefix=args.directory,
             default_mode=default_mode,
             timestamp=timestamp,
         )
-        _normalize_staging_metadata(staging_dir, timestamp)
-
-        if not _generate_sorted_listfile(staging_dir, listfile_path):
-            _create_empty_zip(output_path)
-            return
-
-        _run_sevenzip(
+    else:
+        create_zip_deflated(
             sevenzip_bin=Path(args.sevenzip).resolve(),
             output_path=output_path,
-            listfile_path=listfile_path,
-            staging_dir=staging_dir,
+            entries=entries,
+            dir_prefix=args.directory,
+            default_mode=default_mode,
+            timestamp=timestamp,
             compression_args=compression_args,
         )
 
