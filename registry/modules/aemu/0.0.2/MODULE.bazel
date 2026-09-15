@@ -49,4 +49,4 @@ pip.parse(
     requirements_lock = "//tools/libs_python:requirements_lock.txt",
     requirements_windows = "//tools/libs_python:requirements_windows.txt",
 )
-use_repo(pip, "pypi_aemu")
+use_repo(pip, "goldfish-build-pypi", "pypi_aemu")

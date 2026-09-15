@@ -43,3 +43,8 @@ if build_id:
 build_target = os.getenv("BUILD_TARGET_NAME")
 if build_target:
     print(f"ab_target {build_target}")
+
+# STABLE_BUILD_ID is used by C++ linkstamping (e.g. //emulator/tools:aemu_version).
+# When --stamp is enabled, Bazel passes -DSTABLE_BUILD_ID=<value> to the linkstamp action.
+stable_build_id = os.getenv("BUILD_NUMBER") or os.getenv("BUILD_ID") or "developer"
+print(f"STABLE_BUILD_ID {stable_build_id}")
