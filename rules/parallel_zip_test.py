@@ -181,7 +181,7 @@ class ParallelZipStoredStreamTest(unittest.TestCase):
         (tree_dir / "file_a.txt").write_bytes(b"FILE_A")
 
         manifest = [
-            {"type": "tree", "src": str(tree_dir), "dest": "assets"},
+            {"type": "tree", "src": str(tree_dir), "dest": "assets", "mode": "0644"},
         ]
 
         parallel_zip.create_zip_stored(
@@ -192,12 +192,39 @@ class ParallelZipStoredStreamTest(unittest.TestCase):
             timestamp=parallel_zip.DEFAULT_EPOCH,
         )
 
-        with zipfile.ZipFile(self.output_zip, "r") as zf:
-            names = zf.namelist()
-            self.assertEqual(
-                names,
-                ["assets/", "assets/file_a.txt", "assets/sub/", "assets/sub/file_b.txt"],
-            )
+        extract_dir = self.root / "extracted"
+        extract_dir.mkdir(parents=True)
+        try:
+            with zipfile.ZipFile(self.output_zip, "r") as zf:
+                names = zf.namelist()
+                self.assertEqual(
+                    names,
+                    ["assets/", "assets/file_a.txt", "assets/sub/", "assets/sub/file_b.txt"],
+                )
+                for name in names:
+                    info = zf.getinfo(name)
+                    mode = (info.external_attr >> 16) & 0o7777
+                    if name.endswith("/"):
+                        self.assertEqual(
+                            mode,
+                            0o755,
+                            f"Directory {name} should have 0755 permissions, got {oct(mode)}",
+                        )
+                    else:
+                        self.assertEqual(
+                            mode,
+                            0o644,
+                            f"File {name} should have 0644 permissions, got {oct(mode)}",
+                        )
+                    target = zf.extract(info, extract_dir)
+                    if mode and os.name == "posix":
+                        os.chmod(target, mode)
+        finally:
+            if os.name == "posix":
+                for p in extract_dir.rglob("*"):
+                    if p.is_dir():
+                        p.chmod(0o755)
+                extract_dir.chmod(0o755)
 
 
     def test_deterministic_utc_timestamp(self):
@@ -391,7 +418,7 @@ class ParallelZipDeflatedTest(unittest.TestCase):
         (tree_dir / "file_a.txt").write_bytes(b"FILE_A")
 
         manifest = [
-            {"type": "tree", "src": str(tree_dir), "dest": "assets"},
+            {"type": "tree", "src": str(tree_dir), "dest": "assets", "mode": "0644"},
         ]
 
         parallel_zip.create_zip_deflated(
@@ -404,12 +431,39 @@ class ParallelZipDeflatedTest(unittest.TestCase):
             compression_args=["-mm=Deflate", "-mx=6"],
         )
 
-        with zipfile.ZipFile(self.output_zip, "r") as zf:
-            names = zf.namelist()
-            self.assertEqual(
-                names,
-                ["assets/", "assets/file_a.txt", "assets/sub/", "assets/sub/file_b.txt"],
-            )
+        extract_dir = self.root / "extracted"
+        extract_dir.mkdir(parents=True)
+        try:
+            with zipfile.ZipFile(self.output_zip, "r") as zf:
+                names = zf.namelist()
+                self.assertEqual(
+                    names,
+                    ["assets/", "assets/file_a.txt", "assets/sub/", "assets/sub/file_b.txt"],
+                )
+                for name in names:
+                    info = zf.getinfo(name)
+                    mode = (info.external_attr >> 16) & 0o7777
+                    if name.endswith("/"):
+                        self.assertEqual(
+                            mode,
+                            0o755,
+                            f"Directory {name} should have 0755 permissions, got {oct(mode)}",
+                        )
+                    else:
+                        self.assertEqual(
+                            mode,
+                            0o644,
+                            f"File {name} should have 0644 permissions, got {oct(mode)}",
+                        )
+                    target = zf.extract(info, extract_dir)
+                    if mode and os.name == "posix":
+                        os.chmod(target, mode)
+        finally:
+            if os.name == "posix":
+                for p in extract_dir.rglob("*"):
+                    if p.is_dir():
+                        p.chmod(0o755)
+                extract_dir.chmod(0o755)
 
     def test_deflated_deterministic_timestamp(self):
         file1 = self.root / "file1.txt"
