@@ -182,7 +182,7 @@ def _build_dest_map(
                 raise FileNotFoundError(f"Manifest source tree not found: {src_dir}")
             dest_map[dest_rel.rstrip("/") + "/"] = {
                 "type": "dir",
-                "mode": mode if mode_str else 0o755,
+                "mode": 0o755,
             }
             for root, dirs, files in os.walk(src_dir, followlinks=True):
                 rel_root = Path(root).relative_to(src_dir)
@@ -190,7 +190,7 @@ def _build_dest_map(
                     d_dest = _combine_paths(dest_rel, str(rel_root / d).replace("\\", "/")) + "/"
                     dest_map[d_dest] = {
                         "type": "dir",
-                        "mode": mode if mode_str else 0o755,
+                        "mode": 0o755,
                     }
                 for f in files:
                     fp = Path(root) / f
