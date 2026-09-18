@@ -4,7 +4,7 @@
     "strip_prefix": "libffi-3.4.7",
     "overlay": {
         "BUILD.bazel": "sha256-hEmUxN3jJup4OFUmFR52Un0zV08pU90M1X7q3TYURT8=",
-        "MODULE.bazel": "sha256-KqoOMmaQAqJv/kIemJE+1w+l7iHDb8UdLVEFOl7QdCA=",
+        "MODULE.bazel": "sha256-mwG2k5GRJd9HqALxDMtSw024IF+3CARHbr0Ah8FAI/Q=",
         "fficonfig.h.in": "sha256-Cf6vxX1mdV52LxxK4IjJc/iSvQqbcgLyhC7DWCdotig=",
         "libffi.bzl": "sha256-o4CvQr+a6pwr2KQPI+c1ifKcpE71xx48ZVlaHKXCnyg="
     },
