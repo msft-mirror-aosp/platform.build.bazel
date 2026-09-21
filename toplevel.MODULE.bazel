@@ -65,6 +65,7 @@ bazel_dep(name = "libgav1", version = "0.20.0")
 bazel_dep(name = "dav1d", version = "1.5.3-58-g14c73c7d")
 bazel_dep(name = "libsrtp2", version = "2.3.0")
 bazel_dep(name = "libyuv", version = "1948")
+bazel_dep(name = "webrtc_sdk_android", version = "150.7871.01")
 bazel_dep(name = "nasm", version = "2.16.03.bcr.3")
 bazel_dep(name = "rules_nasm", version = "0.5.0")
 
