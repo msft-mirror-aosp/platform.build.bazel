@@ -197,13 +197,13 @@ multisource_repo.file(
 multisource_repo.archive(
     name = "android16k-x86_64",
     aosp = {
-        "sha256": "6626b3889e2e204863908840b5ce85d37f29282e4ad7c1ce128a22240b9ea047",
-        "url": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-37.0_r04.zip",
+        "sha256": "e31eb87a8e7afb279310d2a700a57e2ca460bac117ac14d3fff068472930b5df",
+        "url": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-37.2_r05.zip",
     },
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
     goog = {
-        "sha256": "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
-        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-15505217.zip",
+        "sha256": "6205aeb88603725bef23d37c50eabf91d11073cc03a963059234b87691630395",
+        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-16418371.zip",
     },
 )
 # END android16k-x86_64
@@ -212,13 +212,13 @@ multisource_repo.archive(
 multisource_repo.archive(
     name = "android16k-arm64-v8a",
     aosp = {
-        "sha256": "767bc55ae7883ca62c87dd669bab6e8f610de97e634496544be1ba24f2f31152",
-        "url": "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-ps16k-37.0_r04.zip",
+        "sha256": "00681b54fe83facadca2aeddfdda09f1fcbde5fd5e3f4467a63619b011ccf33f",
+        "url": "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-ps16k-37.2_r05.zip",
     },
     build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
     goog = {
-        "sha256": "8eabc9496ac08362110d3393dd50e0af7add066d14bf10938aac3a30a4ea1444",
-        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-15505217.zip",
+        "sha256": "7be050d1d592dab2a4945dd1651c7aa978ae160619374a1887c5995aff6dc9ae",
+        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-16418371.zip",
     },
 )
 # END android16k-arm64-v8a

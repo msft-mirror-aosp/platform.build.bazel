@@ -798,7 +798,7 @@
     "@@goldfish_build+//extensions:multisource_repo.bzl%multisource_repo": {
       "general": {
         "bzlTransitiveDigest": "BvKQ70ZtVTwjiTa7R+sXc8N8Xiqzo3wu2FJWquO96Gs=",
-        "usagesDigest": "C5nyLzC8Q9cZq4P3VtKrEWx2+X/vp+7zrAVLVFcjGNA=",
+        "usagesDigest": "kispKWYbA0yNg0Ezq04h1C5VPaqByChoC85HErOg7/g=",
         "recordedInputs": [
           "REPO_MAPPING:goldfish+,goldfish goldfish+",
           "REPO_MAPPING:goldfish_build+,bazel_tools bazel_tools",
@@ -810,8 +810,8 @@
           "android16k-x86_64": {
             "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
             "attributes": {
-              "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-15505217.zip",
-              "sha256": "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
+              "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-16418371.zip",
+              "sha256": "6205aeb88603725bef23d37c50eabf91d11073cc03a963059234b87691630395",
               "build_file": "@@goldfish+//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
               "build_file_content": "",
               "strip_prefix": "",
@@ -822,8 +822,8 @@
           "android16k-arm64-v8a": {
             "repoRuleId": "@@rules_gcs+//gcs/private/repo_rules:gcs_archive.bzl%gcs_archive",
             "attributes": {
-              "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-15505217.zip",
-              "sha256": "8eabc9496ac08362110d3393dd50e0af7add066d14bf10938aac3a30a4ea1444",
+              "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-16418371.zip",
+              "sha256": "7be050d1d592dab2a4945dd1651c7aa978ae160619374a1887c5995aff6dc9ae",
               "build_file": "@@goldfish+//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
               "build_file_content": "",
               "strip_prefix": "",
