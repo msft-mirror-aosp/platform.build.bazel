@@ -1,0 +1,7 @@
+exports_files(["vars.bzl"])
+
+alias(
+    name = "llvm",
+    actual = "//llvm:llvm_shared",
+    visibility = ["//visibility:public"],
+)
