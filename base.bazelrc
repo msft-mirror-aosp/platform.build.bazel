@@ -79,7 +79,8 @@ build:_remote_base --remote_local_fallback
 build:_remote_base --modify_execution_info=CppLTOIndexing=+no-remote
 
 
-# Config to use hermetic SDKs
+# Config to use hermetic SDKs (enabled by default; overridden in build:aosp)
+build --config=hermetic
 build:hermetic --@goldfish_build//toolchains/cc/mac_clang:hermetic_xcode
 build:hermetic --@goldfish_build//toolchains/cc/windows_clang:hermetic_msvc
 build:hermetic --repo_env=CC_ALLOW_HOST_SDK=0
@@ -163,5 +164,12 @@ build:rbe-linux-aarch64 --platforms=@goldfish_build//platforms:linux_aarch64
 build:rbe-linux-aarch64 --extra_execution_platforms=@goldfish_build//platforms:linux_x64
 build:rbe-linux-aarch64 --remote_upload_local_results=false
 
+# External open-source AOSP configuration (b/555489617).
+# downloader_aosp.cfg blocks storage.googleapis.com (including gs://emu-next-bazel),
+# so --config=aosp cannot download @xcode_tools_hermetic and must fall back to
+# the local host SDK (while default internal builds use hermetic_xcode=true).
 common:aosp --repo_env=MULTISOURCE_REPO_TYPE=aosp
 common:aosp --downloader_config=build/bazel/utils/downloader_aosp.cfg
+build:aosp --@goldfish_build//toolchains/cc/mac_clang:hermetic_xcode=false
+build:aosp --@goldfish_build//toolchains/cc/windows_clang:hermetic_msvc=false
+build:aosp --repo_env=CC_ALLOW_HOST_SDK=1
