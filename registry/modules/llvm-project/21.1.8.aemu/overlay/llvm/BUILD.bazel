@@ -5687,9 +5687,22 @@ raw_cc_library(
     ],
 )
 
+genrule(
+    name = "llvm_version_script",
+    outs = ["llvm_version_script.lds"],
+    cmd = "printf 'LLVM_AEMU_21.1 {\\n  global: *;\\n};\\n' > $@",
+)
+
 cc_binary(
     name = "libLLVM.so",
-    linkopts = ["-Wl,-soname,libLLVM.so"],
+    additional_linker_inputs = [":llvm_version_script"],
+    linkopts = [
+        "-Wl,-soname,libLLVM.so",
+        "-Wl,-Bsymbolic",
+        "-Wl,-Bsymbolic-functions",
+        "-Wl,-z,nodelete",
+        "-Wl,--version-script,$(location :llvm_version_script)",
+    ],
     linkshared = True,
     deps = [
         ":AllTargetsAsmParsers",
