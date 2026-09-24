@@ -1,0 +1,10 @@
+{
+    "integrity": "sha256-gcEKlaXCLYOCdu6Q1xJjXWBCQZ/fyl74gygia2Mh5Ts=",
+    "strip_prefix": "rules_cc-0.2.22",
+    "url": "https://github.com/bazelbuild/rules_cc/releases/download/0.2.22/rules_cc-0.2.22.tar.gz",
+    "patch_strip": 1,
+    "patches": {
+        "module_dot_bazel_version.patch": "sha256-GOFyUQAP4G4LT00nVhEEI+1qHRsG6G+8PiebuRnkQmU=",
+        "aemu_linkstamp_root_relative_path.patch": "sha256-otjO0sfZ5YJMlG7FYYCvHJFrCJd07A3FyrUNgHy/XRA="
+    }
+}

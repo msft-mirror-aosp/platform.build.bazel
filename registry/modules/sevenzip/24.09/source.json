@@ -1,0 +1,14 @@
+{
+    "url": "https://github.com/ip7z/7zip/archive/refs/tags/24.09.tar.gz",
+    "integrity": "sha256-5HV7MHklInckogRGURk2ZLo9BOmsE7jmMfFmeJYBS78=",
+    "strip_prefix": "7zip-24.09",
+    "patch_strip": 1,
+    "patches": {
+        "0001-path-mapping.patch": "sha256-umD4JKPMO1HkY/RAjszOZlCLx0Y6/G7HHq+/fk0dFyk="
+    },
+    "overlay": {
+        "BUILD.bazel": "sha256-gnihDOyUqrpHE+95XI9d8d41EUcx6dtf5TyaGMdf8cA=",
+        "LICENSE": "sha256-9S/TkwGSnzF7D0HiI9CbXHBGyrmequjE5pK1Z3pk8LE=",
+        "MODULE.bazel": "sha256-txIE3PZcxOkhiYnabyXJJ/Eps1CQMc/UqsoXTVoQfEA="
+    }
+}

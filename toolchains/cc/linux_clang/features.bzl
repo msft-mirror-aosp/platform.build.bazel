@@ -609,7 +609,7 @@ generate_debug_symbols_feature = feature(
 
 thinlto_feature = feature(
     name = "thin_lto",
-    enabled = True,
+    enabled = False,
     flag_sets = [
         flag_set(
             actions = [

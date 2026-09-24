@@ -1,0 +1,137 @@
+diff --git a/gcs/private/BUILD.bazel b/gcs/private/BUILD.bazel
+index 511e99b..79d8d88 100644
+--- a/gcs/private/BUILD.bazel
++++ b/gcs/private/BUILD.bazel
+@@ -24,6 +24,7 @@ bzl_library(
+         "//docs:__pkg__",
+         "//gcs/private:__subpackages__",
+     ],
++    deps = ["@bazel_tools//tools/build_defs/repo:utils.bzl"],
+ )
+ 
+ filegroup(
+diff --git a/gcs/private/repo_rules/eager.bzl b/gcs/private/repo_rules/eager.bzl
+index 831945f..e21d14d 100644
+--- a/gcs/private/repo_rules/eager.bzl
++++ b/gcs/private/repo_rules/eager.bzl
+@@ -24,7 +24,9 @@ def _eager_impl(repository_ctx):
+ 
+     # start downloads
+     waiters = []
++    reproducible = True
+     for local_path, info in deps.items():
++        reproducible = reproducible and info_is_reproducible(info)
+         args = info_to_download_args(repository_ctx.attr.bucket, local_path, info)
+         waiters.append(repository_ctx.download(**args))
+ 
+@@ -36,6 +38,11 @@ def _eager_impl(repository_ctx):
+         for waiter in waiters:
+             waiter.wait()
+ 
++    if hasattr(repository_ctx, "repo_metadata"):
++        # allows participating in repo contents cache
++        return repository_ctx.repo_metadata(reproducible = reproducible)
++    return None
++
+ def info_to_download_args(bucket_name, local_path, info):
+     args = {
+         "url": bucket_url(bucket_name, info["remote_path"]),
+@@ -51,6 +58,10 @@ def info_to_download_args(bucket_name, local_path, info):
+         args["integrity"] = info["integrity"]
+     return args
+ 
++def info_is_reproducible(info):
++    digest = info.get("sha256") or info.get("integrity")
++    return len(digest) > 0
++
+ eager = repository_rule(
+     implementation = _eager_impl,
+     attrs = {
+diff --git a/gcs/private/repo_rules/gcs_archive.bzl b/gcs/private/repo_rules/gcs_archive.bzl
+index 0f686a1..ced4c23 100644
+--- a/gcs/private/repo_rules/gcs_archive.bzl
++++ b/gcs/private/repo_rules/gcs_archive.bzl
+@@ -15,7 +15,7 @@ See the License for the specific language governing permissions and
+ limitations under the License.
+ """
+ 
+-load("//gcs/private:util.bzl", "bucket_url", "download_and_extract_args", "parse_gs_url")
++load("//gcs/private:util.bzl", "download_and_extract_args", "parse_gs_url", "update_integrity_attr")
+ 
+ def _gcs_archive_impl(repository_ctx):
+     gs_url = repository_ctx.attr.url
+@@ -24,7 +24,7 @@ def _gcs_archive_impl(repository_ctx):
+ 
+     # download && extract the repo
+     args = download_and_extract_args(repository_ctx.attr, target["bucket_name"], target["remote_path"])
+-    repository_ctx.download_and_extract(**args)
++    download_info = repository_ctx.download_and_extract(**args)
+ 
+     # apply patches after extraction has finished
+     for patch in repository_ctx.attr.patches:
+@@ -39,6 +39,7 @@ def _gcs_archive_impl(repository_ctx):
+         repository_ctx.file("BUILD.bazel", repository_ctx.attr.build_file_content)
+     if has_build_file_label:
+         repository_ctx.file("BUILD.bazel", repository_ctx.read(repository_ctx.attr.build_file))
++    return update_integrity_attr(repository_ctx, _gcs_archive_attrs, download_info)
+ 
+ _gcs_archive_doc = """Downloads a Bazel repository as a compressed archive file from a GCS bucket, decompresses it,
+ and makes its targets available for binding.
+diff --git a/gcs/private/repo_rules/gcs_file.bzl b/gcs/private/repo_rules/gcs_file.bzl
+index 609cab5..2749d54 100644
+--- a/gcs/private/repo_rules/gcs_file.bzl
++++ b/gcs/private/repo_rules/gcs_file.bzl
+@@ -15,8 +15,7 @@ See the License for the specific language governing permissions and
+ limitations under the License.
+ """
+ 
+-load("//gcs/private:url_encoding.bzl", "url_encode")
+-load("//gcs/private:util.bzl", "bucket_url", "download_args", "parse_gs_url", "have_unblocked_downloads")
++load("//gcs/private:util.bzl", "download_args", "parse_gs_url", "have_unblocked_downloads", "update_integrity_attr")
+ 
+ def _gcs_file_impl(repository_ctx):
+     gs_url = repository_ctx.attr.url
+@@ -26,6 +25,7 @@ def _gcs_file_impl(repository_ctx):
+     # start download
+     args = download_args(repository_ctx.attr, target["bucket_name"], target["remote_path"])
+     waiter = repository_ctx.download(**args)
++    download_info = waiter
+ 
+     # populate BUILD files
+     repository_ctx.file("BUILD.bazel", "exports_files(glob([\"**\"]))".format(args["output"]))
+@@ -36,7 +36,8 @@ def _gcs_file_impl(repository_ctx):
+ 
+     # wait for download to finish
+     if have_unblocked_downloads():
+-        waiter.wait()
++        download_info = waiter.wait()
++    return update_integrity_attr(repository_ctx, _gcs_file_attrs, download_info)
+ 
+ _gcs_file_doc = """Downloads a file from a GCS bucket and makes it available to be used as a file group.
+ 
+diff --git a/gcs/private/util.bzl b/gcs/private/util.bzl
+index d12d083..9c29db3 100644
+--- a/gcs/private/util.bzl
++++ b/gcs/private/util.bzl
+@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
+ limitations under the License.
+ """
+ 
++load("@bazel_tools//tools/build_defs/repo:utils.bzl", "update_attrs")
+ load("//gcs/private:jsonpath.bzl", "walk_jsonpath")
+ load("//gcs/private:url_encoding.bzl", "url_encode")
+ 
+@@ -141,3 +142,13 @@ def have_unblocked_downloads():
+     if version[0] == 7 and version[1] < 1:
+         return False
+     return True
++
++def update_integrity_attr(ctx, attrs, download_info):
++    if not hasattr(ctx, "repo_metadata"):
++        # Old Bazel versions do not support repo_metadata
++        return None
++    # We don't need to override the integrity attribute if sha256 is already specified.
++    if ctx.attr.sha256 or ctx.attr.integrity:
++        return ctx.repo_metadata(reproducible = True)
++    integrity_override = {"integrity": download_info.integrity}
++    return ctx.repo_metadata(attrs_for_reproducibility = update_attrs(ctx.attr, attrs.keys(), integrity_override))
