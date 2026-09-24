@@ -194,10 +194,52 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "gears",
+    build_file_content = _generic_build,
+    sha256 = "29fe9e27f76fe779cd3c110b76b8ae4d78369d6b6052a3b559cec73f88135b96",
+    url = "gs://emu-next-bazel/apps/gears/2026-09-17/gears.zip",
+)
+
+gcs_archive(
+    name = "gltf-viewer",
+    build_file_content = _generic_build,
+    sha256 = "9287fb6bf4c4cbc5665552d3c1ebb36fbfd4e9bfcd440986aa6e80bda443be82",
+    url = "gs://emu-next-bazel/apps/gltf-viewer/2026-09-17/gltf-viewer.zip",
+)
+
+gcs_archive(
     name = "hellovk",
     build_file_content = _generic_build,
-    sha256 = "2f17d0097d81fcc3f200d97a90554108574e0959814537f63991987ef2e1ef01",
-    url = "gs://emu-next-bazel/apps/hellovk/2025-09-29/hellovk.zip",
+    sha256 = "0868f810699a8ff3c12997ce6a002c1437f95bedb0c496c2e192d230a6d165d7",
+    url = "gs://emu-next-bazel/apps/hellovk/2026-09-17/hellovk.zip",
+)
+
+gcs_archive(
+    name = "qr-generator",
+    build_file_content = _generic_build,
+    sha256 = "ea38bbbd96c3a75d534b76fe4ccbaf13408a1112ff61e351edbe29130295d90e",
+    url = "gs://emu-next-bazel/apps/qr-generator/2026-09-17/qr-generator.zip",
+)
+
+gcs_archive(
+    name = "triangle",
+    build_file_content = _generic_build,
+    sha256 = "8adfe2f4cfd3147e6dfc0030209a9c6619fefe3ccf832ada8c71943e9b4fb3de",
+    url = "gs://emu-next-bazel/apps/triangle/2026-09-17/triangle.zip",
+)
+
+gcs_archive(
+    name = "vulkan_samples",
+    build_file_content = _generic_build,
+    sha256 = "1e1bbd4db30c256668d6c087356c85cbcd1defe18dc4571cf9badbe2d2b8b26a",
+    url = "gs://emu-next-bazel/apps/vulkan_samples/2026-09-17/vulkan_samples.zip",
+)
+
+gcs_archive(
+    name = "vulkancapsviewer",
+    build_file_content = _generic_build,
+    sha256 = "8d62f8e6e0bb4cfc307154d090ffc4a608a532217a0ffcc6e87ef0e11ffd61b3",
+    url = "gs://emu-next-bazel/apps/vulkancapsviewer/2026-09-17/vulkancapsviewer.zip",
 )
 
 gcs_archive(
