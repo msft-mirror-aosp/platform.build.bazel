@@ -724,6 +724,7 @@ dbg_feature = feature(
             flag_groups = [
                 flag_group(flags = [
                     "-O0",
+                    "-fno-limit-debug-info",
                 ]),
             ],
         ),

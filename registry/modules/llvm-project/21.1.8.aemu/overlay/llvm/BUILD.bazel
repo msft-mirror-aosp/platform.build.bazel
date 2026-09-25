@@ -5,13 +5,13 @@
 load("@bazel_skylib//rules:common_settings.bzl", "string_flag")
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//mlir:tblgen.bzl", "gentbl_cc_library", "gentbl_filegroup", "td_library")
 load(":binary_alias.bzl", "binary_alias")
 load(":config.bzl", "llvm_config_defines")
 load(":driver.bzl", "generate_driver_selects", "generate_driver_tools_def", "llvm_driver_cc_binary", "select_driver_tools")
 load(":enum_targets_gen.bzl", "enum_targets_gen")
-load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
-load(":targets.bzl", "cc_binary", "cc_library", "llvm_targets", "raw_cc_library")
+load(":targets.bzl", "cc_binary", "cc_library", "cc_opt_alias", "llvm_targets", "raw_cc_library")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -549,8 +549,10 @@ cc_library(
 
 cc_library(
     name = "DWARFCFIChecker",
-    srcs = glob(["lib/DWARFCFIChecker/*.cpp",
-                 "lib/DWARFCFIChecker/*.h",]),
+    srcs = glob([
+        "lib/DWARFCFIChecker/*.cpp",
+        "lib/DWARFCFIChecker/*.h",
+    ]),
     hdrs = glob(["include/llvm/DWARFCFIChecker/*.h"]),
     copts = llvm_copts,
     deps = [
@@ -1227,6 +1229,7 @@ cc_library(
     ],
 )
 
+# buildifier: disable=name-conventions
 AnalysisFpExcSrcs = [
     "lib/Analysis/ConstantFolding.cpp",
 ]
@@ -5693,42 +5696,13 @@ genrule(
     cmd = "printf 'LLVM_AEMU_21.1 {\\n  global: *;\\n};\\n' > $@",
 )
 
-cc_binary(
+cc_opt_alias(
     name = "libLLVM.so",
-    additional_linker_inputs = [":llvm_version_script"],
-    linkopts = [
-        "-Wl,-soname,libLLVM.so",
-        "-Wl,-Bsymbolic",
-        "-Wl,-Bsymbolic-functions",
-        "-Wl,-z,nodelete",
-        "-Wl,--version-script,$(location :llvm_version_script)",
-    ],
-    linkshared = True,
-    deps = [
-        ":AllTargetsAsmParsers",
-        ":AllTargetsCodeGens",
-        ":AllTargetsDisassemblers",
-        ":Analysis",
-        ":BitWriter",
-        ":Core",
-        ":Coroutines",
-        ":ExecutionEngine",
-        ":InstCombine",
-        ":LTO",
-        ":MCDisassembler",
-        ":MCJIT",
-        ":OrcJIT",
-        ":Passes",
-        ":Scalar",
-        ":Support",
-        ":Target",
-        ":TargetParser",
-        ":TransformUtils",
-    ],
+    actual = "//:libLLVM.so",
 )
 
 raw_cc_library(
     name = "llvm_shared",
-    srcs = [":libLLVM.so"],
+    srcs = ["//:libLLVM.so"],
     deps = [":llvm_headers"],
 )
