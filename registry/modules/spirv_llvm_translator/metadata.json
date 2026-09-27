@@ -1,0 +1,11 @@
+{
+    "homepage": "https://github.com/KhronosGroup/SPIRV-LLVM-Translator",
+    "maintainers": [],
+    "repository": [
+        "github:KhronosGroup/SPIRV-LLVM-Translator"
+    ],
+    "versions": [
+        "21.1.8.aemu"
+    ],
+    "yanked_versions": {}
+}

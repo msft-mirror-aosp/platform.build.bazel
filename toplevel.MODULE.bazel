@@ -178,5 +178,7 @@ local_path_override(
 
 bazel_dep(name = "glslang", version = "16.6.0.aemu")
 bazel_dep(name = "llvm-project", version = "21.1.8.aemu")
+bazel_dep(name = "spirv_llvm_translator", version = "21.1.8.aemu")
+bazel_dep(name = "spirv_tools", version = "2026.1")
 bazel_dep(name = "mesa3d", version = "0.0.1")
 bazel_dep(name = "wayland-protocols", version = "1.41")
