@@ -1,0 +1,9 @@
+{
+    "integrity": "sha256-nAm5ARSccp33RQV9r6gVJ4qqEBuE0rbhTxakLeUvl/I=",
+    "strip_prefix": "glslang-16.6.0",
+    "url": "https://github.com/KhronosGroup/glslang/archive/refs/tags/16.6.0.tar.gz",
+    "overlay": {
+        "BUILD.bazel": "sha256-V/GFAbm6+QOuRFAUkOGdjIHnug+HlIZMm7LOtkbOPuQ=",
+        "MODULE.bazel": "sha256-QN8lz4X+FhEuNKErbDx8+GQcAtUq5lbQcspmgmMEPlY="
+    }
+}
