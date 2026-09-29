@@ -1,6 +1,43 @@
+load("//llvm:targets.bzl", "cc_binary", "cc_opt_alias")
+
 exports_files(["vars.bzl"])
 
-alias(
+cc_binary(
+    name = "libLLVM.so",
+    additional_linker_inputs = ["//llvm:llvm_version_script"],
+    linkopts = [
+        "-Wl,-soname,libLLVM.so",
+        "-Wl,-Bsymbolic",
+        "-Wl,-Bsymbolic-functions",
+        "-Wl,-z,nodelete",
+        "-Wl,--version-script,$(location //llvm:llvm_version_script)",
+    ],
+    linkshared = True,
+    visibility = ["//llvm:__pkg__"],
+    deps = [
+        "//llvm:AllTargetsAsmParsers",
+        "//llvm:AllTargetsCodeGens",
+        "//llvm:AllTargetsDisassemblers",
+        "//llvm:Analysis",
+        "//llvm:BitWriter",
+        "//llvm:Core",
+        "//llvm:Coroutines",
+        "//llvm:ExecutionEngine",
+        "//llvm:InstCombine",
+        "//llvm:LTO",
+        "//llvm:MCDisassembler",
+        "//llvm:MCJIT",
+        "//llvm:OrcJIT",
+        "//llvm:Passes",
+        "//llvm:Scalar",
+        "//llvm:Support",
+        "//llvm:Target",
+        "//llvm:TargetParser",
+        "//llvm:TransformUtils",
+    ],
+)
+
+cc_opt_alias(
     name = "llvm",
     actual = "//llvm:llvm_shared",
     visibility = ["//visibility:public"],

@@ -129,7 +129,7 @@ dbg_feature = feature(
         flag_set(
             actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
-                flag_group(flags = ["/Od", "/Z7"]),
+                flag_group(flags = ["/Od", "/Z7", "-fno-limit-debug-info"]),
             ],
         ),
         flag_set(
