@@ -3,24 +3,27 @@
     "strip_prefix": "llvm-project-21.1.8.src",
     "url": "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.1.8/llvm-project-21.1.8.src.tar.xz",
     "overlay": {
-        "BUILD.bazel": "sha256-NAjJDkcY+Jgx46VgaDPdLqG8hKwWYWQDt41vB5YMO7A=",
+        "BUILD.bazel": "sha256-55LAewkpSFlgJoVHAu/VF/7MvhC32RYNZH2+fpg+zKU=",
         "MODULE.bazel": "sha256-SRgjT3Sk9y7sQ+Ito1d8fKJHW9JbZ4ylAkPKgBZbY6w=",
-        "llvm/BUILD.bazel": "sha256-Q6EZAfR0zVpPk+LVVDNsaXZ4a90qaeJPfPrCEM/8YQ8=",
+        "clang/BUILD.bazel": "sha256-bCU9PoY+JYI4EyW4cQvvso3au/w8WjLQuYU5aFx2xbU=",
+        "clang/include/clang/Config/config.h": "sha256-7L+HpE/FzKiUWtgOfKpd/naU8GJ+J9DuFS3Ng7YQ21M=",
+        "llvm/BUILD.bazel": "sha256-hYOaB+Im8ktuS6tbj3+QIdkIFqRUeAkpTr83xhHxYGM=",
         "llvm/binary_alias.bzl": "sha256-yGIb97Tjj+hlGvJtWqRFlERhJJbEz6KEEHR2Dzr8i8k=",
         "llvm/cc_plugin_library.bzl": "sha256-pP6Z+3GHRPWEX2SeVtW1D595I29R6+bu/TmcIf2TRhs=",
         "llvm/config.bzl": "sha256-i+oxQihrNyB2qizwjxfBawsSo1+RU7cLReIjzHUTZ2s=",
         "llvm/driver.bzl": "sha256-xRCpgWq32NZf/qE+pUWmgKZIh/k+T99WNY0cbMkWuLk=",
         "llvm/enum_targets_gen.bzl": "sha256-cOC1aQxaZ6V+e5rOLKOs6SZ1JMz/fqe5DEbMg4al7zA=",
-        "llvm/include/llvm/CodeGen/RDFRegisters.h": "sha256-EgHzhjoc8CpsHyj9c++zN3meJLNjOquPQ4GjbnibPGg=",
+        "llvm/include/llvm/CodeGen/RDFRegisters.h": "sha256-6+4wORni5JQmZ5mL2D2w01lMywpzgysFa22RNhliR80=",
         "llvm/include/llvm/Config/Targets.h": "sha256-mDY/kGoEXWJgpYCHF/C1SmxwwT2BICOnbYCixs3Rq1o=",
         "llvm/include/llvm/Config/config.h": "sha256-ZuiyH1hUYbU/tjYxbiTtOyqZCbsbDYDuRjVfgmOGWnI=",
         "llvm/include/llvm/Config/llvm-config.h": "sha256-xwZ4JgnIqWyc0FLbLV/E12tC3kJPkt54ao0NB7ZbFDQ=",
         "llvm/lit_test.bzl": "sha256-qYmS5qk136b972jqeMnJU5sUpwg5mZiIHC2uZnO/RBA=",
-        "llvm/targets.bzl": "sha256-+51wHM2sL/G4T/ubg5XiV4s+NwEbS798Y0xnDvXXpCk=",
+        "llvm/targets.bzl": "sha256-L1D12u3GzlFrI5Q5z8BBUWT14tQf2By7hzDaD0Lc+Xw=",
         "mlir/BUILD.bazel": "sha256-2aCZfxYYuaAwuYv3s15dht2AGcJZ7QOtUYN1yxhcUuI=",
         "mlir/tblgen.bzl": "sha256-YddObhZvEQci9ZG464zkB9w2S+r1Y/5H/ZxagOxMTZc=",
         "third-party/siphash/BUILD.bazel": "sha256-5K3gWbGEzF5iSElvn2Z/VKdGXn2iN7xNExq6sRzMF/M=",
         "third-party/unittest/BUILD.bazel": "sha256-d27bkrjiaKExxHx8AQ61/Ffg3WC2bHs2o+xO7WTcyE0=",
-        "vars.bzl": "sha256-UyeQ2MoqTPyOPJ8ZDLA7NIcRrVAC3dy+dNbAw9/XrX8="
+        "vars.bzl": "sha256-UyeQ2MoqTPyOPJ8ZDLA7NIcRrVAC3dy+dNbAw9/XrX8=",
+        "workspace_root.bzl": "sha256-vlpadEI8CD11B7eHK+TgrgGdUL26tNx4VOjCUZUWgyY="
     }
 }

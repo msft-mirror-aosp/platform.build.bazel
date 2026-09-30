@@ -366,9 +366,11 @@ private:
   const llvm::rdf::PhysicalRegisterInfo *PRI;
 };
 
+#if !defined(__APPLE__)
 template <> struct __make_transparent<less<llvm::rdf::RegisterRef>> {
   using type = less<llvm::rdf::RegisterRef>;
 };
+#endif
 } // namespace std
 
 namespace llvm::rdf {

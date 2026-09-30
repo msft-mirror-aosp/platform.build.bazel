@@ -6,6 +6,7 @@ load("@with_cfg.bzl", "with_cfg")
 
 raw_cc_library = _cc_library
 llvm_targets = [
+    "AArch64",
     "X86",
 ]
 
@@ -36,7 +37,10 @@ cc_opt_alias, _cc_opt_alias_internal = with_cfg(_cc_forwarder).set("compilation_
 
 def cc_library(**kwargs):
     if kwargs.get("srcs"):
-        kwargs["alwayslink"] = True
+        kwargs["alwayslink"] = select({
+            "@bazel_tools//src/conditions:darwin": False,
+            "//conditions:default": True,
+        })
         kwargs["cxxopts"] = kwargs.get("cxxopts", []) + ["-std=c++17", "-fno-rtti"]
     _cc_library(**kwargs)
 

@@ -39,6 +39,15 @@ cc_binary(
 
 cc_opt_alias(
     name = "llvm",
-    actual = "//llvm:llvm_shared",
+    actual = select({
+        "@bazel_tools//src/conditions:darwin": "//llvm:llvm_macos",
+        "//conditions:default": "//llvm:llvm_shared",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "clang_lib",
+    actual = "//clang:clang_lib",
     visibility = ["//visibility:public"],
 )
