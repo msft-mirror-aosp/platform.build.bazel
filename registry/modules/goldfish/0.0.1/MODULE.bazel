@@ -139,6 +139,12 @@ new_local_repository(
     path = "prebuilts/python/windows-x86",
 )
 
+new_local_repository(
+    name = "ver_testdata",
+    build_file = "//emulator/libs/ver:ver_testdata.BUILD",
+    path = "prebuilts/android-emulator-build/common",
+)
+
 local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
 
 local_repository(
