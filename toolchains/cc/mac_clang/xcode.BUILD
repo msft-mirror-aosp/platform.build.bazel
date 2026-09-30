@@ -44,6 +44,7 @@ cc_toolchain_import(
 ALL_FRAMEWORKS = [
     "AVFAudio",
     "AVFoundation",
+    "Accelerate",
     "AppKit",
     "ApplicationServices",
     "AudioToolbox",
