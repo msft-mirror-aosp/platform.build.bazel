@@ -32,6 +32,9 @@ build:linux --workspace_status_command="prebuilts/python/linux-x86/bin/python3 b
 build:macos --workspace_status_command="prebuilts/python/darwin-x86/bin/python3 build/bazel/utils/bazel_workspace.py"
 build:windows --workspace_status_command="build\\bazel\\utils\\bazel_workspace.cmd"
 
+# Enable repository cache hardlinks for fast zero-copy repo extraction
+common --experimental_repository_cache_hardlinks
+
 # Credential helper for GCE access
 common:linux --credential_helper="*.googleapis.com=%workspace%/build/bazel/utils/credential_helper.sh"
 common:macos --credential_helper="*.googleapis.com=%workspace%/build/bazel/utils/credential_helper.sh"
@@ -121,7 +124,6 @@ build:dynamic --strategy=ExtractBreakpadSymbols=dynamic
 
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
-startup:ci --experimental_remote_repo_contents_cache
 common:ci --lockfile_mode=error
 common:ci --remote_build_event_upload=all
 common:ci --experimental_collect_system_network_usage
