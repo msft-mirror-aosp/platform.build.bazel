@@ -125,7 +125,9 @@ build:dynamic --strategy=ExtractBreakpadSymbols=dynamic
 # Configs for CI builds
 # When running CI, fail the build if the lockfile needs update
 common:ci --lockfile_mode=error
-common:ci --remote_build_event_upload=all
+# Only upload BEP-important local files (test.log, test.xml, timing profiles)
+# rather than uploading multi-GB top-level release/symbol .zip archives to CAS.
+common:ci --remote_build_event_upload=minimal
 common:ci --experimental_collect_system_network_usage
 build:ci --config=_remote_base
 build:ci --config=sponge
