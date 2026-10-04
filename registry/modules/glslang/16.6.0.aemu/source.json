@@ -3,7 +3,7 @@
     "strip_prefix": "glslang-16.6.0",
     "url": "https://github.com/KhronosGroup/glslang/archive/refs/tags/16.6.0.tar.gz",
     "overlay": {
-        "BUILD.bazel": "sha256-V/GFAbm6+QOuRFAUkOGdjIHnug+HlIZMm7LOtkbOPuQ=",
+        "BUILD.bazel": "sha256-FjW473hLou3F0kYJ2RfAZi+C81UOn+E/mfmpdQXzaJE=",
         "MODULE.bazel": "sha256-QN8lz4X+FhEuNKErbDx8+GQcAtUq5lbQcspmgmMEPlY="
     }
 }

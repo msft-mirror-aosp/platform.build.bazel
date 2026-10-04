@@ -117,7 +117,7 @@ cc_library(
         "glslang/Public/*.h",
     ]),
     copts = select({
-        "@platforms//os:windows": [],
+        "@platforms//os:windows": ["/std:c++17"],
         "//conditions:default": [
             "-std=c++17",
             "-Wno-conversion",
@@ -157,7 +157,7 @@ cc_binary(
         "StandAlone/Worklist.h",
     ],
     copts = select({
-        "@platforms//os:windows": [],
+        "@platforms//os:windows": ["/std:c++17"],
         "//conditions:default": [
             "-std=c++17",
             "-Woverflow",
