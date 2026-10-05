@@ -35,15 +35,27 @@ _cc_forwarder = rule(
 
 cc_opt_alias, _cc_opt_alias_internal = with_cfg(_cc_forwarder).set("compilation_mode", "opt").build()
 
+_llvm_cxxopts = select({
+    "@bazel_tools//src/conditions:windows": [
+        "/std:c++17",
+        "/GR-",
+    ],
+    "//conditions:default": [
+        "-std=c++17",
+        "-fno-rtti",
+    ],
+})
+
 def cc_library(**kwargs):
     if kwargs.get("srcs"):
         kwargs["alwayslink"] = select({
             "@bazel_tools//src/conditions:darwin": False,
+            "@bazel_tools//src/conditions:windows": False,
             "//conditions:default": True,
         })
-        kwargs["cxxopts"] = kwargs.get("cxxopts", []) + ["-std=c++17", "-fno-rtti"]
+        kwargs["cxxopts"] = kwargs.get("cxxopts", []) + _llvm_cxxopts
     _cc_library(**kwargs)
 
 def cc_binary(**kwargs):
-    kwargs["cxxopts"] = kwargs.get("cxxopts", []) + ["-std=c++17", "-fno-rtti"]
+    kwargs["cxxopts"] = kwargs.get("cxxopts", []) + _llvm_cxxopts
     _cc_binary(**kwargs)

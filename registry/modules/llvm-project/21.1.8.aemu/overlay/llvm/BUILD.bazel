@@ -248,7 +248,16 @@ cc_library(
         "@platforms//cpu:aarch64": [
             "lib/Support/BLAKE3/blake3_neon.c",
         ],
-        "@platforms//cpu:x86_64": [
+        "//conditions:default": [
+        ],
+    }) + select({
+        "@bazel_tools//src/conditions:darwin_x86_64": [
+            "lib/Support/BLAKE3/blake3_avx2_x86-64_unix.S",
+            "lib/Support/BLAKE3/blake3_avx512_x86-64_unix.S",
+            "lib/Support/BLAKE3/blake3_sse2_x86-64_unix.S",
+            "lib/Support/BLAKE3/blake3_sse41_x86-64_unix.S",
+        ],
+        "@bazel_tools//src/conditions:linux_x86_64": [
             "lib/Support/BLAKE3/blake3_avx2_x86-64_unix.S",
             "lib/Support/BLAKE3/blake3_avx512_x86-64_unix.S",
             "lib/Support/BLAKE3/blake3_sse2_x86-64_unix.S",
@@ -284,7 +293,9 @@ cc_library(
             "BLAKE3_USE_NEON=0",
         ],
     }) + select({
-        "@platforms//cpu:x86_64": [
+        "@bazel_tools//src/conditions:darwin_x86_64": [
+        ],
+        "@bazel_tools//src/conditions:linux_x86_64": [
         ],
         "//conditions:default": [
             "BLAKE3_NO_AVX2",
@@ -296,8 +307,13 @@ cc_library(
     includes = ["include"],
     linkopts = select({
         "@platforms//os:windows": [
-            "ws2_32.lib",
+            "advapi32.lib",
             "ntdll.lib",
+            "ole32.lib",
+            "psapi.lib",
+            "shell32.lib",
+            "uuid.lib",
+            "ws2_32.lib",
         ],
         "@platforms//os:freebsd": [
             "-pthread",
@@ -5751,6 +5767,32 @@ raw_cc_library(
         ":TransformUtils",
         ":Vectorize",
         ":WindowsDriver",
+        ":llvm_headers",
+    ],
+)
+
+raw_cc_library(
+    name = "llvm_windows",
+    deps = [
+        ":AllTargetsAsmParsers",
+        ":AllTargetsCodeGens",
+        ":AllTargetsDisassemblers",
+        ":Analysis",
+        ":BitWriter",
+        ":Core",
+        ":Coroutines",
+        ":ExecutionEngine",
+        ":InstCombine",
+        ":LTO",
+        ":MCDisassembler",
+        ":MCJIT",
+        ":OrcJIT",
+        ":Passes",
+        ":Scalar",
+        ":Support",
+        ":Target",
+        ":TargetParser",
+        ":TransformUtils",
         ":llvm_headers",
     ],
 )

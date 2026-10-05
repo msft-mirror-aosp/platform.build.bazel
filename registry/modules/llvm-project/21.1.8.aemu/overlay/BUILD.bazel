@@ -41,6 +41,7 @@ cc_opt_alias(
     name = "llvm",
     actual = select({
         "@bazel_tools//src/conditions:darwin": "//llvm:llvm_macos",
+        "@bazel_tools//src/conditions:windows": "//llvm:llvm_windows",
         "//conditions:default": "//llvm:llvm_shared",
     }),
     visibility = ["//visibility:public"],
