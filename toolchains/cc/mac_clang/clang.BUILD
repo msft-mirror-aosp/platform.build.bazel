@@ -105,6 +105,9 @@ cc_tool(
 cc_tool(
     name = "dsymutil",
     applied_actions = [PACKAGE_DEBUG_SYMBOLS_ACTION_NAME],
+    args = [
+        "--linker=parallel",
+    ],
     tool = ":bin/dsymutil",
 )
 
