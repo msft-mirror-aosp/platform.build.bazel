@@ -65,6 +65,7 @@ bazel_dep(name = "libgav1", version = "0.20.0")
 bazel_dep(name = "dav1d", version = "1.5.3-58-g14c73c7d")
 bazel_dep(name = "libsrtp2", version = "2.3.0")
 bazel_dep(name = "libyuv", version = "1948")
+bazel_dep(name = "webrtc_sdk_android", version = "150.7871.01")
 bazel_dep(name = "nasm", version = "2.16.03.bcr.3")
 bazel_dep(name = "rules_nasm", version = "0.5.0")
 
@@ -175,5 +176,9 @@ local_path_override(
     path = "prebuilts/android-emulator-build/common/vulkan/linux-x86_64/lavapipe-bazel-deps",
 )
 
+bazel_dep(name = "glslang", version = "16.6.0.aemu")
+bazel_dep(name = "llvm-project", version = "21.1.8.aemu")
+bazel_dep(name = "spirv_llvm_translator", version = "21.1.8.aemu")
+bazel_dep(name = "spirv_tools", version = "2026.1")
 bazel_dep(name = "mesa3d", version = "0.0.1")
 bazel_dep(name = "wayland-protocols", version = "1.41")

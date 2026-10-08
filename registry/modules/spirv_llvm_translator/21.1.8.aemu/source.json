@@ -1,0 +1,9 @@
+{
+    "integrity": "sha256-QwgP1RIscc2To9F01ZufyV/4rrGEfVDzlAiBEvayohc=",
+    "strip_prefix": "SPIRV-LLVM-Translator-21.1.3",
+    "url": "https://github.com/KhronosGroup/SPIRV-LLVM-Translator/archive/refs/tags/v21.1.3.tar.gz",
+    "overlay": {
+        "BUILD.bazel": "sha256-hcl4b2mvjsSSwRLXkimRSG6GC6lnCiwjpc6ElYHMogY=",
+        "MODULE.bazel": "sha256-PSrcJgZ8aDctrksqbkdyVKYYr4Hkr+ZkvchWt50NRNo="
+    }
+}

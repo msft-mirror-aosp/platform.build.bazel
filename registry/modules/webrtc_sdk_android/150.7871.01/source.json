@@ -1,0 +1,9 @@
+{
+    "url": "https://repo1.maven.org/maven2/io/github/webrtc-sdk/android/150.7871.01/android-150.7871.01.aar",
+    "integrity": "sha256-ChYnsaSMK8F9mkDWL8R71FFm9EoxHpWRfxR8QC3jebA=",
+    "archive_type": "zip",
+    "overlay": {
+        "BUILD.bazel": "sha256-z4gAZKr2+SBZXAn1tvMSoR4INGlaKq0fKMKaLskC9L4=",
+        "MODULE.bazel": "sha256-UIaBQjEeKZYF+wkJXOzi3C65NXG0JyT+2lkckwXksak="
+    }
+}

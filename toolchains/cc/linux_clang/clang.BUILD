@@ -51,6 +51,7 @@ cc_tool(
         ],
     ),
     tool = ":bin/clang",
+    visibility = ["//visibility:public"],
 )
 
 cc_tool(
@@ -85,6 +86,7 @@ cc_toolchain_import(
         ":lib/x86_64-unknown-linux-gnu/libc++abi.a",
     ],
     support_files = glob(["include/c++/v1/**"]),
+    visibility = ["//visibility:public"],
 )
 
 cc_toolchain_import(
@@ -97,6 +99,7 @@ cc_toolchain_import(
         "lib/clang/*/include/**",
         "lib/clang/*/share/**",
     ]),
+    visibility = ["//visibility:public"],
 )
 
 cc_toolchain_import(
@@ -106,6 +109,7 @@ cc_toolchain_import(
         exclude_directories = 0,
     ),
     support_files = glob(["lib/clang/*/lib/x86_64-unknown-linux-gnu/*"]),
+    visibility = ["//visibility:public"],
     deps = [":compiler_hdrs"],
 )
 
@@ -122,9 +126,24 @@ cc_toolchain_import(
         ":lib/x86_64-unknown-linux-gnu/libunwind.a",
         ":libunwind_as_libgcc",
     ],
+    visibility = ["//visibility:public"],
 )
 
 simple_toolchain(
     name = "objcopy",
     executable = ":bin/llvm-objcopy",
+)
+
+filegroup(
+    name = "other_binaries",
+    srcs = [
+        "bin/llvm-ar",
+        "bin/llvm-nm",
+        "bin/llvm-objcopy",
+        "bin/llvm-objdump",
+        "bin/llvm-ranlib",
+        "bin/llvm-strings",
+        "bin/llvm-strip",
+    ],
+    visibility = ["//visibility:public"],
 )

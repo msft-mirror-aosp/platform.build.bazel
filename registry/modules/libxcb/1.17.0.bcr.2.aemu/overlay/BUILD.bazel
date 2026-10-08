@@ -1,6 +1,6 @@
 load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
-load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_python//python:py_binary.bzl", "py_binary")
 
 EXTENSIONS = [
@@ -58,13 +58,13 @@ py_binary(
         "{}.c".format(extension),
         "{}.h".format(extension),
     ],
-    cmd = ('$(location c_client) -c "libxcb 1.17" ' +
+    cmd = ('$(execpath c_client) -c "libxcb 1.17" ' +
            '-l "X Version 11" ' +
            '-s "3" ' +
-           "-p $$(dirname $(location @xcb-proto//:xcbgen/state.py)) " +
-           "$(location @xcb-proto//:src/{extension}.xml) && " +
-           "mv {extension}.c $(location {extension}.c) && " +
-           "mv {extension}.h $(location {extension}.h)").format(
+           "-p $$(dirname $(execpath @xcb-proto//:xcbgen/state.py)) " +
+           "$(execpath @xcb-proto//:src/{extension}.xml) && " +
+           "mv {extension}.c $(execpath {extension}.c) && " +
+           "mv {extension}.h $(execpath {extension}.h)").format(
         extension = extension,
     ),
     tools = [
@@ -119,12 +119,18 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
+# Private static library used only to build libxcb-aemu.so.
+# Visibility is intentionally private to prevent external targets from ever
+# statically linking a private copy of libxcb: xcb_connection_t has
+# version-dependent struct layouts and libxcb maintains process-wide static
+# extension state, so all consumers must link libxcb dynamically.
 cc_library(
-    name = "xcb_lib",
+    name = "xcb_static",
     srcs = (
         ["{}.c".format(x) for x in EXTENSIONS] +
         ["{}.h".format(x) for x in EXTENSIONS] +
         ["src/" + x for x in [
+            "xcb.h",
             "xcb_auth.c",
             "xcb_conn.c",
             "xcb_ext.c",
@@ -133,39 +139,61 @@ cc_library(
             "xcb_out.c",
             "xcb_xid.c",
             "xcb_util.c",
+            "xcbext.h",
             "xcbint.h",
         ]]
     ) + ["//:config_h"],
-    hdrs = [
-        "src/xcb.h",
-        "src/xcbext.h",
-    ],
     copts = [
         "-DHAVE_CONFIG_H",
     ],
-    include_prefix = "xcb",
     includes = ["src"],
-    strip_include_prefix = "src",
-    visibility = ["//visibility:public"],
+    visibility = ["//visibility:private"],
     deps = [
         ":xcb_headers",
         "@libxau",
     ],
+    alwayslink = True,
 )
 
-cc_shared_library(
-    name = "libxcb_shared",
-    shared_lib_name = "libxcb-aemu.so",
-    user_link_flags = ["-Wl,-soname=libxcb-aemu.so"],
+cc_binary(
+    name = "libxcb-aemu.so",
+    linkopts = ["-Wl,-soname=libxcb-aemu.so"],
+    linkshared = True,
     visibility = ["//visibility:public"],
     deps = [
-        ":xcb_lib",
+        ":xcb_static",
         "@libxau",
     ],
 )
 
+cc_library(
+    name = "xcb_lib",
+    srcs = [":libxcb-aemu.so"],
+    hdrs = [
+        "src/xcb.h",
+        "src/xcbext.h",
+    ],
+    include_prefix = "xcb",
+    includes = ["src"],
+    linkopts = [
+        "-Wl,-rpath,$$ORIGIN",
+        "-Wl,-rpath,$$ORIGIN/lib64/vulkan",
+    ],
+    strip_include_prefix = "src",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":xcb_headers",
+    ],
+)
+
+alias(
+    name = "libxcb_shared",
+    actual = ":libxcb-aemu.so",
+    visibility = ["//visibility:public"],
+)
+
 alias(
     name = "libxcb",
-    actual = ":libxcb_shared",
+    actual = ":xcb_lib",
     visibility = ["//visibility:public"],
 )

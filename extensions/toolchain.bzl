@@ -110,6 +110,13 @@ def _toolchain_impl(ctx):
             xcode_tools_repository(
                 name = "xcode_tools",
                 build_file = "//toolchains/cc/mac_clang:xcode.BUILD",
+                sdk_versions = [
+                    "16.2",
+                    "16",
+                    "15",
+                    "26",
+                    "",
+                ],
             )
         else:
             # dummy

@@ -102,6 +102,19 @@ sysroot(
     path = "sysroot",
 )
 
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "sysroot/**",
+        "include/**",
+        "lib/**",
+        "lib64/**",
+        "libexec/**",
+        "x86_64-linux/**",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
 exports_files(
     srcs = ["lib/gcc/x86_64-linux/4.8.3"],
 )

@@ -129,7 +129,7 @@ dbg_feature = feature(
         flag_set(
             actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS,
             flag_groups = [
-                flag_group(flags = ["/Od", "/Z7"]),
+                flag_group(flags = ["/Od", "/Z7", "-fno-limit-debug-info"]),
             ],
         ),
         flag_set(
@@ -328,6 +328,30 @@ def get_toolchain_link_flags_feature(flags):
 has_configured_linker_path_feature = feature(
     name = "has_configured_linker_path",
     enabled = True,
+)
+
+# Forced includes. Bazel passes the build-info header (which defines
+# BUILD_EMBED_LABEL etc.) to linkstamp_compile only through the "includes"
+# variable, so without this linkstamped sources never see the stamped values.
+# Mirrors includes_feature in linux_clang/features.bzl, using clang-cl's /FI.
+includes_feature = feature(
+    name = "includes",
+    enabled = True,
+    flag_sets = [
+        flag_set(
+            actions = CPP_SOURCE_ACTIONS + C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + [
+                ACTION_NAMES.preprocess_assemble,
+                ACTION_NAMES.linkstamp_compile,
+            ],
+            flag_groups = [
+                flag_group(
+                    expand_if_available = "includes",
+                    iterate_over = "includes",
+                    flags = ["/FI%{includes}"],
+                ),
+            ],
+        ),
+    ],
 )
 
 include_paths_feature = feature(
@@ -680,6 +704,7 @@ def _cc_features_impl(ctx):
         rules_rust_unsupported_feature,
         preprocessor_defines_feature,
         parse_showincludes_feature,
+        includes_feature,
         include_paths_feature,
         external_include_paths_feature,
         get_toolchain_include_paths_feature(import_config),

@@ -1,0 +1,6 @@
+module(
+    name = "webrtc_sdk_android",
+    version = "150.7871.01",
+)
+
+bazel_dep(name = "rules_java", version = "9.3.0")

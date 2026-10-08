@@ -1,0 +1,35 @@
+load("@rules_java//java:java_import.bzl", "java_import")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+java_import(
+    name = "webrtc_java",
+    jars = ["classes.jar"],
+)
+
+filegroup(
+    name = "jni_libs",
+    srcs = glob(["jni/**/*.so"]),
+)
+
+filegroup(
+    name = "jni_arm64_v8a",
+    srcs = glob(["jni/arm64-v8a/*.so"]),
+)
+
+filegroup(
+    name = "jni_armeabi_v7a",
+    srcs = glob(["jni/armeabi-v7a/*.so"]),
+)
+
+filegroup(
+    name = "jni_x86_64",
+    srcs = glob(["jni/x86_64/*.so"]),
+)
+
+filegroup(
+    name = "jni_x86",
+    srcs = glob(["jni/x86/*.so"]),
+)

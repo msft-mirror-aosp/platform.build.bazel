@@ -41,6 +41,7 @@ cc_tool(
         ":bin/libwinpthread-1.dll",
     ],
     tool = ":bin/clang-cl.exe",
+    visibility = ["//visibility:public"],
 )
 
 cc_tool(
@@ -51,6 +52,7 @@ cc_tool(
         ":bin/libxml2.dll",
     ],
     tool = ":bin/lld-link.exe",
+    visibility = ["//visibility:public"],
 )
 
 cc_tool(
@@ -77,4 +79,21 @@ cc_toolchain_import(
         exclude_directories = 0,
     ),
     support_files = glob(["lib/clang/*/include/**"]),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "other_binaries",
+    srcs = [
+        "bin/lld-link.exe",
+        "bin/llvm-ar.exe",
+        "bin/llvm-lib.exe",
+        "bin/llvm-nm.exe",
+        "bin/llvm-objcopy.exe",
+        "bin/llvm-objdump.exe",
+        "bin/llvm-ranlib.exe",
+        "bin/llvm-strings.exe",
+        "bin/llvm-strip.exe",
+    ],
+    visibility = ["//visibility:public"],
 )

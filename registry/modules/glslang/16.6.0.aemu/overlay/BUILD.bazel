@@ -1,0 +1,182 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_python//python:defs.bzl", "py_binary")
+
+package(default_visibility = ["//visibility:public"])
+
+py_binary(
+    name = "build_info_script",
+    srcs = ["build_info.py"],
+    main = "build_info.py",
+)
+
+genrule(
+    name = "glslang_build_info",
+    srcs = [
+        "CHANGES.md",
+        "build_info.h.tmpl",
+    ],
+    outs = ["include/glslang/build_info.h"],
+    cmd = "SOURCE_DATE_EPOCH=0 $(location :build_info_script) $$(dirname $(location CHANGES.md)) -i $(location build_info.h.tmpl) -o $@",
+    tools = [":build_info_script"],
+)
+
+py_binary(
+    name = "gen_extension_headers_script",
+    srcs = ["gen_extension_headers.py"],
+    main = "gen_extension_headers.py",
+)
+
+genrule(
+    name = "glslang_extension_headers",
+    srcs = glob(["glslang/ExtensionHeaders/*.glsl"]),
+    outs = ["include/glslang/glsl_intrinsic_header.h"],
+    cmd = "$(location :gen_extension_headers_script) -i $$(dirname $(location glslang/ExtensionHeaders/GL_EXT_shader_realtime_clock.glsl)) -o $@",
+    tools = [":gen_extension_headers_script"],
+)
+
+cc_library(
+    name = "glslang_generated_headers",
+    hdrs = [
+        ":glslang_build_info",
+        ":glslang_extension_headers",
+    ],
+    includes = ["include"],
+)
+
+cc_library(
+    name = "glslang_default_resource_limits",
+    srcs = ["glslang/ResourceLimits/ResourceLimits.cpp"],
+    hdrs = [
+        "glslang/Include/ResourceLimits.h",
+        "glslang/Include/visibility.h",
+        "glslang/Public/ResourceLimits.h",
+    ],
+    includes = ["."],
+)
+
+cc_library(
+    name = "glslang_sources",
+    srcs = [
+        "SPIRV/GlslangToSpv.cpp",
+        "SPIRV/InReadableOrder.cpp",
+        "SPIRV/Logger.cpp",
+        "SPIRV/SpvBuilder.cpp",
+        "SPIRV/SpvPostProcess.cpp",
+        "SPIRV/SpvTools.cpp",
+        "SPIRV/disassemble.cpp",
+        "SPIRV/doc.cpp",
+        "glslang/GenericCodeGen/CodeGen.cpp",
+        "glslang/GenericCodeGen/Link.cpp",
+        "glslang/HLSL/hlslAttributes.cpp",
+        "glslang/HLSL/hlslGrammar.cpp",
+        "glslang/HLSL/hlslOpMap.cpp",
+        "glslang/HLSL/hlslParseHelper.cpp",
+        "glslang/HLSL/hlslParseables.cpp",
+        "glslang/HLSL/hlslScanContext.cpp",
+        "glslang/HLSL/hlslTokenStream.cpp",
+        "glslang/MachineIndependent/Constant.cpp",
+        "glslang/MachineIndependent/InfoSink.cpp",
+        "glslang/MachineIndependent/Initialize.cpp",
+        "glslang/MachineIndependent/IntermTraverse.cpp",
+        "glslang/MachineIndependent/Intermediate.cpp",
+        "glslang/MachineIndependent/ParseContextBase.cpp",
+        "glslang/MachineIndependent/ParseHelper.cpp",
+        "glslang/MachineIndependent/PoolAlloc.cpp",
+        "glslang/MachineIndependent/RemoveTree.cpp",
+        "glslang/MachineIndependent/Scan.cpp",
+        "glslang/MachineIndependent/ShaderLang.cpp",
+        "glslang/MachineIndependent/SpirvIntrinsics.cpp",
+        "glslang/MachineIndependent/SymbolTable.cpp",
+        "glslang/MachineIndependent/Versions.cpp",
+        "glslang/MachineIndependent/attribute.cpp",
+        "glslang/MachineIndependent/glslang_tab.cpp",
+        "glslang/MachineIndependent/intermOut.cpp",
+        "glslang/MachineIndependent/iomapper.cpp",
+        "glslang/MachineIndependent/limits.cpp",
+        "glslang/MachineIndependent/linkValidate.cpp",
+        "glslang/MachineIndependent/parseConst.cpp",
+        "glslang/MachineIndependent/preprocessor/Pp.cpp",
+        "glslang/MachineIndependent/preprocessor/PpAtom.cpp",
+        "glslang/MachineIndependent/preprocessor/PpContext.cpp",
+        "glslang/MachineIndependent/preprocessor/PpScanner.cpp",
+        "glslang/MachineIndependent/preprocessor/PpTokens.cpp",
+        "glslang/MachineIndependent/propagateNoContraction.cpp",
+        "glslang/MachineIndependent/reflection.cpp",
+    ] + select({
+        "@platforms//os:windows": ["glslang/OSDependent/Windows/ossource.cpp"],
+        "//conditions:default": ["glslang/OSDependent/Unix/ossource.cpp"],
+    }),
+    hdrs = glob([
+        "SPIRV/*.h",
+        "SPIRV/*.hpp11",
+        "glslang/HLSL/*.h",
+        "glslang/Include/*.h",
+        "glslang/MachineIndependent/**/*.h",
+        "glslang/OSDependent/*.h",
+        "glslang/Public/*.h",
+    ]),
+    copts = select({
+        "@platforms//os:windows": ["/std:c++17"],
+        "//conditions:default": [
+            "-std=c++17",
+            "-Wno-conversion",
+            "-Wno-extra-semi",
+            "-Wno-ignored-qualifiers",
+            "-Wno-implicit-fallthrough",
+            "-Wno-inconsistent-missing-override",
+            "-Wno-missing-field-initializers",
+            "-Wno-newline-eof",
+            "-Wno-sign-compare",
+            "-Wno-suggest-destructor-override",
+            "-Wno-suggest-override",
+            "-Wno-unused-variable",
+        ],
+    }),
+    defines = [
+        "ENABLE_HLSL=1",
+        "ENABLE_OPT=1",
+        "ENABLE_SPIRV=1",
+    ] + select({
+        "@platforms//os:windows": ["GLSLANG_OSINCLUDE_WIN32"],
+        "//conditions:default": ["GLSLANG_OSINCLUDE_UNIX"],
+    }),
+    includes = ["."],
+    deps = [
+        ":glslang_generated_headers",
+        "@spirv_tools",
+        "@spirv_tools//:spirv_tools_opt",
+    ],
+)
+
+cc_binary(
+    name = "glslangValidator",
+    srcs = [
+        "StandAlone/DirStackFileIncluder.h",
+        "StandAlone/StandAlone.cpp",
+        "StandAlone/Worklist.h",
+    ],
+    copts = select({
+        "@platforms//os:windows": ["/std:c++17"],
+        "//conditions:default": [
+            "-std=c++17",
+            "-Woverflow",
+        ],
+    }),
+    defines = [
+        "ENABLE_HLSL=1",
+        "ENABLE_OPT=1",
+        "ENABLE_SPIRV=1",
+    ],
+    linkopts = select({
+        "@platforms//os:linux": ["-pthread"],
+        "//conditions:default": [],
+    }),
+    deps = [
+        ":glslang_default_resource_limits",
+        ":glslang_generated_headers",
+        ":glslang_sources",
+        "@spirv_tools",
+        "@spirv_tools//:spirv_tools_opt",
+    ],
+)

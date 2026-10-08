@@ -23,6 +23,30 @@ bazel_dep(name = "protobuf", version = "33.4")
 bazel_dep(name = "pkg-config", version = "0.29.2")
 bazel_dep(name = "ninja", version = "1.12.1.bcr.1")
 bazel_dep(name = "rules_nodejs", version = "6.3.3.aemu")
+bazel_dep(name = "aspect_bazel_lib", version = "2.19.2")
+bazel_dep(name = "aspect_rules_js", version = "3.4.1")
+bazel_dep(name = "aspect_rules_ts", version = "3.10.1")
+bazel_dep(name = "rules_kotlin", version = "2.3.20")
+bazel_dep(name = "webrtc_sdk_android", version = "150.7871.01")
+
+local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "local_repository")
+
+local_repository(
+    name = "prebuilt_android_sdk",
+    path = "prebuilts/android/android-sdk",
+)
+
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "typescript")
+rules_ts_ext.deps()
+use_repo(rules_ts_ext, "npm_typescript")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "aemu_web_npm",
+    pnpm_lock = "//api/web:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+use_repo(npm, "aemu_web_npm")
 
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
 node.toolchain(
@@ -35,6 +59,17 @@ node.toolchain(
 use_repo(node, "nodejs_toolchains")
 
 register_toolchains("@nodejs_toolchains//:all")
+
+new_local_repository = use_repo_rule("@bazel_tools//tools/build_defs/repo:local.bzl", "new_local_repository")
+
+new_local_repository(
+    name = "meson",
+    build_file = "//:meson.BUILD",
+    path = "third_party/meson",
+)
+
+custom_toolchains = use_extension("@goldfish_build//extensions:toolchain.bzl", "toolchain")
+use_repo(custom_toolchains, "clang_linux_x64", "clang_mac_all", "clang_win_x64", "gcc_lib")
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(
