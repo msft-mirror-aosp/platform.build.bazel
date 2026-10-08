@@ -1,0 +1,1 @@
+python3.exe %~dp0\setup_dev_env.py
