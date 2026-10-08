@@ -36,5 +36,11 @@ build:ciasan --config=asan
 build:tidy --@goldfish_build//:clang_tidy_enabled=true
 test:tidy --@goldfish_build//:clang_tidy_enabled=true
 
+# Gfxstream software Vulkan test environment (Linux-only for now:
+# SetupGraphicsTestEnvironment() hardcodes .so names and gfxstream_unit_tests
+# currently only runs on Linux).
+build:linux --@gfxstream//common/testenv:graphics_test_environment=gles_none_vulkan_lavapipe
+build:linux --@gfxstream//common/testenv:vulkan_lavapipe_drivers=@goldfish//emulator/libs/ver:test_vulkan_icds
+
 # User overrides must come last
 try-import %workspace%/user.bazelrc
