@@ -11,12 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides implementations for the emulator kotlin rules for shared studio targets ."""
+"""Re-export kotlin library rule."""
 
-load("@rules_kotlin//kotlin:jvm.bzl", "kt_jvm_library", "kt_jvm_test")
+load("//tools/base/bazel:kotlin.bzl", _kotlin_library = "kotlin_library")
 
 def kotlin_library(**kwargs):
-    kt_jvm_library(**kwargs)
-
-def kotlin_test(**kwargs):
-    kt_jvm_test(**kwargs)
+    _kotlin_library(**kwargs)

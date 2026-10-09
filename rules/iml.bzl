@@ -11,12 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Provides emulator implmentations for iml rules (empty)."""
+"""Re-export iml rules."""
 
-def iml_module(**_):
-    # Building iml_modules is not supported in the emulator repo
-    pass
+load("//tools/base/bazel:bazel.bzl", _iml_module = "iml_module", _iml_test = "iml_test")
 
-def iml_test(**_):
-    # No iml_test either
-    pass
+iml_module = _iml_module
+
+iml_test = _iml_test
