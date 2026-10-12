@@ -156,6 +156,12 @@ build:rbe-win-x64 --platforms=@goldfish_build//platforms:windows_x64
 build:rbe-win-x64 --extra_execution_platforms=@goldfish_build//platforms:windows_x64
 build:rbe-win-x64 --remote_upload_local_results=false
 
+## (Any) -> Windows aarch64 (cross-compiled on windows x64)
+build:rbe-win-aarch64 --config=hermetic --config=remote --remote_local_fallback=false
+build:rbe-win-aarch64 --platforms=@goldfish_build//platforms:windows_aarch64
+build:rbe-win-aarch64 --extra_execution_platforms=@goldfish_build//platforms:windows_x64
+build:rbe-win-aarch64 --remote_upload_local_results=false
+
 ## (Any) -> Linux x64
 build:rbe-linux-x64 --config=remote --remote_local_fallback=false
 build:rbe-linux-x64 --platforms=@goldfish_build//platforms:linux_x64

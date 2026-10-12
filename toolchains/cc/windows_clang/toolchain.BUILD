@@ -24,10 +24,26 @@ alias(
 )
 
 alias(
+    name = "msvc_runtimes_aarch64",
+    actual = select({
+        ":is_hermetic_msvc": "@vctools_hermetic//:msvc_runtimes_aarch64",
+        "//conditions:default": "@vctools//:msvc_runtimes_aarch64",
+    }),
+)
+
+alias(
     name = "ml64",
     actual = select({
         ":is_hermetic_msvc": "@vctools_hermetic//:ml64",
         "//conditions:default": "@vctools//:ml64",
+    }),
+)
+
+alias(
+    name = "armasm64",
+    actual = select({
+        ":is_hermetic_msvc": "@vctools_hermetic//:armasm64",
+        "//conditions:default": "@vctools//:armasm64",
     }),
 )
 
@@ -48,10 +64,26 @@ alias(
 )
 
 alias(
+    name = "msvc_dlls_aarch64",
+    actual = select({
+        ":is_hermetic_msvc": "@vctools_hermetic//:dlls_aarch64",
+        "//conditions:default": "@vctools//:dlls_aarch64",
+    }),
+)
+
+alias(
     name = "sdk_libs_x64",
     actual = select({
         ":is_hermetic_msvc": "@windows_sdk_hermetic//:sdk_libs_x64",
         "//conditions:default": "@windows_sdk//:sdk_libs_x64",
+    }),
+)
+
+alias(
+    name = "sdk_libs_aarch64",
+    actual = select({
+        ":is_hermetic_msvc": "@windows_sdk_hermetic//:sdk_libs_aarch64",
+        "//conditions:default": "@windows_sdk//:sdk_libs_aarch64",
     }),
 )
 
@@ -70,7 +102,14 @@ _x64_imports = [
     ":sdk_libs_x64",
 ]
 
-_x64_defines = [
+_aarch64_imports = [
+    "@goldfish_build//toolchains/cc/windows_clang/compat:headers",
+    "@clang_win_x64//:compiler_runtime",
+    ":msvc_runtimes_aarch64",
+    ":sdk_libs_aarch64",
+]
+
+_windows_defines = [
     # Improves compatibility with older or embedded systems where atomics might not be supported or efficient.
     "/D__STDC_NO_ATOMICS__",
     "/DCOMPILER_MSVC",  # Identify as MSVC cl
@@ -86,12 +125,33 @@ _x64_defines = [
     "/D_UCRT_NOISY_NAN",
 ]
 
+_windows_warning_flags = [
+    "/W3",
+    "/wd4117",  # #pragma pragma should be at global scope
+    "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
+    "/wd4291",  # C++ exception specification used to terminate unexpected()
+    "/wd4250",  # base class '...' has virtual functions but is not virtual
+    "/wd4996",  # '...' is deprecated
+    "-Wno-initializer-overrides",
+    "-Wno-shift-negative-value",
+    "-Wno-unused-const-variable",
+    "-Wno-writable-strings",
+    "-Wno-unused-variable",
+    "-Wno-ignored-attributes",
+    "-Wno-unused-function",
+    "-Wno-format",
+    "-Wno-missing-braces",
+    "-Wno-uninitialized",
+    "-Wno-sometimes-uninitialized",
+    "-Wno-c99-designator",
+]
+
 cc_features(
     name = "x64_features",
     archive_flags = ["/ignore:4221"],
     assembler_flags = [
         "/nologo",
-    ] + _x64_defines,
+    ] + _windows_defines,
     compile_flags = [
         "-Wno-macro-redefined",  # We force define a large set windows settings
         "--target=x86_64-pc-windows-msvc",
@@ -106,7 +166,7 @@ cc_features(
         "/EHs-",
         "/EHc-",
         "/EHa-",
-    ] + _x64_defines,
+    ] + _windows_defines,
     cxx_flags = [
         "/std:c++latest",
         # Drop unreferenced inline functions/data from .obj files to reduce size
@@ -114,26 +174,35 @@ cc_features(
     ],
     link_flags = ["/ignore:4070"],
     toolchain_imports = _x64_imports,
-    warning_flags = [
-        "/W3",
-        "/wd4117",  # #pragma pragma should be at global scope
-        "/wd4351",  # nonstandard extension used: zero size arrays are deprecated
-        "/wd4291",  # C++ exception specification used to terminate unexpected()
-        "/wd4250",  # base class '...' has virtual functions but is not virtual
-        "/wd4996",  # '...' is deprecated
-        "-Wno-initializer-overrides",
-        "-Wno-shift-negative-value",
-        "-Wno-unused-const-variable",
-        "-Wno-writable-strings",
-        "-Wno-unused-variable",
-        "-Wno-ignored-attributes",
-        "-Wno-unused-function",
-        "-Wno-format",
-        "-Wno-missing-braces",
-        "-Wno-uninitialized",
-        "-Wno-sometimes-uninitialized",
-        "-Wno-c99-designator",
+    warning_flags = _windows_warning_flags,
+)
+
+cc_features(
+    name = "aarch64_features",
+    archive_flags = ["/ignore:4221"],
+    assembler_flags = [
+        "-nologo",
+    ] + _windows_defines,
+    compile_flags = [
+        "-Wno-macro-redefined",  # We force define a large set windows settings
+        "--target=aarch64-pc-windows-msvc",
+        # Allow removal of unused sections and code folding at link time.
+        "/Gy",
+        "/Gw",
+        # Disable exception handling
+        # https://learn.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-170#standard-c-exception-handling
+        "/EHs-",
+        "/EHc-",
+        "/EHa-",
+    ] + _windows_defines,
+    cxx_flags = [
+        "/std:c++latest",
+        # Drop unreferenced inline functions/data from .obj files to reduce size
+        "/Zc:inline",
     ],
+    link_flags = ["/ignore:4070"],
+    toolchain_imports = _aarch64_imports,
+    warning_flags = _windows_warning_flags,
 )
 
 cc_artifact_name(
@@ -225,6 +294,59 @@ toolchain(
     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
 )
 
+cc_toolchain_config(
+    name = "aarch64_config",
+    artifact_name_patterns = [
+        ":obj",
+        ":lib",
+        ":always_link_lib",
+        ":exe",
+        ":dll",
+        ":interface_lib",
+    ],
+    cc_features = ":aarch64_features",
+    cc_tools = [
+        "@clang_win_x64//:clang-cl",
+        "@clang_win_x64//:clang-tidy",
+        "@clang_win_x64//:link",
+        "@clang_win_x64//:archiver",
+        ":armasm64",
+    ],
+    compiler_name = "clang-cl",
+    identifier = "win_clangcl_aarch64",
+    target_cpu = "arm64",
+    toolchain_imports = _aarch64_imports,
+)
+
+cc_toolchain(
+    name = "aarch64",
+    all_files = ":aarch64_config",
+    ar_files = "@clang_win_x64//:archiver",
+    as_files = ":armasm64",
+    compiler_files = ":aarch64_config",
+    dwp_files = "@goldfish_build//toolchains/cc:empty",
+    linker_files = ":aarch64_config",
+    objcopy_files = "@goldfish_build//toolchains/cc:empty",
+    strip_files = "@goldfish_build//toolchains/cc:empty",
+    supports_param_files = True,
+    toolchain_config = ":aarch64_config",
+)
+
+toolchain(
+    name = "aarch64_toolchain",
+    exec_compatible_with = [
+        "@platforms//os:windows",
+        "@platforms//cpu:x86_64",
+        "@bazel_tools//tools/cpp:clang-cl",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
+        "@platforms//os:windows",
+    ],
+    toolchain = ":aarch64",
+    toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+)
+
 toolchain(
     name = "resource_compiler_x64",
     exec_compatible_with = [
@@ -233,6 +355,20 @@ toolchain(
     ],
     target_compatible_with = [
         "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+    ],
+    toolchain = ":resource_compiler_toolchain_x64",
+    toolchain_type = "@goldfish_build//toolchains/cc/windows_clang:resource_compiler_toolchain_type",
+)
+
+toolchain(
+    name = "resource_compiler_aarch64",
+    exec_compatible_with = [
+        "@platforms//cpu:x86_64",
+        "@platforms//os:windows",
+    ],
+    target_compatible_with = [
+        "@platforms//cpu:aarch64",
         "@platforms//os:windows",
     ],
     toolchain = ":resource_compiler_toolchain_x64",
