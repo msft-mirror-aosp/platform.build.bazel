@@ -58,6 +58,7 @@ cc_tool(
         "@goldfish_build//toolchains/cc:is_bootstrap": ":bin/clang",
         "//conditions:default": "@goldfish_build//toolchains/cc:wrapper",
     }),
+    visibility = ["//visibility:public"],
 )
 
 cc_tool(
@@ -104,6 +105,9 @@ cc_tool(
 cc_tool(
     name = "dsymutil",
     applied_actions = [PACKAGE_DEBUG_SYMBOLS_ACTION_NAME],
+    args = [
+        "--linker=parallel",
+    ],
     tool = ":bin/dsymutil",
 )
 
@@ -135,9 +139,25 @@ cc_toolchain_import(
             "lib/clang/*/share/**",
         ],
     ),
+    visibility = ["//visibility:public"],
 )
 
 simple_toolchain(
     name = "objcopy",
     executable = ":bin/llvm-objcopy",
+)
+
+filegroup(
+    name = "other_binaries",
+    srcs = [
+        "bin/dsymutil",
+        "bin/llvm-ar",
+        "bin/llvm-nm",
+        "bin/llvm-objcopy",
+        "bin/llvm-objdump",
+        "bin/llvm-ranlib",
+        "bin/llvm-strings",
+        "bin/llvm-strip",
+    ],
+    visibility = ["//visibility:public"],
 )

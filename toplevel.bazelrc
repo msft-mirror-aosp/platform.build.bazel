@@ -12,7 +12,7 @@ build --copt=-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
 build --host_copt=-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST
 
 
-build:debug --compilation_mode=dbg --strip=never --copt=-fno-limit-debug-info
+build:debug --compilation_mode=dbg --strip=never
 build:release --compilation_mode=opt
 build:release-assert --config=release --copt=-UNDEBUG
 build:debug_symbols --features='generate_debug_symbols'

@@ -1,0 +1,84 @@
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+cc_library(
+    name = "llvmspirvlib_prefixed_hdrs",
+    hdrs = glob(
+        [
+            "include/**/*.h",
+            "include/**/*.inc",
+        ],
+        allow_empty = True,
+    ),
+    include_prefix = "LLVMSPIRVLib",
+    strip_include_prefix = "include",
+)
+
+cc_library(
+    name = "llvmspirvlib",
+    srcs = glob(
+        [
+            "lib/SPIRV/**/*.cpp",
+            "lib/SPIRV/**/*.h",
+            "lib/SPIRV/**/*.hpp",
+            "lib/SPIRV/**/*.inc",
+        ],
+        allow_empty = True,
+    ),
+    hdrs = glob(
+        [
+            "include/**/*.h",
+            "include/**/*.inc",
+        ],
+        allow_empty = True,
+    ),
+    copts = [
+        "-std=c++17",
+        "-fno-rtti",
+        "-fno-exceptions",
+        "-w",
+    ],
+    includes = [
+        "include",
+        "lib/SPIRV",
+        "lib/SPIRV/Mangler",
+        "lib/SPIRV/libSPIRV",
+    ],
+    local_defines = [
+        "BASE_LLVM_VERSION=2101",
+    ],
+    deps = [
+        ":llvmspirvlib_prefixed_hdrs",
+        "@llvm-project//:llvm",
+        "@spirv_headers//:spirv_c_headers",
+        "@spirv_headers//:spirv_cpp11_headers",
+        "@spirv_headers//:spirv_cpp_headers",
+    ],
+)
+
+cc_binary(
+    name = "llvm-spirv",
+    srcs = glob(
+        [
+            "tools/llvm-spirv/*.cpp",
+            "tools/llvm-spirv/*.h",
+        ],
+        allow_empty = True,
+    ),
+    copts = [
+        "-std=c++17",
+        "-fno-rtti",
+        "-fno-exceptions",
+        "-w",
+    ],
+    includes = [
+        "include",
+        "lib/SPIRV",
+        "lib/SPIRV/libSPIRV",
+    ],
+    deps = [
+        ":llvmspirvlib",
+        "@llvm-project//:llvm",
+    ],
+)

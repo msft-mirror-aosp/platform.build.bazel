@@ -601,7 +601,7 @@ generate_debug_symbols_feature = feature(
         flag_set(
             actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + LTO_BACKEND_ACTIONS,
             flag_groups = [
-                flag_group(flags = ["-g"]),
+                flag_group(flags = ["-gline-tables-only"]),
             ],
         ),
     ],
@@ -724,6 +724,8 @@ dbg_feature = feature(
             flag_groups = [
                 flag_group(flags = [
                     "-O0",
+                    "-g",
+                    "-fno-limit-debug-info",
                 ]),
             ],
         ),
