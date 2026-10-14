@@ -120,6 +120,7 @@ cc_features(
     cxx_flags = [
         "-std=c++26",
         "-fno-exceptions",
+        "-fexperimental-library",
     ],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
@@ -235,6 +236,7 @@ cc_features(
     cxx_flags = [
         "-std=c++26",
         "-fno-exceptions",
+        "-fexperimental-library",
     ],
     link_flags = [
         "--target=arm64-apple-darwin-macho",
