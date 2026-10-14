@@ -37,6 +37,29 @@ cc_toolchain_import(
     ),
 )
 
+cc_toolchain_import(
+    name = "sdk_libs_aarch64",
+    include_paths = [
+        ":Include/ucrt",
+        ":Include/shared",
+        ":Include/um",
+        ":Include/winrt",
+        ":Include/cppwinrt",
+    ],
+    lib_search_paths = [
+        ":Lib/ucrt/arm64",
+        ":Lib/um/arm64",
+    ],
+    support_files = glob(
+        [
+            "Include/**",
+            "Lib/ucrt/arm64/**",
+            "Lib/um/arm64/**",
+        ],
+        allow_empty = True,
+    ),
+)
+
 simple_toolchain(
     name = "resource_compiler_toolchain_x64",
     args = ["/nologo"],

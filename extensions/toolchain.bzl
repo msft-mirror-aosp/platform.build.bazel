@@ -53,14 +53,14 @@ def _toolchain_impl(ctx):
         gcs_archive(
             name = "vctools_hermetic",
             build_file = "//toolchains/cc/windows_clang:vctools.BUILD",
-            sha256 = "41c278147d9633427a7f9d606f43db42345b92b80e358a182e7e7047f4ddd4a0",
-            url = "gs://emu-next-bazel/hermetic-msvc/msvc_tools_14_50_35717_202601231558.zip",
+            sha256 = "91e742c5c664aec3e9d9c742077c7319439ffb55be35e68f0232a755e56bb821",
+            url = "gs://emu-next-bazel/hermetic-msvc/msvc_tools_14_50_35717_202610121913.zip",
         )
         gcs_archive(
             name = "windows_sdk_hermetic",
             build_file = "//toolchains/cc/windows_clang:sdk.BUILD",
-            sha256 = "44451a7b5d9c8785f0bf19e747ab25c21b1717d73aa9e636eb5be57049f33841",
-            url = "gs://emu-next-bazel/hermetic-msvc/windows_11_sdk_10.0.22621.0_202506021733.zip",
+            sha256 = "6af8e86ac2cf13905a0d6dda3e51e2eb72a98d944458b3da42300814c67394f5",
+            url = "gs://emu-next-bazel/hermetic-msvc/windows_sdk_10_0_26100_0_202601231845.zip",
         )
 
         # Host SDKs

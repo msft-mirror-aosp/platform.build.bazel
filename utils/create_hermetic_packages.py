@@ -276,12 +276,13 @@ def find_vs_info():
         "json",
         "-requires",
         "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+        "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
     ]
     result = subprocess.run(command, capture_output=True, text=True, check=True)
     installations = json.loads(result.stdout)
     if not installations:
         raise Exception(
-            "vswhere did not find any Visual Studio installation with C++ tools."
+            "vswhere did not find any Visual Studio installation with x64 and ARM64 C++ tools."
         )
     return installations[0]
 
