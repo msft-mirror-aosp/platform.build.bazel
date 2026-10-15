@@ -302,6 +302,43 @@ gcs_archive(
         # Verify content was NOT updated
         self.assertEqual(updated_content, self.module_content)
 
+    @patch("update_sysimage.subprocess.run")
+    @patch("update_sysimage.calculate_sha256")
+    @patch("update_sysimage.Path.exists")
+    @patch("update_sysimage.Path.unlink")
+    def test_update_target_android_repos_bzl_dict_style(
+        self, mock_remove, mock_exists, mock_sha256, mock_run
+    ):
+        repos_bzl_content = """
+    # BEGIN android16k-x86_64
+    "android16k-x86_64": {
+        "aosp": {"url": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-37.2_r05.zip", "sha256": "aosp_sha"},
+        "goog": {"url": "old_url", "sha256": "old_sha256"},
+        "build_file": "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
+    },
+    # END android16k-x86_64
+"""
+        mock_sha256.return_value = "new_sha256"
+        mock_exists.return_value = True
+        mock_run.return_value = MagicMock(returncode=0)
+
+        target = ImageTarget("x86_64", True)
+        updated_content = update_sysimage.update_target(
+            target=target,
+            build_id="99999",
+            gcs_bucket="gs://dummy-bucket",
+            force=False,
+            dry_run=False,
+            current_content=repos_bzl_content,
+        )
+
+        self.assertIn(
+            '"url": "gs://dummy-bucket/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-99999.zip"',
+            updated_content,
+        )
+        self.assertIn('"sha256": "new_sha256"', updated_content)
+        self.assertIn('"sha256": "aosp_sha"', updated_content)
+
 
 if __name__ == "__main__":
     unittest.main()
