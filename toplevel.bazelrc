@@ -36,6 +36,14 @@ build:ciasan --config=asan
 build:tidy --@goldfish_build//:clang_tidy_enabled=true
 test:tidy --@goldfish_build//:clang_tidy_enabled=true
 
+# Code coverage configuration (LLVM source-based coverage)
+coverage --build_tests_only
+coverage --test_tag_filters=-tidy-test
+coverage --combined_report=lcov
+coverage --experimental_use_llvm_covmap
+coverage --experimental_generate_llvm_lcov
+coverage --instrumentation_filter=//emulator[/:],@goldfish//emulator[/:],//common[/:],//host[/:]
+
 # Gfxstream software Vulkan test environment (Linux-only for now:
 # SetupGraphicsTestEnvironment() hardcodes .so names and gfxstream_unit_tests
 # currently only runs on Linux).

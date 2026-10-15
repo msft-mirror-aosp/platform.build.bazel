@@ -798,6 +798,74 @@ msan_feature = get_sanitizer_feature(
     ],
 )
 
+coverage_feature = feature(
+    name = "coverage",
+)
+
+llvm_coverage_map_format_feature = feature(
+    name = "llvm_coverage_map_format",
+    provides = ["profile"],
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + [
+                ACTION_NAMES.preprocess_assemble,
+            ],
+            flag_groups = [
+                flag_group(
+                    expand_if_available = "gcov_gcno_file",
+                    flags = [
+                        "-fprofile-instr-generate",
+                        "-fcoverage-mapping",
+                    ],
+                ),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags = [
+                        "-fprofile-instr-generate",
+                    ],
+                ),
+            ],
+        ),
+    ],
+    requires = [feature_set(features = ["coverage"])],
+)
+
+gcc_coverage_map_format_feature = feature(
+    name = "gcc_coverage_map_format",
+    provides = ["profile"],
+    flag_sets = [
+        flag_set(
+            actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + CPP_COMPILE_ACTIONS + [
+                ACTION_NAMES.preprocess_assemble,
+            ],
+            flag_groups = [
+                flag_group(
+                    expand_if_available = "gcov_gcno_file",
+                    flags = [
+                        "-fprofile-arcs",
+                        "-ftest-coverage",
+                    ],
+                ),
+            ],
+        ),
+        flag_set(
+            actions = LINK_ACTIONS + LTO_INDEX_ACTIONS,
+            flag_groups = [
+                flag_group(
+                    flags = [
+                        "--coverage",
+                    ],
+                ),
+            ],
+        ),
+    ],
+    requires = [feature_set(features = ["coverage"])],
+)
+
 reproducible_build_feature = get_reproducible_build_feature(
     assembler_flags = [
         # Force the timestamps to a fixed value.
@@ -866,6 +934,9 @@ def _cc_features_impl(ctx):
         asan_feature,
         tsan_feature,
         msan_feature,
+        coverage_feature,
+        llvm_coverage_map_format_feature,
+        gcc_coverage_map_format_feature,
         get_toolchain_link_flags_feature(ctx.attr.link_flags),
         get_toolchain_cc_only_features(ctx.attr.cc_only_link_flags),
         get_toolchain_assembler_flags_feature(ctx.attr.assembler_flags),
