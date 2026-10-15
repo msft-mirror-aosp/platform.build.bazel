@@ -3,7 +3,7 @@
     "integrity": "sha256-wEnQKMfIGtojQwFVnETopdjrE8YOG0SfKcI6JxNqu0E=",
     "strip_prefix": "libyuv-d23308a2a7442be8e559b1b471862fd7588d6a57",
     "overlay": {
-        "BUILD.bazel": "sha256-Ta/ikpOsYx1tRr1wF9XVlVwjxJCKcguRvA5rwe8sjGg=",
+        "BUILD.bazel": "sha256-QcY0GyEwL/Z1s/wSo0EIJS7YPRnHgi281J0BvH58pJg=",
         "MODULE.bazel": "sha256-tm1icBp03WjW9hymxFiDUd3G3pT8fAMD8S1fmfjAyUo=",
         "unit_test/BUILD.bazel": "sha256-vLJk0fySK59D4ErWB3mTMODI6TB9SNJz2PZYurbjsHU=",
         "unit_test/unit_test/unit_test.h": "sha256-cdb5+VhyUBfr4YrTZ2Z5xZ+eV7Xa5OMxuLE5nUMraDA="

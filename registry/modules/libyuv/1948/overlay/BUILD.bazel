@@ -112,6 +112,7 @@ cc_library(
         "include/libyuv/version.h",
         "include/libyuv/video_common.h",
     ],
+    defines = ["LIBYUV_DISABLE_SME"],
     includes = ["include"],
 )
 
