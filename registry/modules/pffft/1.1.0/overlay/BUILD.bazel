@@ -37,9 +37,10 @@ SIMD_COPTS_X64 = [
 ]
 
 SIMD_COPTS = select({
-    "@platforms//os:windows": SIMD_COPTS_X64,
-    "@platforms//os:linux": SIMD_COPTS_X64,
-    "@platforms//os:macos": SIMD_COPTS_ARM64,
+    "@platforms//cpu:aarch64": SIMD_COPTS_ARM64,
+    "@platforms//cpu:arm64": SIMD_COPTS_ARM64,
+    "@platforms//cpu:x86_64": SIMD_COPTS_X64,
+    "//conditions:default": SIMD_COPTS_X64,
 })
 
 cc_library(

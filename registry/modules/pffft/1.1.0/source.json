@@ -3,7 +3,7 @@
     "integrity": "sha256-HJtT0mfpCTQEKFqFqCZKkyUWRU4d6BdoE+Cxcx5JPnA=",
     "strip_prefix": "pffft-master",
     "overlay": {
-        "BUILD.bazel": "sha256-6s2afKyE/pZd/KGE925D9Putt1pS+Q7i2SI6sxN7WlE=",
+        "BUILD.bazel": "sha256-uziO2GSerqDLm1vvrnnR6vr8+SC4R2jZpWX6SHqaDRk=",
         "MODULE.bazel": "sha256-e9prAkxEBFrXwsdczkwAHiDjwak7IHX2eVocNco1K44=",
         "LICENSE": "sha256-pGIAWS6xk4U1JyUNoJjmuwx1Qk56LH242lJsTzAcPYg="
     }
