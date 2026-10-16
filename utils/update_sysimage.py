@@ -18,8 +18,8 @@ from typing import List, Optional, Tuple
 FETCH_ARTIFACT = "/google/data/ro/projects/android/fetch_artifact"
 DEFAULT_BUCKET = "gs://emu-next-bazel"
 
-# Regex patterns for finding blocks in MODULE.bazel
-GOOG_DICT_PATTERN = r"(goog\s*=\s*\{.*?\})"
+# Regex patterns for finding blocks in MODULE.bazel or android_repos.bzl
+GOOG_DICT_PATTERN = r'((?:"goog"|goog)\s*(?:=|:)\s*\{.*?\})'
 GCS_ARCHIVE_PATTERN = r'(gcs_archive\s*\(\s*name\s*=\s*"{archive}".*?\))'
 
 # Regex patterns for updating attributes within a block
@@ -247,7 +247,7 @@ def update_target(
             )
             return current_content
 
-        if source_block.strip().startswith("goog"):
+        if source_block.strip().startswith(("goog", '"goog"')):
             updated_source = re.sub(
                 DICT_URL_PATTERN, f'"url": "{gcs_full_path}"', source_block
             )
@@ -329,16 +329,20 @@ def main():
     setup_logging(args.verbose)
     check_prerequisites()
 
-    # Find MODULE.bazel relative to script
+    # Find android_repos.bzl or MODULE.bazel relative to script
     script_dir = Path(__file__).parent
-    module_file = (
-        script_dir.parent
-        / "registry"
-        / "modules"
-        / "goldfish"
-        / "0.0.1"
-        / "MODULE.bazel"
-    )
+    repos_file = script_dir.parent / "extensions" / "android_repos.bzl"
+    if repos_file.exists():
+        module_file = repos_file
+    else:
+        module_file = (
+            script_dir.parent
+            / "registry"
+            / "modules"
+            / "goldfish"
+            / "0.0.1"
+            / "MODULE.bazel"
+        )
     if not module_file.exists():
         logging.error(f"Module file not found: {module_file}")
         sys.exit(1)

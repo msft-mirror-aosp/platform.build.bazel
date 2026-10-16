@@ -152,26 +152,20 @@ test harnesses) and public open-source releases.
    ```bash
    gcloud storage cp /path/to/system-image.zip gs://emu-next-bazel/sys-img/<target>/<image.zip>
    ```
-2. **Declare in `MODULE.bazel` via `multisource_repo`:**
-   ```python
-   multisource_repo.archive(
-       name = "android16k-x86_64",
-       goog = {
-           "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-15505217.zip",
-           "sha256": "069d6cdcf9192bd5ceec3f010d15bd8e9ed5a2bd2ad451bf35e343c522378596",
-           "build_file": "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-       },
-       aosp = {
-           "url": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-37.0_r04.zip",
-           "sha256": "6626b3889e2e204863908840b5ce85d37f29282e4ad7c1ce128a22240b9ea047",
-           "build_file": "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-       },
-   )
-   ```
+2. **Declare in `extensions/android_repos.bzl` (or override via `multisource_repo.archive`):**
+   - Standard Android API 29–37 system images (`SYSTEM_IMAGE_ARCHIVES`), CTS
+     suites (`CTS_ARCHIVES`), CTS-Verifier suites (`CTS_VERIFIER_ARCHIVES`), and
+     the default API 37 16K system images (`DEFAULT_SYSTEM_IMAGE_ARCHIVES`) are
+     declared in the compact table-driven catalog in
+     [extensions/android_repos.bzl](extensions/android_repos.bzl) and loaded
+     automatically by `multisource_repo.bzl`.
+   - Individual `MODULE.bazel` files only need `use_extension` and `use_repo`
+     (though explicit `multisource_repo.archive(...)` tags can still be used to
+     add or override repositories).
 3. **Automated Updating:**
    - Use [utils/update_sysimage.py](utils/update_sysimage.py) to automatically
-     download system images from `go/ab`, upload to GCS, and update
-     `MODULE.bazel`.
+     download default system images from `go/ab`, upload to GCS, and update
+     [extensions/android_repos.bzl](extensions/android_repos.bzl).
 
 ---
 
@@ -189,6 +183,37 @@ test harnesses) and public open-source releases.
   ```
   This flag activates `build/bazel/utils/downloader_aosp.cfg` (blocking GCS) and
   sets `MULTISOURCE_REPO_TYPE=aosp`.
+
+### Selecting Android API Levels (API 29–37) for Launcher, ETS, and xTS
+
+All Android API levels from **29 through 37** (`x86_64` and `arm64-v8a`) are
+registered for system images, CTS, and CTS-Verifier in
+[extensions/android_repos.bzl](extensions/android_repos.bzl). When no API level
+is specified, all targets default to **API 37** (`@android16k-x86_64` /
+`@android16k-arm64-v8a`, `@cts-x86-64` / `@cts-arm64`, `@cts-verifier`).
+
+You can target a specific API level (`29..37`) in two ways:
+
+1. **Via `--define api_level=<29..37>` on default targets:**
+   ```bash
+   # Launch the emulator with an API 36 system image
+   bzl run --define api_level=36 @goldfish//emulator/launcher:launch_emulator
+
+   # Run ETS or xTS suites against API 36
+   bzl test --define api_level=36 @goldfish_test//ets:boot_test
+   bzl test --define api_level=36 @goldfish_test//xts:infodeqp
+   bzl test --define api_level=36 @goldfish_test//xts:presubmit
+   bzl test --define api_level=36 @goldfish_test//xts:cts-verifier
+   ```
+
+2. **Via explicit `*_api_<29..37>` targets:**
+   ```bash
+   bzl test @goldfish_test//ets:boot_test_api_36
+   bzl test @goldfish_test//ets:presubmit_api_36
+   bzl test @goldfish_test//xts:infodeqp_api_36
+   bzl test @goldfish_test//xts:presubmit_api_36
+   bzl test @goldfish_test//xts:cts-verifier_api_36
+   ```
 
 #### Expected Content & AOSP Status
 
@@ -209,12 +234,17 @@ test harnesses) and public open-source releases.
     [create_hermetic_packages.py](utils/create_hermetic_packages.py). See
     [utils/README.md](utils/README.md) for details.
 
-#### 2. System Images for Testing
+#### 2. System Images & xTS Suites for Testing
 
-- **Android 16k Images**:
-  - `android16k-x86_64`
-  - `android16k-arm64-v8a`
-  - **AOSP Status**: Available via official public SDK images.
+- **Configurable API 29–37 System Images & xTS Suites**:
+  - `sysimg-android-<29..37>-{x86_64,arm64-v8a}`
+  - `cts-android-<29..37>-{x86-64,arm64}`
+  - `cts-verifier-android-<29..37>-{x86-64,arm64}`
+- **Unversioned Latest-API Aliases (API 37)**:
+  - `android16k-{x86_64,arm64-v8a}` (aliases for `sysimg-android-37-{x86_64,arm64-v8a}`)
+  - `cts-{x86-64,arm64}` (aliases for `cts-android-37-{x86-64,arm64}`)
+  - `cts-verifier` (alias for `cts-verifier-android-37-x86-64`)
+  - **AOSP Status**: Available via official public `dl.google.com` SDK and CTS archives.
 
 ## Key Utilities
 
@@ -240,7 +270,7 @@ python utils/create_hermetic_packages.py {msvc|sdk} [options]
 ### [update_sysimage.py](utils/update_sysimage.py)
 
 Manages the update and upload of system images to the GCS bucket, and updates
-the `goog` source entries in `MODULE.bazel`. (Internal Google use only).
+the `goog` source entries in `extensions/android_repos.bzl`. (Internal Google use only).
 
 **Usage:**
 

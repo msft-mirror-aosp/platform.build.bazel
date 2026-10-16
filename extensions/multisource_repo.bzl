@@ -17,6 +17,7 @@ HTTP/HTTPS URLs, and local labels (e.g., @repo//path/to/file).
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 load("@rules_gcs//gcs:repo_rules.bzl", "gcs_archive", "gcs_file")
+load("//extensions:android_repos.bzl", "get_android_archive_specs")
 
 def _zip_link_repo_impl(ctx):
     """Implementation of the repository rule that standardizes zip file access.
@@ -59,12 +60,12 @@ def _multisource_repo_impl(ctx):
     """
     build_type = ctx.getenv("MULTISOURCE_REPO_TYPE", "goog")
 
-    # Collect archives and their attributes
-    archives = {}
+    # Collect archives from the table-driven catalog in android_repos.bzl
+    # and allow explicit module tags to add or override entries.
+    archives = get_android_archive_specs()
     for mod in ctx.modules:
         for archive in mod.tags.archive:
-            if archive.name not in archives:
-                archives[archive.name] = archive
+            archives[archive.name] = archive
 
     # Collect files and their attributes
     files = {}

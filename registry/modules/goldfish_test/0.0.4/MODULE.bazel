@@ -139,6 +139,27 @@ gcs_archive(
 )
 
 gcs_archive(
+    name = "sysimg-android-37-arm64-v8a",
+    build_file_content = _generic_build,
+    sha256 = "66a7bdbeb368ceb20f345cec206c205b304caa90735c333b733bfdd63972d7c0",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_arm64-userdebug/16571990/sdk-repo-linux-system-images-16571990.zip",
+)
+
+gcs_archive(
+    name = "sysimg-android-37-x86_64",
+    build_file_content = _generic_build,
+    sha256 = "94936d2fb7d8bd1d0c2411510ca7e06ce93184695cad8a43fea036660ffb972d",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-userdebug/16571990/sdk-repo-linux-system-images-16571990.zip",
+)
+
+gcs_archive(
+    name = "sysimg-android-37-x86_64-user",
+    build_file_content = _generic_build,
+    sha256 = "456a0027d1e833daedf0a6edeface2c9ffcaad0e4a31c46bb1b7672d27de7b7f",
+    url = "gs://emu-next-bazel/ab/git_26Q2-emu-release/sdk_gphone16k_x86_64-user-cts/15982542/signed-x86_64-sdk-repo-linux-system-images-15982542.zip",
+)
+
+gcs_archive(
     name = "build-tools-linux",
     build_file_content = _generic_build,
     sha256 = "321e687caa570210bf4acd80e8cfbe901d17368d83f51976ccbba3656093fe2b",
@@ -152,18 +173,66 @@ gcs_archive(
     url = "gs://emu-next-bazel/ab/aosp-sdk-release/sdk_mac/13278306/sdk-repo-darwin-build-tools-13278306.zip",
 )
 
-gcs_archive(
-    name = "cts-arm64",
-    build_file_content = _generic_build,
-    sha256 = "868ed00224b0e754e928c43299843c2fa3ef04e9d35f3b273c8efecc3186eccc",
-    url = "gs://emu-next-bazel/xts_releases/android-cts-17_r1-linux_x86-arm.zip",
-)
-
-gcs_archive(
-    name = "cts-x86-64",
-    build_file_content = _generic_build,
-    sha256 = "e3b784016da9d9fb6aa34eb98835028a5a88fe8e5a40584fd6558b621c7a6306",
-    url = "gs://emu-next-bazel/xts_releases/android-cts-17_r1-linux_x86-x86.zip",
+# API 29-37 system images, CTS, and CTS-Verifier archives from the compact catalog
+# in build/bazel/extensions/android_repos.bzl.
+multisource_repo = use_extension("@goldfish_build//extensions:multisource_repo.bzl", "multisource_repo")
+use_repo(
+    multisource_repo,
+    "cts-android-29-arm64",
+    "cts-android-29-x86-64",
+    "cts-android-30-arm64",
+    "cts-android-30-x86-64",
+    "cts-android-31-arm64",
+    "cts-android-31-x86-64",
+    "cts-android-32-arm64",
+    "cts-android-32-x86-64",
+    "cts-android-33-arm64",
+    "cts-android-33-x86-64",
+    "cts-android-34-arm64",
+    "cts-android-34-x86-64",
+    "cts-android-35-arm64",
+    "cts-android-35-x86-64",
+    "cts-android-36-arm64",
+    "cts-android-36-x86-64",
+    "cts-android-37-arm64",
+    "cts-android-37-x86-64",
+    "cts-arm64",
+    "cts-verifier",
+    "cts-verifier-android-29-arm64",
+    "cts-verifier-android-29-x86-64",
+    "cts-verifier-android-30-arm64",
+    "cts-verifier-android-30-x86-64",
+    "cts-verifier-android-31-arm64",
+    "cts-verifier-android-31-x86-64",
+    "cts-verifier-android-32-arm64",
+    "cts-verifier-android-32-x86-64",
+    "cts-verifier-android-33-arm64",
+    "cts-verifier-android-33-x86-64",
+    "cts-verifier-android-34-arm64",
+    "cts-verifier-android-34-x86-64",
+    "cts-verifier-android-35-arm64",
+    "cts-verifier-android-35-x86-64",
+    "cts-verifier-android-36-arm64",
+    "cts-verifier-android-36-x86-64",
+    "cts-verifier-android-37-arm64",
+    "cts-verifier-android-37-x86-64",
+    "cts-x86-64",
+    "sysimg-android-29-arm64-v8a",
+    "sysimg-android-29-x86_64",
+    "sysimg-android-30-arm64-v8a",
+    "sysimg-android-30-x86_64",
+    "sysimg-android-31-arm64-v8a",
+    "sysimg-android-31-x86_64",
+    "sysimg-android-32-arm64-v8a",
+    "sysimg-android-32-x86_64",
+    "sysimg-android-33-arm64-v8a",
+    "sysimg-android-33-x86_64",
+    "sysimg-android-34-arm64-v8a",
+    "sysimg-android-34-x86_64",
+    "sysimg-android-35-arm64-v8a",
+    "sysimg-android-35-x86_64",
+    "sysimg-android-36-arm64-v8a",
+    "sysimg-android-36-x86_64",
 )
 
 gcs_archive(
@@ -178,13 +247,6 @@ gcs_archive(
     build_file_content = _generic_build,
     sha256 = "0d047961309c7956442ef9c7a6559e3fe8cbb952c7369622f08f899c9e881ce7",
     url = "gs://emu-next-bazel/source.android.com/android-cts-media-1.5.zip",
-)
-
-gcs_archive(
-    name = "cts-verifier",
-    build_file_content = _generic_build,
-    sha256 = "a47bc094a90be4d05f081c5cc45a9f7fc3429c4ef3cabff440f429f64da68ab9",
-    url = "gs://emu-next-bazel/xts_releases/android-cts-verifier-17_r1-linux_x86-x86.zip",
 )
 
 gcs_archive(
