@@ -20,6 +20,8 @@ license(
 )
 
 SIMD_COPTS_ARM64 = [
+    # Required on Windows (UCRT) so <math.h> exposes M_PI, M_SQRT2, etc.
+    "-D_USE_MATH_DEFINES",
     "-Wno-vla",
     "-Wno-#pragma-messages",
     "-Wno-absolute-value",

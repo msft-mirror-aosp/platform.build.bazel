@@ -181,11 +181,17 @@ cc_features(
     name = "aarch64_features",
     archive_flags = ["/ignore:4221"],
     assembler_flags = [
-        "-nologo",
+        "/nologo",
+        "--target=aarch64-pc-windows-msvc",
+        "-D__ASSEMBLER__",
     ] + _windows_defines,
     compile_flags = [
         "-Wno-macro-redefined",  # We force define a large set windows settings
         "--target=aarch64-pc-windows-msvc",
+        # clang-cl targets Windows SEH unwind info on ARM64 but only defines
+        # __SEH__ in MinGW mode; defining __SEH__ enables upstream workarounds
+        # (e.g. protobuf upb/wire/encode.c) for llvm/llvm-project#47432.
+        "/D__SEH__",
         # Allow removal of unused sections and code folding at link time.
         "/Gy",
         "/Gw",
@@ -307,14 +313,14 @@ cc_toolchain_config(
     cc_features = ":aarch64_features",
     cc_tools = [
         "@clang_win_x64//:clang-cl",
+        "@clang_win_x64//:clang-cl-assembler",
         "@clang_win_x64//:clang-tidy",
         "@clang_win_x64//:link",
         "@clang_win_x64//:archiver",
-        ":armasm64",
     ],
     compiler_name = "clang-cl",
     identifier = "win_clangcl_aarch64",
-    target_cpu = "arm64",
+    target_cpu = "aarch64",
     toolchain_imports = _aarch64_imports,
 )
 
@@ -322,7 +328,7 @@ cc_toolchain(
     name = "aarch64",
     all_files = ":aarch64_config",
     ar_files = "@clang_win_x64//:archiver",
-    as_files = ":armasm64",
+    as_files = ":aarch64_config",
     compiler_files = ":aarch64_config",
     dwp_files = "@goldfish_build//toolchains/cc:empty",
     linker_files = ":aarch64_config",

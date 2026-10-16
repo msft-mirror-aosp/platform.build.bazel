@@ -188,6 +188,16 @@ def _msvc_tools_repository_impl(repo_ctx):
         )
     selected_vctools = vctools_by_version[selected_version]
     repo_ctx.symlink(selected_vctools.vctools_path, "msvc")
+    redist_parent = selected_vctools.vs_path.get_child("VC", "Redist", "MSVC")
+    if redist_parent.exists:
+        redist_by_version = {
+            p.basename: p
+            for p in redist_parent.readdir()
+            if p.get_child("x64").exists or p.get_child("arm64").exists
+        }
+        selected_redist = _select_version(redist_by_version, [selected_version, ""])
+        if selected_redist:
+            repo_ctx.symlink(redist_by_version[selected_redist], "msvc_redist")
     dia_sdk_path = selected_vctools.vs_path.get_child("DIA SDK")
     repo_ctx.symlink(dia_sdk_path, "ms_dia_sdk")
     create_build_file(repo_ctx.attr.build_file, repo_ctx)

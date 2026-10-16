@@ -174,6 +174,10 @@ build:rbe-linux-aarch64 --platforms=@goldfish_build//platforms:linux_aarch64
 build:rbe-linux-aarch64 --extra_execution_platforms=@goldfish_build//platforms:linux_x64
 build:rbe-linux-aarch64 --remote_upload_local_results=false
 
+# Local cross-compiling for Windows ARM64 (aarch64)
+build:win_arm64 --platforms=@goldfish_build//platforms:windows_aarch64
+build:win_aarch64 --platforms=@goldfish_build//platforms:windows_aarch64
+
 # External open-source AOSP configuration (b/555489617).
 # downloader_aosp.cfg blocks storage.googleapis.com (including gs://emu-next-bazel),
 # so --config=aosp cannot download @xcode_tools_hermetic and must fall back to

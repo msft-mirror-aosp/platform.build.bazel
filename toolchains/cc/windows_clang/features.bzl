@@ -185,8 +185,6 @@ generate_pdb_file_feature = feature(
         flag_set(
             actions = ASSEMBLE_ACTIONS,
             flag_groups = [flag_group(flags = [
-                # Generate debug information for assembly files
-                "/Zd",
                 # Generate full debug information
                 "/Zi",
             ])],
