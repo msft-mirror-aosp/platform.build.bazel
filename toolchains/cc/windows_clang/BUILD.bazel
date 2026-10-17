@@ -17,3 +17,19 @@ alias(
     name = "msdia",
     actual = "@toolchain_hub//cc/windows_clang:msdia",
 )
+
+filegroup(
+    name = "sysroot_x64",
+    srcs = [
+        "@toolchain_hub//cc/windows_clang:msvc_runtimes_x64",
+        "@toolchain_hub//cc/windows_clang:sdk_libs_x64",
+    ],
+)
+
+filegroup(
+    name = "sysroot_aarch64",
+    srcs = [
+        "@toolchain_hub//cc/windows_clang:msvc_runtimes_aarch64",
+        "@toolchain_hub//cc/windows_clang:sdk_libs_aarch64",
+    ],
+)

@@ -1,6 +1,7 @@
 load(
     "@goldfish_build//toolchains/cc:actions.bzl",
     "ARCHIVER_ACTIONS",
+    "ASSEMBLE_ACTIONS",
     "CPP_COMPILE_ACTIONS",
     "C_COMPILE_ACTIONS",
     "LINK_ACTIONS",
@@ -42,6 +43,23 @@ cc_tool(
     ],
     tool = ":bin/clang-cl.exe",
     visibility = ["//visibility:public"],
+)
+
+cc_tool(
+    name = "clang-cl-assembler",
+    applied_actions = ASSEMBLE_ACTIONS,
+    runfiles = glob(
+        ["bin/clang*"],
+        exclude = [
+            "bin/clang-check.exe",
+            "bin/clang-format.exe",
+            "bin/clang-scan-deps.exe",
+            "bin/clang-tidy.exe",
+        ],
+    ) + [
+        ":bin/libwinpthread-1.dll",
+    ],
+    tool = ":bin/clang-cl.exe",
 )
 
 cc_tool(
@@ -92,8 +110,10 @@ filegroup(
         "bin/llvm-objcopy.exe",
         "bin/llvm-objdump.exe",
         "bin/llvm-ranlib.exe",
+        "bin/llvm-rc.exe",
         "bin/llvm-strings.exe",
         "bin/llvm-strip.exe",
+        "bin/llvm-windres.exe",
     ],
     visibility = ["//visibility:public"],
 )
