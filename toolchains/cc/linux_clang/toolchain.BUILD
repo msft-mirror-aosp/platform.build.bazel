@@ -162,6 +162,10 @@ cc_features(
         "--gcc-toolchain=external/goldfish_build++http_archive+arm_sysroot",
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
+        # In-process ThinLTO on rust_shared_library lowers AArch64 outline
+        # atomics (__aarch64_*) after archive scanning, resolving against
+        # Rust's libcompiler_builtins.a.
+        "-Wl,--warn-backrefs-exclude=*libcompiler_builtins*",
         "-Wl,--as-needed",
         "-lm",
         "-ldl",
