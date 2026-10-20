@@ -816,6 +816,7 @@ llvm_coverage_map_format_feature = feature(
                     flags = [
                         "-fprofile-instr-generate",
                         "-fcoverage-mapping",
+                        "-fcoverage-compilation-dir=.",
                     ],
                 ),
             ],
