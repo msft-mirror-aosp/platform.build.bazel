@@ -6,9 +6,18 @@ load("@goldfish_build//toolchains/cc:rules.bzl", "cc_toolchain_import")
 package(default_visibility = ["@toolchain_hub//:__subpackages__"])
 
 filegroup(
-    name = "dlls",
+    name = "dlls_x64",
     srcs = glob(
         ["Redist/ucrt/DLLs/x64/*.dll"],
+        allow_empty = True,
+    ),
+    visibility = ["//visibility:public"],
+)
+
+filegroup(
+    name = "dlls_aarch64",
+    srcs = glob(
+        ["Redist/ucrt/DLLs/arm64/*.dll"],
         allow_empty = True,
     ),
     visibility = ["//visibility:public"],

@@ -120,6 +120,7 @@ cc_features(
     cxx_flags = [
         "-std=c++26",
         "-fno-exceptions",
+        "-fexperimental-library",
     ],
     link_flags = [
         "--target=x86_64-apple-darwin-macho",
@@ -152,6 +153,8 @@ cc_toolchain_config(
         "@clang_mac_all//:archiver",
         "@clang_mac_all//:strip",
         "@clang_mac_all//:dsymutil",
+        "@clang_mac_all//:llvm-cov",
+        "@clang_mac_all//:llvm-profdata",
     ],
     compiler_name = "clang",
     identifier = "macos_clang_x64",
@@ -235,6 +238,7 @@ cc_features(
     cxx_flags = [
         "-std=c++26",
         "-fno-exceptions",
+        "-fexperimental-library",
     ],
     link_flags = [
         "--target=arm64-apple-darwin-macho",
@@ -259,6 +263,8 @@ cc_toolchain_config(
         "@clang_mac_all//:archiver",
         "@clang_mac_all//:strip",
         "@clang_mac_all//:dsymutil",
+        "@clang_mac_all//:llvm-cov",
+        "@clang_mac_all//:llvm-profdata",
     ],
     compiler_name = "clang",
     identifier = "macos_clang_arm64",

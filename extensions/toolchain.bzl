@@ -97,13 +97,8 @@ def _toolchain_impl(ctx):
             gcs_archive(
                 name = "dism_adk",
                 build_file = "//toolchains/cc/windows_clang:dism_adk.BUILD",
-                sha256 = "f180fe513c09a75b813dffbadb69fbd911e88f9d648f686d4c868b90a3b7ae77",
-                url = "gs://emu-next-bazel/hermetic-msvc/windows_11_adk_dismapi_10.1.26100.2454.zip",
-                # Bug: 523435084, fix path names in dismapi
-                rename_files = {
-                    "Include\\dismapi.h": "Include/dismapi.h",
-                    "Lib\\amd64\\dismapi.lib": "Lib/amd64/dismapi.lib",
-                },
+                sha256 = "4baf8013556e402fc3c07584ba0ca6f92aedd5a191664b4d813eccc84884edc9",
+                url = "gs://emu-next-bazel/hermetic-msvc/windows_11_adk_dismapi_10.1.26100.9457.zip",
             )
 
         if ctx.os.name.lower().startswith("mac") and ctx.getenv("CC_ALLOW_HOST_SDK", "1") in ("1", "true"):

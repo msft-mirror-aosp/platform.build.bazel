@@ -33,6 +33,23 @@ filegroup(
 )
 
 cc_tool(
+    name = "llvm-cov",
+    applied_actions = [
+        "gcov",
+        "llvm-cov",
+    ],
+    tool = ":bin/llvm-cov",
+    visibility = ["//visibility:public"],
+)
+
+cc_tool(
+    name = "llvm-profdata",
+    applied_actions = ["llvm-profdata"],
+    tool = ":bin/llvm-profdata",
+    visibility = ["//visibility:public"],
+)
+
+cc_tool(
     name = "clang",
     applied_actions = C_COMPILE_ACTIONS + OBJC_COMPILE_ACTIONS + ASSEMBLE_ACTIONS + LINK_ACTIONS + LTO_BACKEND_ACTIONS + LTO_INDEX_ACTIONS,
     env = select({
