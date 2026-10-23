@@ -33,8 +33,8 @@ build:ciasan --config=debug
 build:ciasan --config=asan
 
 # Clang-tidy execution configuration
-build:tidy --@goldfish_build//:clang_tidy_enabled=true
-test:tidy --@goldfish_build//:clang_tidy_enabled=true
+build:tidy --@aemu//tools/clang_tidy:clang_tidy_enabled=true
+test:tidy --@aemu//tools/clang_tidy:clang_tidy_enabled=true
 
 # Code coverage configuration (LLVM source-based coverage)
 coverage --build_tests_only
