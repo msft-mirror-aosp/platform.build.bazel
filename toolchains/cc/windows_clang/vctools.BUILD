@@ -23,6 +23,9 @@ filegroup(
 filegroup(
     name = "dlls_aarch64",
     srcs = glob(
+        ["msvc_redist/arm64/Microsoft.VC*.CRT/*.dll"],
+        allow_empty = True,
+    ) or glob(
         ["msvc/bin/HostArm64/arm64/*.dll"],
         allow_empty = True,
     ),

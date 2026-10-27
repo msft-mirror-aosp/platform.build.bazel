@@ -197,41 +197,8 @@ multisource_repo.file(
 )
 # END upload_fishtank
 
-# List of system images, these are updated by running the script
-# ./util/update_mingbm_image.sh -b <bid>
-# Please run that script if you wish to update the default system image used
-# Do not remove the BEGIN/END markers, as that will break the fragile script.
-
-# BEGIN android16k-x86_64
-multisource_repo.archive(
-    name = "android16k-x86_64",
-    aosp = {
-        "sha256": "e31eb87a8e7afb279310d2a700a57e2ca460bac117ac14d3fff068472930b5df",
-        "url": "https://dl.google.com/android/repository/sys-img/google_apis/x86_64-ps16k-37.2_r05.zip",
-    },
-    build_file = "@goldfish//emulator/sdk/system_images/sysimage-x86_64:sysimage.BUILD",
-    goog = {
-        "sha256": "6205aeb88603725bef23d37c50eabf91d11073cc03a963059234b87691630395",
-        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_x86_64-userdebug/sdk-repo-linux-system-images-16418371.zip",
-    },
-)
-# END android16k-x86_64
-
-# BEGIN android16k-arm64-v8a
-multisource_repo.archive(
-    name = "android16k-arm64-v8a",
-    aosp = {
-        "sha256": "00681b54fe83facadca2aeddfdda09f1fcbde5fd5e3f4467a63619b011ccf33f",
-        "url": "https://dl.google.com/android/repository/sys-img/google_apis/arm64-v8a-ps16k-37.2_r05.zip",
-    },
-    build_file = "@goldfish//emulator/sdk/system_images/sysimage-arm64-v8a:sysimage.BUILD",
-    goog = {
-        "sha256": "7be050d1d592dab2a4945dd1651c7aa978ae160619374a1887c5995aff6dc9ae",
-        "url": "gs://emu-next-bazel/sys-img/sdk_gphone16k_arm64-userdebug/sdk-repo-linux-system-images-16418371.zip",
-    },
-)
-# END android16k-arm64-v8a
-
+# System image archives (API 29-37) are defined in the compact catalog at
+# build/bazel/extensions/android_repos.bzl (updated via build/bazel/utils/update_sysimage.py).
 use_repo(
     multisource_repo,
     "android16k-arm64-v8a",
@@ -240,4 +207,22 @@ use_repo(
     "fishtank-linux_internal",
     "fishtank-mac",
     "fishtank-windows",
+    "sysimg-android-29-arm64-v8a",
+    "sysimg-android-29-x86_64",
+    "sysimg-android-30-arm64-v8a",
+    "sysimg-android-30-x86_64",
+    "sysimg-android-31-arm64-v8a",
+    "sysimg-android-31-x86_64",
+    "sysimg-android-32-arm64-v8a",
+    "sysimg-android-32-x86_64",
+    "sysimg-android-33-arm64-v8a",
+    "sysimg-android-33-x86_64",
+    "sysimg-android-34-arm64-v8a",
+    "sysimg-android-34-x86_64",
+    "sysimg-android-35-arm64-v8a",
+    "sysimg-android-35-x86_64",
+    "sysimg-android-36-arm64-v8a",
+    "sysimg-android-36-x86_64",
+    "sysimg-android-37-arm64-v8a",
+    "sysimg-android-37-x86_64",
 )

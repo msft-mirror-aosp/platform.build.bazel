@@ -36,10 +36,19 @@ build:ciasan --config=asan
 build:tidy --@goldfish_build//:clang_tidy_enabled=true
 test:tidy --@goldfish_build//:clang_tidy_enabled=true
 
-# Gfxstream software Vulkan test environment (Linux-only for now:
-# SetupGraphicsTestEnvironment() hardcodes .so names and gfxstream_unit_tests
+# Code coverage configuration (LLVM source-based coverage)
+coverage --build_tests_only
+coverage --test_tag_filters=-tidy-test
+coverage --combined_report=lcov
+coverage --experimental_use_llvm_covmap
+coverage --experimental_generate_llvm_lcov
+coverage --instrumentation_filter=//emulator[/:],@goldfish//emulator[/:],//common[/:],//host[/:]
+
+# Gfxstream software GLES (ANGLE) and Vulkan (Lavapipe) test environment (Linux-only
+# for now: SetupGraphicsTestEnvironment() hardcodes .so names and gfxstream_unit_tests
 # currently only runs on Linux).
-build:linux --@gfxstream//common/testenv:graphics_test_environment=gles_none_vulkan_lavapipe
+build:linux --@gfxstream//common/testenv:graphics_test_environment=gles_angle_vulkan_lavapipe
+build:linux --@gfxstream//common/testenv:gles_angle_drivers=@goldfish_prebuilts_common//ANGLE:lib_linux_x86_64
 build:linux --@gfxstream//common/testenv:vulkan_lavapipe_drivers=@goldfish//emulator/libs/ver:test_vulkan_icds
 
 # User overrides must come last

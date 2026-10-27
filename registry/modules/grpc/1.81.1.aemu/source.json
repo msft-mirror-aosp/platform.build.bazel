@@ -5,6 +5,7 @@
     "patch_strip": 1,
     "patches": {
         "aemu_no-macos-universal-binary.patch": "sha256-4goaY43Y0miqp/1FpL68djzH8B1qf7WyO8/k5hxSBw4=",
+        "no-upb-gen-includes.patch": "sha256-c5g9NZZgEP1TphpyTqJ6W8zCi1pYRWeMj67mgg/eToI=",
         "null-function-check.patch": "sha256-dU6zKlT6gHsgVFt4sZaKhZe7zeBi1GEySfobgYkBiTA="
     }
 }

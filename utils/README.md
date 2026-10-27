@@ -66,9 +66,9 @@ python utils/create_hermetic_packages.py sdk --list-versions
 
 ## `update_sysimage.py`
 
-This script updates the default system images used for emulator testing in `MODULE.bazel`. It fetches the images from the internal Android Build server, calculates their SHA256 hash, uploads them to GCS, and updates the corresponding `goog` source entries in `MODULE.bazel`.
+This script updates the default system images used for emulator testing in `extensions/android_repos.bzl`. It fetches the images from the internal Android Build server, calculates their SHA256 hash, uploads them to GCS, and updates the corresponding `goog` source entries in `extensions/android_repos.bzl`.
 
-**Note: This script is for internal Google use only.** AOSP users should use the public URLs defined in the `aosp` source tags in `MODULE.bazel`.
+**Note: This script is for internal Google use only.** AOSP users should use the public URLs defined in the `aosp` source entries in `extensions/android_repos.bzl`.
 
 ### Requirements
 *   **Python 3**

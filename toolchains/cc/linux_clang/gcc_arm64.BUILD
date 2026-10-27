@@ -56,3 +56,19 @@ sysroot(
     all_files = glob(["aarch64-none-linux-gnu/libc/**"]),
     path = "aarch64-none-linux-gnu/libc",
 )
+
+filegroup(
+    name = "all_files",
+    srcs = glob([
+        "aarch64-none-linux-gnu/**",
+        "include/**",
+        "lib/**",
+        "lib64/**",
+        "libexec/**",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+exports_files(
+    srcs = ["lib/gcc/aarch64-none-linux-gnu/13.2.1"],
+)

@@ -23,6 +23,34 @@ _arm64_imports = [
     "@clang_linux_x64//:compiler_hdrs",
 ]
 
+_warning_flags = [
+    "-Wall",
+    "-Wthread-safety",
+    "-Wthread-safety-analysis",
+    "-Wthread-safety-attributes",
+    "-Wthread-safety-beta",
+    "-Wthread-safety-negative",
+    "-Wno-error=thread-safety-negative",
+    "-Wthread-safety-pointer",
+    "-Wthread-safety-precise",
+    "-Wthread-safety-reference",
+    "-Wthread-safety-reference-return",
+    "-Wthread-safety-verbose",
+    "-Wno-character-conversion",
+    "-Wno-deprecated-declarations",
+    "-Wno-initializer-overrides",
+    "-Wno-unused-const-variable",
+    "-Wno-ignored-attributes",
+    "-Wno-writable-strings",
+    "-Wno-extern-c-compat",
+    "-Wno-unused-function",
+    "-Wno-unused-variable",
+    "-Wno-c99-designator",
+    "-Wno-unknown-warning-option",
+    "-Wno-gnu-variable-sized-type-not-at-end",
+    "-Wno-macro-redefined",
+]
+
 cc_features(
     name = "x64_features",
     assembler_flags = [
@@ -33,6 +61,7 @@ cc_features(
         "--target=x86_64-unknown-linux-gnu",
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
+        "-D__STDC_FORMAT_MACROS",
     ],
     cxx_flags = [
         "-std=c++26",
@@ -50,30 +79,7 @@ cc_features(
         "-l:libunwind.a",
     ],
     toolchain_imports = _x64_imports,
-    warning_flags = [
-        "-Wall",
-        "-Wthread-safety",
-        "-Wthread-safety-analysis",
-        "-Wthread-safety-attributes",
-        "-Wthread-safety-beta",
-        "-Wthread-safety-pointer",
-        "-Wthread-safety-precise",
-        "-Wthread-safety-reference",
-        "-Wthread-safety-reference-return",
-        "-Wthread-safety-verbose",
-        "-Wno-character-conversion",
-        "-Wno-deprecated-declarations",
-        "-Wno-initializer-overrides",
-        "-Wno-unused-const-variable",
-        "-Wno-ignored-attributes",
-        "-Wno-writable-strings",
-        "-Wno-extern-c-compat",
-        "-Wno-unused-function",
-        "-Wno-unused-variable",
-        "-Wno-c99-designator",
-        "-Wno-unknown-warning-option",
-        "-Wno-gnu-variable-sized-type-not-at-end",
-    ],
+    warning_flags = _warning_flags,
 )
 
 cc_toolchain_config(
@@ -84,6 +90,8 @@ cc_toolchain_config(
         "@clang_linux_x64//:clang-tidy",
         "@clang_linux_x64//:archiver",
         "@clang_linux_x64//:strip",
+        "@clang_linux_x64//:llvm-cov",
+        "@clang_linux_x64//:llvm-profdata",
     ],
     compiler_name = "clang",
     identifier = "linux_clang_x64",
@@ -144,6 +152,7 @@ cc_features(
         "--gcc-toolchain=external/goldfish_build++http_archive+arm_sysroot",
         "-fstack-protector-strong",
         "-fcolor-diagnostics",
+        "-D__STDC_FORMAT_MACROS",
     ],
     cxx_flags = [
         "-std=c++26",
@@ -153,26 +162,17 @@ cc_features(
         "--gcc-toolchain=external/goldfish_build++http_archive+arm_sysroot",
         "-fuse-ld=lld",
         "-Wno-unused-command-line-argument",
+        # In-process ThinLTO on rust_shared_library lowers AArch64 outline
+        # atomics (__aarch64_*) after archive scanning, resolving against
+        # Rust's libcompiler_builtins.a.
+        "-Wl,--warn-backrefs-exclude=*libcompiler_builtins*",
         "-Wl,--as-needed",
         "-lm",
         "-ldl",
         "-Wl,--no-as-needed",
     ],
     toolchain_imports = _arm64_imports,
-    warning_flags = [
-        "-Wall",
-        "-Wthread-safety",
-        "-Wthread-safety-analysis",
-        "-Wthread-safety-attributes",
-        "-Wthread-safety-beta",
-        "-Wthread-safety-negative",
-        "-Wno-error=thread-safety-negative",
-        "-Wthread-safety-pointer",
-        "-Wthread-safety-precise",
-        "-Wthread-safety-reference",
-        "-Wthread-safety-reference-return",
-        "-Wthread-safety-verbose",
-    ],
+    warning_flags = _warning_flags,
 )
 
 cc_toolchain_config(
@@ -182,6 +182,8 @@ cc_toolchain_config(
         "@clang_linux_x64//:clang",
         "@clang_linux_x64//:archiver",
         "@clang_linux_x64//:strip",
+        "@clang_linux_x64//:llvm-cov",
+        "@clang_linux_x64//:llvm-profdata",
     ],
     compiler_name = "clang",
     identifier = "linux_clang_arm64",

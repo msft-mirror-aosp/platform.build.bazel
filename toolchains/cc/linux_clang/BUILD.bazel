@@ -1,1 +1,11 @@
 package(default_visibility = ["//visibility:public"])
+
+alias(
+    name = "arm_sysroot_files",
+    actual = "@arm_sysroot//:all_files",
+)
+
+alias(
+    name = "arm_compat_lib",
+    actual = "@arm_sysroot//:lib/gcc/aarch64-none-linux-gnu/13.2.1",
+)
