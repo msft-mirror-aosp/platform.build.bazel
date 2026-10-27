@@ -37,7 +37,7 @@ http_archive(
 )
 
 custom_toolchain = use_extension("//extensions:toolchain.bzl", "toolchain")
-use_repo(custom_toolchain, "toolchain_hub")
+use_repo(custom_toolchain, "toolchain_hub", "windows_test_tools")
 
 register_toolchains(
     "@toolchain_hub//cc/linux_clang:all",
